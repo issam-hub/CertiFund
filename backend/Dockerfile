@@ -5,10 +5,6 @@ RUN apk add --no-cache make
 
 WORKDIR /app
 
-# Copy Makefile first
-COPY Makefile .
-
-# Then copy rest of the files
 COPY . .
 
 RUN make build
