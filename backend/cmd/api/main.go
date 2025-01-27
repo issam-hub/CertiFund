@@ -71,6 +71,8 @@ func customHTTPErrorHandler(err error, c echo.Context) {
 	}
 }
 
+// A COMMENT TO TRIGGER REDEPLOYMENT
+
 func main() {
 	envErr := godotenv.Load()
 	if envErr != nil {
