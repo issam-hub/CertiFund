@@ -7,6 +7,6 @@ WORKDIR /app
 
 COPY . .
 
-RUN go build -o ./bin/api ./cmd/api
+RUN make build
 EXPOSE 9000
 CMD [ "./bin/api" ]
