@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"projectx/internal/data"
 	"strconv"
 	"sync"
 	"time"
@@ -45,6 +46,7 @@ type config struct {
 type application struct {
 	config config
 	logger *slog.Logger
+	models data.Models
 	wg     sync.WaitGroup
 }
 
@@ -70,8 +72,6 @@ func customHTTPErrorHandler(err error, c echo.Context) {
 		c.JSON(status, envelope{"error": message})
 	}
 }
-
-// A COMMENT TO TRIGGER REDEPLOYMENT
 
 func main() {
 	envErr := godotenv.Load()
@@ -170,7 +170,6 @@ func main() {
 		),
 		IdentifierExtractor: func(ctx echo.Context) (string, error) {
 			id := ctx.RealIP()
-			fmt.Println("client IP: ", id)
 			return id, nil
 		},
 		ErrorHandler: func(c echo.Context, err error) error {
@@ -186,6 +185,7 @@ func main() {
 	app := &application{
 		config: cfg,
 		logger: logger,
+		models: data.NewModels(db),
 	}
 
 	e.Use(echoprometheus.NewMiddleware("myapp"))

@@ -7,4 +7,9 @@ import (
 func (app *application) routes(e *echo.Echo) {
 	router := e.Group("/v1")
 	router.GET("/healthCheck", app.healthCheckHandler)
+
+	// projects
+	router.POST("/projects/create", app.createProjectHandler)
+	router.GET("/projects/:id", app.getProjectHandler)
+	router.PATCH("/projects/:id", app.updateProjectHandler)
 }
