@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS project (
     funding_goal DECIMAL NOT NULL,
     current_funding DECIMAL NOT NULL DEFAULT 0.0,
     deadline timestamp(0) with time zone NOT NULL,
-    status project_status NOT NULL DEFAULT 'Pending Review',
+    status project_status NOT NULL DEFAULT 'Draft',
     created_at timestamp(0) with time zone NOT NULL DEFAULT NOW(),
     version integer NOT NULL DEFAULT 1
 );
