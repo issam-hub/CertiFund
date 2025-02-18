@@ -20,7 +20,7 @@ func (app *application) createProjectHandler(c echo.Context) error {
 	}
 
 	if err := c.Bind(&input); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+		return echo.NewHTTPError(http.StatusBadRequest, "Error while processing data")
 	}
 
 	project := &data.Project{
@@ -88,15 +88,22 @@ func (app *application) updateProjectHandler(c echo.Context) error {
 	}
 
 	var input struct {
-		Title       *string    `json:"title"`
-		Description *string    `json:"description"`
-		FundingGoal *float64   `json:"funding_goal"`
-		Deadline    *time.Time `json:"deadline"`
+		Title          *string    `json:"title"`
+		Description    *string    `json:"description"`
+		FundingGoal    *float64   `json:"funding_goal"`
+		CurrentFunding *float64   `json:"current_funding"`
+		Deadline       *time.Time `json:"deadline"`
+		ProjectImg     *string    `json:"project_img"`
+		Status         *string    `json:"status"`
+		Campaign       *string    `json:"campaign"`
 	}
 
 	if err := c.Bind(&input); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+		app.logger.Error(err.Error())
+		return echo.NewHTTPError(http.StatusBadRequest, "Error while processing data")
 	}
+
+	v := validator.New()
 
 	if input.Title != nil {
 		project.Title = *input.Title
@@ -110,10 +117,24 @@ func (app *application) updateProjectHandler(c echo.Context) error {
 	if input.FundingGoal != nil {
 		project.FundingGoal = *input.FundingGoal
 	}
-
-	v := validator.New()
+	if input.CurrentFunding != nil {
+		project.CurrentFunding = *input.CurrentFunding
+	}
+	if input.Status != nil {
+		project.Status = *input.Status
+	}
+	if input.Campaign != nil {
+		project.Campaign = *input.Campaign
+	}
+	if input.ProjectImg != nil {
+		project.ProjectImg = *input.ProjectImg
+	}
 
 	if data.ValidateProject(v, project); !v.Valid() {
+		return echo.NewHTTPError(http.StatusUnprocessableEntity, v.Errors)
+	}
+
+	if !v.Valid() {
 		return echo.NewHTTPError(http.StatusUnprocessableEntity, v.Errors)
 	}
 

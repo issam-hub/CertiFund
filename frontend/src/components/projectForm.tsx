@@ -1,4 +1,5 @@
-import React from 'react';
+"use client"
+import React, { useCallback, useState } from 'react';
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Label } from "@/components/ui/label";
@@ -6,12 +7,13 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { UpdateProjectSchema, createProjectSchema } from '@/lib/schemas/project';
-import { reverseDateTimeFormat } from "@/lib/utils";
+import { UpdateProjectSchema, createProjectSchema } from '@/app/lib/schemas/project';
+import { reverseDateTimeFormat } from "@/app/lib/utils";
 import StoryEditor from "@/app/components/project/storyEditor";
 import ImageInput from "@/components/imageInput";
 import { useToast } from "@/hooks/use-toast";
-import { TOAST_SUCCESS_TITLE, TOAST_ERROR_TITLE } from "@/lib/constants";
+import { TOAST_SUCCESS_TITLE, TOAST_ERROR_TITLE } from "@/app/lib/constants";
+import { updateProject, uploadImage } from '@/app/actions/projects';
 
 interface ProjectFormProps {
   data: UpdateProjectSchema;
@@ -20,21 +22,58 @@ interface ProjectFormProps {
 }
 
 // Define interfaces for each step's data
-interface BasicsFormData {
-  imageURL?: string;
+export interface BasicsFormData {
+  project_img: string | null;
   title: string;
   description: string;
   category: string;
 }
 
-interface FundingFormData {
+export interface FundingFormData {
   funding_goal: number;
   deadline: string;
 }
 
+export interface StoryFormData {
+  campaign: string
+}
+
+
 export default function ProjectForm({ data, activeTab, onStepComplete }: ProjectFormProps) {
   const { toast } = useToast();
-  
+  const [imageFile, setImageFile] = useState<File | null>(null);
+
+  const [getEditorContent, setGetEditorContent] = useState<(() => string) | null>(null);
+
+  const handleGetContent = useCallback((getContent: () => string) => {
+    setGetEditorContent(() => getContent);
+  }, []);
+
+  const handleSaveStory = async() => {
+    if (getEditorContent) {
+      const content = getEditorContent();
+      try {
+        // Handle funding step submission
+        await updateProject({
+          "campaign": content
+        }, data.project_id as string)
+        
+        toast({
+          title: TOAST_SUCCESS_TITLE,
+          description: "Story saved successfully",
+          variant: "default",
+        });
+        
+        onStepComplete('story');
+      } catch (error) {
+        toast({
+          title: TOAST_ERROR_TITLE,
+          description: (error as Error).message,
+          variant: "destructive",
+        });
+      }
+    }
+  };
   // Create separate form instances for each step
   const basicsForm = useForm<BasicsFormData>({
     resolver: zodResolver(createProjectSchema.pick({ 
@@ -43,6 +82,7 @@ export default function ProjectForm({ data, activeTab, onStepComplete }: Project
       category: true 
     })),
     defaultValues: {
+      project_img: data.project_img,
       title: data.title,
       description: data.description,
       category: data.category
@@ -62,9 +102,14 @@ export default function ProjectForm({ data, activeTab, onStepComplete }: Project
 
   const handleBasicsSubmit = async (formData: BasicsFormData) => {
     try {
-      // Handle basics step submission
-      console.log('Basics form data:', formData);
-      
+
+      const result = await uploadImage(imageFile as File)
+      if(result.url){
+        let toBeSentFormData = formData
+        toBeSentFormData['project_img'] = result.url
+        await updateProject(formData, data.project_id as string)
+      }
+
       toast({
         title: TOAST_SUCCESS_TITLE,
         description: "Basics information saved successfully",
@@ -84,7 +129,7 @@ export default function ProjectForm({ data, activeTab, onStepComplete }: Project
   const handleFundingSubmit = async (formData: FundingFormData) => {
     try {
       // Handle funding step submission
-      console.log('Funding form data:', formData);
+      await updateProject(formData, data.project_id as string)
       
       toast({
         title: TOAST_SUCCESS_TITLE,
@@ -107,7 +152,9 @@ export default function ProjectForm({ data, activeTab, onStepComplete }: Project
       <form onSubmit={basicsForm.handleSubmit(handleBasicsSubmit)} className="space-y-4">
         <div>
           <Label htmlFor="description" className="font-semibold">Project Image:</Label>
-          <ImageInput />
+          <ImageInput defaultValue={data.project_img as string} onImageChange={(imageUrl, file) => {
+            setImageFile(file); 
+          }}/>
         </div>
         <div>
           <Label htmlFor="title" className="font-semibold">Title:</Label>
@@ -209,14 +256,17 @@ export default function ProjectForm({ data, activeTab, onStepComplete }: Project
   if (activeTab === "story") {
     return (
       <div className="space-y-4">
-        <StoryEditor />
-        <Button 
-          onClick={() => onStepComplete('story')}
-          className="w-full bg-secondaryColor hover:bg-secondaryColor"
-        >
-          Save Story
-        </Button>
-      </div>
+      <StoryEditor 
+        defaultvalue={data.campaign as string} 
+        onGetContent={handleGetContent}  // Changed prop name
+      />
+      <Button 
+        onClick={handleSaveStory}
+        className="w-full bg-secondaryColor hover:bg-secondaryColor"
+      >
+        Save Story
+      </Button>
+    </div>
     );
   }
 

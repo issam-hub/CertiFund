@@ -17,6 +17,8 @@ type Project struct {
 	CurrentFunding float64   `json:"current_funding"`
 	Deadline       time.Time `json:"deadline"`
 	Status         string    `json:"status"`
+	ProjectImg     string    `json:"project_img"`
+	Campaign       string    `json:"campaign"`
 	CreatedAt      time.Time `json:"-"`
 	Version        int32     `json:"version"`
 }
@@ -69,7 +71,7 @@ func (m ProjectModel) Get(id int) (*Project, error) {
 		return nil, ErrNoRecordFound
 	}
 	var project Project
-	query := `SELECT project_id, title, description, funding_goal, current_funding, deadline, status, created_at, version FROM project WHERE project_id = $1`
+	query := `SELECT project_id, title, description, funding_goal, current_funding, deadline, status, projectimg, campaign, created_at, version FROM project WHERE project_id = $1`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -82,6 +84,8 @@ func (m ProjectModel) Get(id int) (*Project, error) {
 		&project.CurrentFunding,
 		&project.Deadline,
 		&project.Status,
+		&project.ProjectImg,
+		&project.Campaign,
 		&project.CreatedAt,
 		&project.Version,
 	)
@@ -99,15 +103,19 @@ func (m ProjectModel) Get(id int) (*Project, error) {
 func (m ProjectModel) Update(project *Project) error {
 	query := `
 		UPDATE project SET 
-		title = $1, description = $2, funding_goal = $3, deadline = $4, version = version + 1
-		WHERE project_id = $5 AND version = $6 RETURNING version
+		title = $1, description = $2, funding_goal = $3, current_funding = $4, deadline = $5, status = $6, projectimg = $7, campaign = $8, version = version + 1
+		WHERE project_id = $9 AND version = $10 RETURNING version
 	`
 
 	args := []interface{}{
 		project.Title,
 		project.Description,
 		project.FundingGoal,
+		project.CurrentFunding,
 		project.Deadline,
+		project.Status,
+		project.ProjectImg,
+		project.Campaign,
 		project.ID,
 		project.Version,
 	}

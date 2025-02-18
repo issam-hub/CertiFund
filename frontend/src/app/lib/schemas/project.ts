@@ -9,4 +9,4 @@ export const createProjectSchema = z.object({
 })
 
 export type CreateProjectSchema = z.infer<typeof createProjectSchema>
-export type UpdateProjectSchema = z.infer<typeof createProjectSchema>&{id?:string}
+export type UpdateProjectSchema = z.infer<typeof createProjectSchema>&{project_id?:string, project_img?:string, campaign?:string}

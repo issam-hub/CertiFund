@@ -1,10 +1,10 @@
 "use client"
 import React, { useState } from 'react';
-import { cn } from "@/lib/utils";
+import { cn } from "@/app/lib/utils";
 import { Check } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import Link from 'next/link';
-import { UpdateProjectSchema } from '@/lib/schemas/project';
+import { UpdateProjectSchema } from '@/app/lib/schemas/project';
 import ProjectForm from '@/components/projectForm';
 
 const projectRules = [

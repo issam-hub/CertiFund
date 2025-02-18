@@ -13,4 +13,7 @@ func (app *application) routes(e *echo.Echo) {
 	router.GET("/projects/:id", app.getProjectHandler)
 	router.PATCH("/projects/:id", app.updateProjectHandler)
 	router.DELETE("/projects/:id", app.deleteProjectHandler)
+
+	// image upload
+	router.POST("/projects/image/upload", app.fileUploadHandler)
 }
