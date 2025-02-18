@@ -2,11 +2,16 @@ package main
 
 import (
 	"errors"
+	"net/http"
 	"net/url"
+	"os"
 	"projectx/internal/validator"
 	"strconv"
 	"strings"
 
+	"github.com/cloudinary/cloudinary-go/v2"
+	"github.com/cloudinary/cloudinary-go/v2/api/uploader"
+	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 )
 
@@ -63,4 +68,53 @@ func (app *application) background(fn func()) {
 
 		fn()
 	}()
+}
+
+func (app *application) fileUploadHandler(c echo.Context) error {
+	// Get the file from the request
+	file, err := c.FormFile("file")
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"error": "Failed to get file from request: " + err.Error(),
+		})
+	}
+	envErr := godotenv.Load()
+	if envErr != nil {
+		return errors.New("Error happened while uploading the image")
+	}
+	cloud_name := os.Getenv("CLOUD_NAME")
+	api_key := os.Getenv("API_KEY")
+	api_secret := os.Getenv("API_SECRET")
+	cld, err := cloudinary.NewFromParams(
+		cloud_name,
+		api_key,
+		api_secret,
+	)
+	// Open the file
+	src, err := file.Open()
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, envelope{
+			"error": "Failed to open file: " + err.Error(),
+		})
+	}
+	defer src.Close()
+
+	// Upload to Cloudinary using the opened file
+	uploadResult, err := cld.Upload.Upload(
+		c.Request().Context(),
+		src,
+		uploader.UploadParams{
+			ResourceType: "auto", // This will automatically detect the resource type
+		})
+
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, envelope{
+			"error": "Failed to upload to Cloudinary: " + err.Error(),
+		})
+	}
+	// Return the Cloudinary URL
+	return c.JSON(http.StatusOK, envelope{
+		"message": "Image uploaded successfully",
+		"url":     uploadResult.SecureURL,
+	})
 }

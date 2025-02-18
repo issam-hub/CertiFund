@@ -6,8 +6,10 @@ import (
 )
 
 var (
-	ErrNoRecordFound = errors.New("record not found")
-	ErrEditConflict  = errors.New("edit conflict")
+	ErrNoRecordFound   = errors.New("record not found")
+	ErrEditConflict    = errors.New("edit conflict")
+	ErrFailedOpening   = errors.New("Failed to open file")
+	ErrFailedUploading = errors.New("Failed to upload the image")
 )
 
 type Models struct {

@@ -2,7 +2,8 @@
 import React, { useRef, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { useToast } from '@/hooks/use-toast';
-import { TOAST_ERROR_TITLE } from '@/lib/constants';
+import { TOAST_ERROR_TITLE } from '@/app/lib/constants';
+import { apiKey } from '@/app/lib/config';
 
 // Dynamically import the Editor component with SSR disabled
 const Editor = dynamic(() => import('@tinymce/tinymce-react').then(mod => mod.Editor), {
@@ -10,93 +11,31 @@ const Editor = dynamic(() => import('@tinymce/tinymce-react').then(mod => mod.Ed
   loading: () => <p className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-pulse'>Loading editor...</p>
 });
 
-export default function StoryEditor() {
+export default function StoryEditor({defaultvalue,onGetContent }:{defaultvalue:string,onGetContent:(getContent: () => string) => void}) {
   const editorRef = useRef<any>(null);
   const { toast } = useToast()
   const MAX_FILE_SIZE = 300 * 1024; // 300KB in bytes
-
-  useEffect(() => {
-    // Function to find the DialogContent
-    const findDialogContent = (element: HTMLElement | null): HTMLElement | null => {
-      while (element && !element.classList.contains('tox-dialog') && element.parentElement) {
-        element = element.parentElement;
-      }
-      return element;
-    };
-
-    const handleFocusin = (e: FocusEvent) => {
-      const target = e.target as HTMLElement;
-      
-      // Check if the target is within TinyMCE elements
-      if (target.closest('.tox-tinymce, .tox-tinymce-aux, .moxman-window, .tam-assetmanager-root')) {
-        e.stopImmediatePropagation();
-        
-        // Find the dialog content element
-        const dialogContent = findDialogContent(target);
-        if (dialogContent) {
-          // Temporarily disable focus trap
-          const dialogParent = dialogContent.parentElement;
-          if (dialogParent) {
-            dialogParent.setAttribute('data-focus-trap-disabled', 'true');
-            
-            // Re-enable focus trap after interaction
-            const handleBlur = () => {
-              dialogParent.removeAttribute('data-focus-trap-disabled');
-              target.removeEventListener('blur', handleBlur);
-            };
-            target.addEventListener('blur', handleBlur);
-          }
-        }
-      }
-    };
-
-    document.addEventListener('focusin', handleFocusin, true);
-    
-    return () => {
-      document.removeEventListener('focusin', handleFocusin, true);
-    };
-  }, []);
-
-  const log = () => {
+  
+  const getContent = () => {
     if (editorRef.current) {
-      console.log(editorRef.current.getContent());
+      return editorRef.current.getContent();
     }
+    return '';
   };
+
+  // Expose the getContent function to parent
+  useEffect(() => {
+    onGetContent(getContent);
+  }, [onGetContent]);
 
   return (
     <div className="relative">
       <Editor
-        apiKey="351adhux0avyakjzrmlur3jiadngkc59py6agbcrhyy6bmbg"
+        apiKey={apiKey}
+        initialValue={defaultvalue}
         onInit={(_evt, editor) => {
           editorRef.current = editor;
           
-          // Add custom class to TinyMCE dialogs to ensure proper z-index
-          const customStyles = document.createElement('style');
-          customStyles.innerHTML = `
-            .tox-dialog-wrap {
-              z-index: 1000000 !important;
-            }
-            .tox-dialog {
-              z-index: 1000001 !important;
-            }
-            .tox-dialog__header {
-              z-index: 1000002 !important;
-            }
-            .tox-dialog__footer {
-              z-index: 1000002 !important;
-            }
-            .tox-dialog__body {
-              z-index: 1000002 !important;
-            }
-            .tox-dialog-wrap__backdrop {
-              z-index: 1000000 !important;
-            }
-          `;
-          document.head.appendChild(customStyles);
-          
-          return () => {
-            customStyles.remove();
-          };
         }}
         init={{
           height: 500, // Reduced height to better fit in dialog
@@ -119,12 +58,13 @@ export default function StoryEditor() {
             "code",
             "help",
             "wordcount",
+            "emoticons"
           ],
           toolbar:
             "undo redo | blocks fontfamily fontsize | " +
             "bold italic forecolor | alignleft aligncenter " +
             "alignright alignjustify | bullist numlist outdent indent | " +
-            "removeformat | image link | help",
+            "removeformat | image link emoticons | help",
 
           inline: false,
           toolbar_sticky: true,
