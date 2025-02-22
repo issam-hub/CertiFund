@@ -7,11 +7,6 @@ export default async function page({params}:{params: Promise<{id: string}>}) {
 
     const result = await getProject(id)
 
-  if(result.error && result.error === "Project not found"){
-    return (
-      notFound()
-    )
-  }
   return (
     <ProjectOverview data={result["project"]}/>
   )

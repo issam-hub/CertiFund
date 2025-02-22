@@ -1,15 +1,27 @@
 "use client"
 import React, { useEffect, useState } from 'react';
 import { cn } from "@/app/lib/utils";
-import { Check, ChevronDown, Frown, Goal, Hourglass, LucideIcon, PartyPopper, Rocket, Target, Timer, Trophy, X } from 'lucide-react';
+import { Check, ChevronDown, Frown, Goal, Hourglass, LucideIcon, PartyPopper, Rocket, Target, Timer, Trash2, Trophy, X } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import Link from 'next/link';
 import { UpdateProjectSchema } from '@/app/lib/schemas/project';
 import ProjectForm from '@/components/projectForm';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { updateProject } from '@/app/actions/projects';
+import { deleteProject, updateProject } from '@/app/actions/projects';
 import { TOAST_ERROR_TITLE, TOAST_SUCCESS_TITLE } from '@/app/lib/constants';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { useRouter } from 'next/navigation';
 
 const projectRules = [
   "All projects must have a clear goal and timeline",
@@ -195,6 +207,7 @@ export default function ProjectOverview({ data }: ProjectOverviewProps) {
   const [expandedStep, setExpandedStep] = useState<string>("");
   const [timeRemaining, setTimeRemaining] = useState<string>(getTimeDifference(data.deadline));
   const {toast} = useToast()
+  const router = useRouter()
 
   const currentFund = ((data.current_funding * 100) / data.funding_goal).toFixed(2)
 
@@ -234,7 +247,7 @@ export default function ProjectOverview({ data }: ProjectOverviewProps) {
   };
 
   return (
-    <div className="container mx-auto py-8 max-w-[80%] max-lg:max-w-full max-lg:px-2">
+    <div className="container mx-auto py-8 max-w-[80%] max-lg:max-w-full max-lg:px-2 mb-[70px]">
       <h1 className="text-3xl font-bold text-center">{data.title}</h1>
       <div className='text-center mt-3 mb-12 space-x-2'>
         {
@@ -570,6 +583,40 @@ export default function ProjectOverview({ data }: ProjectOverviewProps) {
           </div>
         )
       }
+      <AlertDialog>
+        <AlertDialogTrigger className='rounded-md h-9 px-4 py-2 flex gap-2 items-center text-sm text-red-500 border border-red-500 float-right mt-5'><Trash2 className='h-4 w-4'/>Delete project</AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete your project
+              and remove it's data from our servers.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={async()=>{
+              try {
+                await deleteProject(data.project_id as string)
+                toast({
+                  title: TOAST_SUCCESS_TITLE,
+                  description: "Project deleted successfully",
+                  variant: "default",
+                });
+
+                router.push('/',{scroll:true})
+              
+              } catch (error) {
+                toast({
+                  title: TOAST_ERROR_TITLE,
+                  description: (error as Error).message,
+                  variant: "destructive",
+                });
+              }
+            }} className='bg-red-500 hover:bg-red-600'>Confirm</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
