@@ -41,9 +41,9 @@ export default function StepIndicator({ currentStep, errors }: StepIndicatorProp
                     ? "bg-secondaryColor text-white"
                     : "bg-gray-200 text-gray-600"
                 } ${
-                  (errors.title || errors.description || errors.category) && step.number == 1 && "bg-red-500"
+                  (errors.title || errors.description || errors.categories) && step.number == 1 && "bg-red-special"
                 } ${
-                  (errors.funding_goal || errors.deadline) && step.number == 2 && "bg-red-500"
+                  (errors.funding_goal || errors.deadline) && step.number == 2 && "bg-red-special"
                 }`}
               >
                 {step.number}

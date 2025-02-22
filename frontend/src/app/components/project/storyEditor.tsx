@@ -11,7 +11,7 @@ const Editor = dynamic(() => import('@tinymce/tinymce-react').then(mod => mod.Ed
   loading: () => <p className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-pulse'>Loading editor...</p>
 });
 
-export default function StoryEditor({defaultvalue,onGetContent }:{defaultvalue:string,onGetContent:(getContent: () => string) => void}) {
+export default function StoryEditor({defaultvalue,onGetContent,disableEdit }:{defaultvalue:string,onGetContent:(getContent: () => string) => void, disableEdit: boolean}) {
   const editorRef = useRef<any>(null);
   const { toast } = useToast()
   const MAX_FILE_SIZE = 300 * 1024; // 300KB in bytes
@@ -31,8 +31,9 @@ export default function StoryEditor({defaultvalue,onGetContent }:{defaultvalue:s
   return (
     <div className="relative">
       <Editor
+        disabled={disableEdit}
         apiKey={apiKey}
-        initialValue={defaultvalue}
+        initialValue={defaultvalue || `<p>Loading...</p>`}
         onInit={(_evt, editor) => {
           editorRef.current = editor;
           
@@ -58,12 +59,13 @@ export default function StoryEditor({defaultvalue,onGetContent }:{defaultvalue:s
             "code",
             "help",
             "wordcount",
-            "emoticons"
+            "emoticons",
+            "accordion",
           ],
           toolbar:
-            "undo redo | blocks fontfamily fontsize | " +
+            "undo redo fullscreen preview | blocks fontfamily fontsize | " +
             "bold italic forecolor | alignleft aligncenter " +
-            "alignright alignjustify | bullist numlist outdent indent | " +
+            "alignright alignjustify | table tabledelete | tableprops tablerowprops tablecellprops | tableinsertrowbefore tableinsertrowafter tabledeleterow | tableinsertcolbefore tableinsertcolafter tabledeletecol | bullist numlist outdent indent accordion | " +
             "removeformat | image link emoticons | help",
 
           inline: false,

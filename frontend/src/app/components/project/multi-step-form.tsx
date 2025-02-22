@@ -55,6 +55,7 @@ export default function MultiStepForm() {
     resolver: zodResolver(createProjectSchema),
   });
 
+
   return (
     <div className="w-full max-w-2xl mx-auto mt-10  ">
       <StepIndicator currentStep={step} errors={errors} />

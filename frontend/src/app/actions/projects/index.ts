@@ -1,20 +1,20 @@
 "use server"
 
 import { apiKey, apiUrl } from "@/app/lib/config";
-import { BasicsFormData, FundingFormData, StoryFormData } from "@/components/projectForm";
 import { CreateProjectSchema } from "@/app/lib/schemas/project";
+import { BasicsFormData, FundingFormData, StoryFormData } from "@/app/lib/types";
 import { formatDateTime } from "@/app/lib/utils";
+import { revalidateTag } from "next/cache";
 
 export async function createProject(data: CreateProjectSchema){
-    let toBeSent = Object.fromEntries(Object.entries(data).filter(([key]) => key !== 'category'));
-    toBeSent['deadline'] = formatDateTime(toBeSent['deadline'] as string)
+    data['deadline'] = formatDateTime(data['deadline'] as string)
     
     const res = await fetch(`${apiUrl}/projects/create`,{
         method:"POST",
         headers:{
             "Content-Type":"application/json"
         },
-        body: JSON.stringify(toBeSent)
+        body: JSON.stringify(data)
     })
 
     if(!res.ok){
@@ -29,20 +29,27 @@ export async function createProject(data: CreateProjectSchema){
 }
 
 export async function getProject(id: string) {
-    const res = await fetch(`${apiUrl}/projects/${id}`)
+    const res = await fetch(`${apiUrl}/projects/${id}`, {next:{tags:["project"]}})
+    
+    if(!res.ok){
+        const result = await res.json()
+        if(typeof result.error === "object"){
+            throw new Error(Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string)
+        }
+        throw new Error(result.error)
+    }
+
     
     return await res.json()
 }
 
-export async function updateProject(data: BasicsFormData|FundingFormData|StoryFormData, id: string){
-    let toBeSent = Object.fromEntries(Object.entries(data).filter(([key]) => key !== 'category'));
-
+export async function updateProject(data: BasicsFormData|FundingFormData|StoryFormData|{status:string}, id: string){
     const res = await fetch(`${apiUrl}/projects/${id}`,{
         method:"PATCH",
         headers:{
             "Content-Type":"application/json"
         },
-        body: JSON.stringify(toBeSent)
+        body: JSON.stringify(data)
     })
 
     if(!res.ok){
@@ -51,6 +58,8 @@ export async function updateProject(data: BasicsFormData|FundingFormData|StoryFo
             throw new Error(Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string)
         }
         throw new Error(result.error)
+    }else{
+        revalidateTag("project")
     }
 
     return await res.json()
