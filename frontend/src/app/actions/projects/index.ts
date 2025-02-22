@@ -5,6 +5,7 @@ import { CreateProjectSchema } from "@/app/lib/schemas/project";
 import { BasicsFormData, FundingFormData, StoryFormData } from "@/app/lib/types";
 import { formatDateTime } from "@/app/lib/utils";
 import { revalidateTag } from "next/cache";
+import { notFound } from "next/navigation";
 
 export async function createProject(data: CreateProjectSchema){
     data['deadline'] = formatDateTime(data['deadline'] as string)
@@ -35,8 +36,11 @@ export async function getProject(id: string) {
         const result = await res.json()
         if(typeof result.error === "object"){
             throw new Error(Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string)
+        }else if(result.error === "Project not found"){
+            notFound()
+        }else{
+            throw new Error(result.error)
         }
-        throw new Error(result.error)
     }
 
     
@@ -82,4 +86,16 @@ export async function uploadImage(image: File){
     }
 
     return await res.json()
+}
+
+export async function deleteProject(id: string){
+    const res = await fetch(`${apiUrl}/projects/${id}`,{method:"DELETE"})
+
+    if(!res.ok){
+        const result = await res.json()
+        if(typeof result.error === "object"){
+            throw new Error(Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string)
+        }
+        throw new Error(result.error)
+    }
 }
