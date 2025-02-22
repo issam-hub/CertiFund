@@ -7,20 +7,23 @@ import (
 	"projectx/internal/validator"
 	"strings"
 	"time"
+
+	"github.com/lib/pq"
 )
 
 type Project struct {
-	ID             int       `json:"project_id"`
-	Title          string    `json:"title"`
-	Description    string    `json:"description"`
-	FundingGoal    float64   `json:"funding_goal"`
-	CurrentFunding float64   `json:"current_funding"`
-	Deadline       time.Time `json:"deadline"`
-	Status         string    `json:"status"`
-	ProjectImg     string    `json:"project_img"`
-	Campaign       string    `json:"campaign"`
-	CreatedAt      time.Time `json:"-"`
-	Version        int32     `json:"version"`
+	ID             int            `json:"project_id"`
+	Title          string         `json:"title"`
+	Description    string         `json:"description"`
+	FundingGoal    float64        `json:"funding_goal"`
+	CurrentFunding float64        `json:"current_funding"`
+	Categories     pq.StringArray `json:"categories"`
+	Deadline       time.Time      `json:"deadline"`
+	Status         string         `json:"status"`
+	ProjectImg     string         `json:"project_img"`
+	Campaign       string         `json:"campaign"`
+	CreatedAt      time.Time      `json:"-"`
+	Version        int32          `json:"version"`
 }
 
 type ProjectModel struct {
@@ -28,11 +31,17 @@ type ProjectModel struct {
 }
 
 func ValidateProject(v *validator.Validator, project *Project) {
+	categories := []string{"technology", "art", "music", "games", "film & video", "publishing & writing", "design", "food & craft", "social good", "miscellaneous"}
+
 	v.Check(project.Title != "", "title", "Title must be provided")
 	v.Check(len(project.Title) <= 100, "title", "Title should be less than or equal to 100 character")
 
 	v.Check(project.Description != "", "description", "Description must be provided")
 	v.Check(len(strings.Split(project.Description, " ")) <= 2000, "description", "Description should be less than or equal to 2000 word")
+
+	v.Check(project.Categories != nil, "categories", "Categories must be provided")
+	v.Check(len(project.Categories) >= 1 && len(project.Categories) <= 5, "categories", "Categories most contain at least 1 and no more than 5 items")
+	v.Check(validator.Unique(project.Categories), "categories", "Categories must contain unique items")
 
 	v.Check(project.FundingGoal != 0, "funding goal", "Funding goal must be provided")
 	v.Check(project.FundingGoal > 0, "funding goal", "Funding goal must be positive")
@@ -40,6 +49,9 @@ func ValidateProject(v *validator.Validator, project *Project) {
 	v.Check(project.Deadline.GoString() != "", "deadline", "Deadline must be provided")
 	v.Check(project.Deadline.After(time.Now()), "deadline", "Deadline should be after the date of today")
 
+	for _, category := range project.Categories {
+		v.Check(validator.In(category, categories...), "categories", "Invalid category")
+	}
 }
 
 func (m ProjectModel) GetAll() ([]*Project, error) {
@@ -49,13 +61,14 @@ func (m ProjectModel) GetAll() ([]*Project, error) {
 func (m ProjectModel) Insert(project *Project) error {
 	query := `
 	INSERT INTO project 
-	(title, description, funding_goal, deadline)
-	VALUES ($1, $2, $3, $4)
+	(title, description, categories, funding_goal, deadline)
+	VALUES ($1, $2, $3, $4, $5)
 	RETURNING project_id, status, created_at, version
 	`
 	args := []interface{}{
 		project.Title,
 		project.Description,
+		project.Categories,
 		project.FundingGoal,
 		project.Deadline,
 	}
@@ -71,7 +84,9 @@ func (m ProjectModel) Get(id int) (*Project, error) {
 		return nil, ErrNoRecordFound
 	}
 	var project Project
-	query := `SELECT project_id, title, description, funding_goal, current_funding, deadline, status, projectimg, campaign, created_at, version FROM project WHERE project_id = $1`
+	var projectImgVar sql.NullString
+	var campaignVar sql.NullString
+	query := `SELECT project_id, title, description, categories, funding_goal, current_funding, deadline, status, projectimg, campaign, created_at, version FROM project WHERE project_id = $1`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -80,12 +95,13 @@ func (m ProjectModel) Get(id int) (*Project, error) {
 		&project.ID,
 		&project.Title,
 		&project.Description,
+		&project.Categories,
 		&project.FundingGoal,
 		&project.CurrentFunding,
 		&project.Deadline,
 		&project.Status,
-		&project.ProjectImg,
-		&project.Campaign,
+		&projectImgVar,
+		&campaignVar,
 		&project.CreatedAt,
 		&project.Version,
 	)
@@ -97,19 +113,24 @@ func (m ProjectModel) Get(id int) (*Project, error) {
 			return nil, err
 		}
 	}
+
+	project.ProjectImg = projectImgVar.String
+	project.Campaign = campaignVar.String
+
 	return &project, nil
 }
 
 func (m ProjectModel) Update(project *Project) error {
 	query := `
 		UPDATE project SET 
-		title = $1, description = $2, funding_goal = $3, current_funding = $4, deadline = $5, status = $6, projectimg = $7, campaign = $8, version = version + 1
-		WHERE project_id = $9 AND version = $10 RETURNING version
+		title = $1, description = $2, categories = $3, funding_goal = $4, current_funding = $5, deadline = $6, status = $7, projectimg = $8, campaign = $9, version = version + 1
+		WHERE project_id = $10 AND version = $11 RETURNING version
 	`
 
 	args := []interface{}{
 		project.Title,
 		project.Description,
+		project.Categories,
 		project.FundingGoal,
 		project.CurrentFunding,
 		project.Deadline,
