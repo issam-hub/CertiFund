@@ -16,6 +16,7 @@ func (app *application) createProjectHandler(c echo.Context) error {
 		Title       string    `json:"title"`
 		Description string    `json:"description"`
 		FundingGoal float64   `json:"funding_goal"`
+		Categories  []string  `json:"categories"`
 		Deadline    time.Time `json:"deadline"`
 	}
 
@@ -28,6 +29,7 @@ func (app *application) createProjectHandler(c echo.Context) error {
 		Description: input.Description,
 		FundingGoal: input.FundingGoal,
 		Deadline:    input.Deadline,
+		Categories:  input.Categories,
 	}
 
 	v := validator.New()
@@ -88,14 +90,15 @@ func (app *application) updateProjectHandler(c echo.Context) error {
 	}
 
 	var input struct {
-		Title          *string    `json:"title"`
-		Description    *string    `json:"description"`
-		FundingGoal    *float64   `json:"funding_goal"`
-		CurrentFunding *float64   `json:"current_funding"`
-		Deadline       *time.Time `json:"deadline"`
-		ProjectImg     *string    `json:"project_img"`
-		Status         *string    `json:"status"`
-		Campaign       *string    `json:"campaign"`
+		Title          *string    `json:"title,omitempty"`
+		Description    *string    `json:"description,omitempty"`
+		FundingGoal    *float64   `json:"funding_goal,omitempty"`
+		Categories     []string   `json:"categories,omitempty"`
+		CurrentFunding *float64   `json:"current_funding,omitempty"`
+		Deadline       *time.Time `json:"deadline,omitempty"`
+		ProjectImg     *string    `json:"project_img,omitempty"`
+		Status         *string    `json:"status,omitempty"`
+		Campaign       *string    `json:"campaign,omitempty"`
 	}
 
 	if err := c.Bind(&input); err != nil {
@@ -110,6 +113,9 @@ func (app *application) updateProjectHandler(c echo.Context) error {
 	}
 	if input.Description != nil {
 		project.Description = *input.Description
+	}
+	if input.Categories != nil {
+		project.Categories = input.Categories
 	}
 	if input.Deadline != nil {
 		project.Deadline = *input.Deadline
@@ -131,10 +137,6 @@ func (app *application) updateProjectHandler(c echo.Context) error {
 	}
 
 	if data.ValidateProject(v, project); !v.Valid() {
-		return echo.NewHTTPError(http.StatusUnprocessableEntity, v.Errors)
-	}
-
-	if !v.Valid() {
 		return echo.NewHTTPError(http.StatusUnprocessableEntity, v.Errors)
 	}
 

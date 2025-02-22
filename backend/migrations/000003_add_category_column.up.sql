@@ -1,0 +1,1 @@
+ALTER TABLE project ADD COLUMN categories text[] NOT NULL DEFAULT '{}';
