@@ -14,6 +14,8 @@ import ImageInput from "@/components/imageInput";
 import { useToast } from "@/hooks/use-toast";
 import { TOAST_SUCCESS_TITLE, TOAST_ERROR_TITLE } from "@/app/lib/constants";
 import { updateProject, uploadImage } from '@/app/actions/projects';
+import MultiSelect, { renderCategories } from './multiSelect';
+import { BasicsFormData, FundingFormData } from '@/app/lib/types';
 
 interface ProjectFormProps {
   data: UpdateProjectSchema;
@@ -21,22 +23,6 @@ interface ProjectFormProps {
   onStepComplete: (stepId: string) => void;
 }
 
-// Define interfaces for each step's data
-export interface BasicsFormData {
-  project_img: string | null;
-  title: string;
-  description: string;
-  category: string;
-}
-
-export interface FundingFormData {
-  funding_goal: number;
-  deadline: string;
-}
-
-export interface StoryFormData {
-  campaign: string
-}
 
 
 export default function ProjectForm({ data, activeTab, onStepComplete }: ProjectFormProps) {
@@ -44,6 +30,8 @@ export default function ProjectForm({ data, activeTab, onStepComplete }: Project
   const [imageFile, setImageFile] = useState<File | null>(null);
 
   const [getEditorContent, setGetEditorContent] = useState<(() => string) | null>(null);
+
+  const disableEdit = (data.status === "Live" || data.status === "Completed")
 
   const handleGetContent = useCallback((getContent: () => string) => {
     setGetEditorContent(() => getContent);
@@ -79,13 +67,13 @@ export default function ProjectForm({ data, activeTab, onStepComplete }: Project
     resolver: zodResolver(createProjectSchema.pick({ 
       title: true, 
       description: true, 
-      category: true 
+      categories: true 
     })),
     defaultValues: {
       project_img: data.project_img,
       title: data.title,
       description: data.description,
-      category: data.category
+      categories: data.categories
     }
   });
 
@@ -96,19 +84,20 @@ export default function ProjectForm({ data, activeTab, onStepComplete }: Project
     })),
     defaultValues: {
       funding_goal: data.funding_goal,
-      deadline: data.deadline
+      deadline: reverseDateTimeFormat(data.deadline)
     }
   });
 
   const handleBasicsSubmit = async (formData: BasicsFormData) => {
     try {
-
-      const result = await uploadImage(imageFile as File)
-      if(result.url){
-        let toBeSentFormData = formData
-        toBeSentFormData['project_img'] = result.url
-        await updateProject(formData, data.project_id as string)
+      let toBeSentFormData = formData
+      if(!data.project_img){
+        const result = await uploadImage(imageFile as File)
+        if(result.url){
+          toBeSentFormData['project_img'] = result.url
+        }
       }
+      await updateProject(formData, data.project_id as string)
 
       toast({
         title: TOAST_SUCCESS_TITLE,
@@ -152,13 +141,14 @@ export default function ProjectForm({ data, activeTab, onStepComplete }: Project
       <form onSubmit={basicsForm.handleSubmit(handleBasicsSubmit)} className="space-y-4">
         <div>
           <Label htmlFor="description" className="font-semibold">Project Image:</Label>
-          <ImageInput defaultValue={data.project_img as string} onImageChange={(imageUrl, file) => {
+          <ImageInput disableEdit={disableEdit} defaultValue={data.project_img as string} onImageChange={(imageUrl, file) => {
             setImageFile(file); 
           }}/>
         </div>
         <div>
           <Label htmlFor="title" className="font-semibold">Title:</Label>
           <Input
+            disabled={disableEdit}
             id="title"
             {...basicsForm.register("title")}
             placeholder="Enter the project title"
@@ -170,6 +160,7 @@ export default function ProjectForm({ data, activeTab, onStepComplete }: Project
         <div>
           <Label htmlFor="description" className="font-semibold">Description:</Label>
           <Textarea
+            disabled={disableEdit}
             id="description"
             className="min-h-28"
             {...basicsForm.register("description")}
@@ -180,33 +171,12 @@ export default function ProjectForm({ data, activeTab, onStepComplete }: Project
           )}
         </div>
         <div>
-          <Label htmlFor="category" className="font-semibold">Category:</Label>
-          <Controller
-            control={basicsForm.control}
-            name="category"
-            render={({ field: { onChange, value } }) => (
-              <Select onValueChange={onChange} defaultValue={value}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="technology">Technology</SelectItem>
-                  <SelectItem value="art">Art</SelectItem>
-                  <SelectItem value="music">Music</SelectItem>
-                  <SelectItem value="film">Film</SelectItem>
-                  <SelectItem value="games">Games</SelectItem>
-                  <SelectItem value="miscellaneous">Miscellaneous</SelectItem>
-                </SelectContent>
-              </Select>
-            )}
-          />
-          {basicsForm.formState.errors.category && (
-            <p className="text-xs text-red-600">* {basicsForm.formState.errors.category.message}</p>
-          )}
+          <Label htmlFor="category" className="font-semibold">Categories:</Label>
+          <MultiSelect disableEdit={disableEdit} register={basicsForm.register} control={basicsForm.control} errors={basicsForm.formState.errors}/>
         </div>
         <Button 
           type="submit" 
-          className="w-full bg-secondaryColor hover:bg-secondaryColor"
+          className={`w-full bg-secondaryColor hover:bg-secondaryColor ${disableEdit ? 'hidden': ''}`}
           disabled={basicsForm.formState.isSubmitting}
         >
           Save Basics
@@ -225,6 +195,7 @@ export default function ProjectForm({ data, activeTab, onStepComplete }: Project
             type="number"
             {...fundingForm.register("funding_goal", { valueAsNumber: true })}
             placeholder="Enter funding goal"
+            disabled={disableEdit}
           />
           {fundingForm.formState.errors.funding_goal && (
             <p className="text-xs text-red-600">* {fundingForm.formState.errors.funding_goal.message}</p>
@@ -236,7 +207,8 @@ export default function ProjectForm({ data, activeTab, onStepComplete }: Project
             id="deadline"
             type="datetime-local"
             {...fundingForm.register("deadline")}
-            defaultValue={reverseDateTimeFormat(data.deadline)}
+            disabled={disableEdit}
+            // defaultValue={reverseDateTimeFormat(data.deadline)}
           />
           {fundingForm.formState.errors.deadline && (
             <p className="text-xs text-red-600">* {fundingForm.formState.errors.deadline.message}</p>
@@ -244,7 +216,7 @@ export default function ProjectForm({ data, activeTab, onStepComplete }: Project
         </div>
         <Button 
           type="submit" 
-          className="w-full bg-secondaryColor hover:bg-secondaryColor"
+          className={`w-full bg-secondaryColor hover:bg-secondaryColor ${disableEdit ? 'hidden': ''}`}
           disabled={fundingForm.formState.isSubmitting}
         >
           Save Funding Details
@@ -256,13 +228,14 @@ export default function ProjectForm({ data, activeTab, onStepComplete }: Project
   if (activeTab === "story") {
     return (
       <div className="space-y-4">
-      <StoryEditor 
+      <StoryEditor
+        disableEdit={disableEdit}
         defaultvalue={data.campaign as string} 
         onGetContent={handleGetContent}  // Changed prop name
       />
-      <Button 
+      <Button
         onClick={handleSaveStory}
-        className="w-full bg-secondaryColor hover:bg-secondaryColor"
+        className={`w-full bg-secondaryColor hover:bg-secondaryColor ${disableEdit ? 'hidden': ''}`}
       >
         Save Story
       </Button>
@@ -278,7 +251,7 @@ export default function ProjectForm({ data, activeTab, onStepComplete }: Project
         </p>
         <Button 
           onClick={() => onStepComplete('rewards')}
-          className="w-full bg-secondaryColor hover:bg-secondaryColor"
+          className={`w-full bg-secondaryColor hover:bg-secondaryColor ${disableEdit ? 'hidden': ''}`}
         >
           Save Rewards
         </Button>

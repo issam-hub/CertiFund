@@ -3,6 +3,7 @@ import { Control, Controller, UseFormRegister } from "react-hook-form";
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import MultiSelect from "@/components/multiSelect";
 
 type StepOneProps = {
   register: UseFormRegister<any>
@@ -33,8 +34,9 @@ export default function StepOne({register, control, errors}: StepOneProps) {
         {errors.description && <p className="text-xs text-red-600">* {errors.description.message}</p>}
       </div>
       <div>
-        <Label htmlFor="category" className="font-semibold">Category:</Label>
-        <Controller
+        <Label htmlFor="category" className="font-semibold">Categories:</Label>
+        <MultiSelect register={register} control={control} errors={errors}/>
+        {/* <Controller
           control={control}
           {...register("category")}
           render={({field:{onChange}})=>(
@@ -53,7 +55,7 @@ export default function StepOne({register, control, errors}: StepOneProps) {
           </Select>
           )}
         />
-        {errors.category && <p className="text-xs text-red-600">* {errors.category.message}</p>}
+        {errors.category && <p className="text-xs text-red-600">* {errors.category.message}</p>} */}
       </div>
     </div>
   )

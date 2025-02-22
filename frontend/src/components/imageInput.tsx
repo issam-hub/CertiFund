@@ -7,9 +7,10 @@ import Image from "next/image"
 interface ImageInputProps {
   defaultValue: string
   onImageChange?: (imageUrl: string, file: File) => void;
+  disableEdit: boolean
 }
 
-export default function ImageInput({ defaultValue, onImageChange }: ImageInputProps) {
+export default function ImageInput({ defaultValue, onImageChange, disableEdit }: ImageInputProps) {
   const [imagePreview, setImagePreview] = useState<string | null>(defaultValue)
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -54,12 +55,12 @@ export default function ImageInput({ defaultValue, onImageChange }: ImageInputPr
   return (
     <div>
       <div
-        className="h-[400px] max-w-[750px] border-2 border-dashed border-gray-300 rounded-lg cursor-pointer flex items-center justify-center overflow-hidden"
+        className={`h-[400px] max-w-[750px] border-2 border-dashed border-gray-300 rounded-lg ${disableEdit ? "cursor-not-allowed":"cursor-pointer"} flex items-center justify-center overflow-hidden`}
         onClick={handleImageClick}
       >
         {imagePreview ? (
           <Image
-            src={"https://res.cloudinary.com/dw9gxl9qm/image/upload/v1739822061/xubiqlzyb2brz4kvcdqw.jpg"}
+            src={imagePreview}
             alt="Chosen image"
             width={750}
             height={400}
@@ -73,7 +74,8 @@ export default function ImageInput({ defaultValue, onImageChange }: ImageInputPr
           ref={fileInputRef} 
           onChange={handleFileChange} 
           accept="image/*" 
-          className="hidden" 
+          className="hidden"
+          disabled={disableEdit}
         />
       </div>
       {error && <p className="text-xs text-red-600 mt-1">* {error}</p>}

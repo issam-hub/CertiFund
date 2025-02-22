@@ -73,5 +73,9 @@
   h6 {
     font-family: var(--font-montserrat);
   }
+
+  .bg-red-special {
+    background-color: #ef4444 !important;
+  }
 }
 
