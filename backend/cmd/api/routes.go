@@ -16,4 +16,12 @@ func (app *application) routes(e *echo.Echo) {
 
 	// image upload
 	router.POST("/projects/image/upload", app.fileUploadHandler)
+
+	// user
+	router.POST("/users/create", app.registerUserHandler)
+	router.DELETE("/users/:id", app.deleteUserHandler)
+	router.GET("/users/activate", app.activateUserHandler)
+	router.GET("/users/:id", app.getUserHandler)
+	router.POST("/users/login", app.loginUserHandler)
+
 }

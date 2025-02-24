@@ -1,0 +1,102 @@
+{{define "subject"}}Welcome to CertiFund - Let's Bring Ideas to Life! 🚀{{end}}
+
+{{define "htmlBody"}}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Welcome to CertiFund!</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-image: url("https://res.cloudinary.com/dw9gxl9qm/image/upload/v1740407305/iiiduszvejff3hlo3o23.svg");
+            background-size: cover;
+            background-repeat: no-repeat;
+            margin: 0;
+            padding: 0;
+            color: #ffffff;
+        }
+        .container {
+            width: 90%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            translate: -50% -50%;
+            margin: 20px auto;
+            background: rgba(255, 255, 255, 0.95); /* Increased opacity for better contrast */
+            border-radius: 16px;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(8px); /* Reduced blur */
+            -webkit-backdrop-filter: blur(8px); /* Reduced blur */
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            text-align: center;
+            color: #111827; /* Darker text color for better contrast */
+            padding: 15px; /* Increased padding */
+            font-size: 18px;
+            text-rendering: optimizeLegibility; /* Improve text rendering */
+            -webkit-font-smoothing: antialiased; /* Better font smoothing */
+            -moz-osx-font-smoothing: grayscale; /* Better font smoothing */
+        }
+        .header {
+            background-color: #1E3A8A;
+            color: #ffffff;
+            padding: 15px;
+            border-radius: 8px 8px 0 0;
+            font-size: 22px;
+            font-weight: bold;
+            letter-spacing: 0.01em; /* Slight letter spacing for clarity */
+        }
+        .button {
+            display: inline-block;
+            background-color: #3B82F6;
+            color: #ffffff;
+            text-decoration: none;
+            padding: 12px 20px;
+            border-radius: 5px;
+            font-size: 16px;
+            margin-top: 20px;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .button:hover {
+            background-color: #2563EB; /* Darker blue on hover for better contrast */
+        }
+        .footer {
+            margin-top: 20px;
+            font-size: 14px;
+            color: #1F2937;
+        }
+        p.footer a {
+            color: #1E3A8A;
+            text-decoration: none;
+            font-weight: 500; /* Medium weight for links */
+        }
+        p.footer a:hover {
+            color: #3B82F6;
+        }
+        p {
+            line-height: 1.6; /* Improved line height for readability */
+            margin: 12px 0; /* Consistent margins */
+        }
+        .username {
+            font-weight: 600; /* Semi-bold instead of "semi-bold" */
+            font-size: 25px;
+            color: #1E3A8A; /* Blue color to make it stand out */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">Welcome to CertiFund! 🎉</div>
+        <p>Hi <span class="username">{{.Username}}</span>,</p>
+        <p>We're thrilled to have you join our crowdfunding community. Whether you're here to launch a project or support one, you're now part of a movement that turns great ideas into reality! 🚀</p>
+        <p>Get started by <strong>exploring projects</strong> or <strong>creating your own campaign</strong> today.</p>
+        <a target="_self" class="button" href="http://localhost:{{.Port}}/v1/users/activate?token={{.ActivationToken}}">Activate your account</a>
+        <p class="footer">If you have any questions, feel free to <a href="#">contact us</a>. We're here to help!</p>
+        <p class="footer">&copy; 2025 CertiFund. All rights reserved.</p>
+    </div>
+</body>
+</html>
+{{end}}
