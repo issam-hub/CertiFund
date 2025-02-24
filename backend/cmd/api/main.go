@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/signal"
 	"projectx/internal/data"
+	"projectx/internal/mailer"
 	"strconv"
 	"sync"
 	"time"
@@ -36,17 +37,27 @@ type dbConfig struct {
 	maxIdleLifeTime string
 }
 
+type smtp struct {
+	host     string
+	port     int
+	username string
+	password string
+	sender   string
+}
+
 type config struct {
 	port    int
 	env     string
 	db      dbConfig
 	limiter rateLimitConfig
+	smtp    smtp
 }
 
 type application struct {
 	config config
 	logger *slog.Logger
 	models data.Models
+	mailer mailer.Mailer
 	wg     sync.WaitGroup
 }
 
@@ -97,6 +108,12 @@ func main() {
 	realBurst, _ := strconv.Atoi(burst)
 	disabled := os.Getenv("DISABLED")
 	realDisabled, _ := strconv.ParseBool(disabled)
+	smtpHost := os.Getenv("SMTP_HOST")
+	smtpPort := os.Getenv("SMTP_PORT")
+	realSmtpPort, _ := strconv.Atoi(smtpPort)
+	smtpUsername := os.Getenv("SMTP_USERNAME")
+	smtpPassword := os.Getenv("SMTP_PASSWORD")
+	smtpSender := os.Getenv("SMTP_SENDER")
 
 	cfg := config{
 		port: realPort,
@@ -110,6 +127,13 @@ func main() {
 			rps:      realRps,
 			burst:    realBurst,
 			disabled: realDisabled,
+		},
+		smtp: smtp{
+			host:     smtpHost,
+			port:     realSmtpPort,
+			username: smtpUsername,
+			password: smtpPassword,
+			sender:   smtpSender,
 		},
 	}
 	flag.StringVar(&cfg.env, "env", "development", "Environment(development|staging|production)")
@@ -186,6 +210,7 @@ func main() {
 		config: cfg,
 		logger: logger,
 		models: data.NewModels(db),
+		mailer: mailer.New(cfg.smtp.host, cfg.smtp.port, cfg.smtp.username, cfg.smtp.password, cfg.smtp.sender),
 	}
 
 	e.Use(echoprometheus.NewMiddleware("myapp"))
@@ -194,6 +219,7 @@ func main() {
 	e.Use(app.CustomRecover())
 	e.Use(middleware.RateLimiterWithConfig(config))
 	e.Use(middleware.CORS())
+	e.Use(app.Authenticate())
 
 	e.HTTPErrorHandler = customHTTPErrorHandler
 	app.routes(e)
