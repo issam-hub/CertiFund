@@ -7,15 +7,15 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { UpdateProjectSchema, createProjectSchema } from '@/app/lib/schemas/project';
-import { reverseDateTimeFormat } from "@/app/lib/utils";
-import StoryEditor from "@/app/components/project/storyEditor";
+import { UpdateProjectSchema, createProjectSchema } from '@/app/_lib/schemas/project';
+import { reverseDateTimeFormat } from "@/app/_lib/utils";
+import StoryEditor from "@/app/_components/project/storyEditor";
 import ImageInput from "@/components/imageInput";
 import { useToast } from "@/hooks/use-toast";
-import { TOAST_SUCCESS_TITLE, TOAST_ERROR_TITLE } from "@/app/lib/constants";
-import { updateProject, uploadImage } from '@/app/actions/projects';
+import { TOAST_SUCCESS_TITLE, TOAST_ERROR_TITLE } from "@/app/_lib/constants";
+import { updateProject, uploadImage } from '@/app/_actions/projects';
 import MultiSelect, { renderCategories } from './multiSelect';
-import { BasicsFormData, FundingFormData } from '@/app/lib/types';
+import { BasicsFormData, FundingFormData } from '@/app/_lib/types';
 
 interface ProjectFormProps {
   data: UpdateProjectSchema;

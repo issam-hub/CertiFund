@@ -1,5 +1,5 @@
 import { Toaster } from "@/components/ui/toaster";
-import Header from "./components/header";
+import Header from "./_components/header";
 import "./globals.css";
 import { Inter, Montserrat } from "next/font/google";
 

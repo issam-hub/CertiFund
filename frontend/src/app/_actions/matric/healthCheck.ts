@@ -1,4 +1,4 @@
-import { apiUrl } from "@/app/lib/config";
+import { apiUrl } from "@/app/_lib/config";
 
 export async function healthCheck(){
     console.log(apiUrl);

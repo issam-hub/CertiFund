@@ -1,9 +1,9 @@
 "use server"
 
-import { apiKey, apiUrl } from "@/app/lib/config";
-import { CreateProjectSchema } from "@/app/lib/schemas/project";
-import { BasicsFormData, FundingFormData, StoryFormData } from "@/app/lib/types";
-import { formatDateTime } from "@/app/lib/utils";
+import { apiKey, apiUrl } from "@/app/_lib/config";
+import { CreateProjectSchema } from "@/app/_lib/schemas/project";
+import { BasicsFormData, FundingFormData, StoryFormData } from "@/app/_lib/types";
+import { formatDateTime } from "@/app/_lib/utils";
 import { revalidateTag } from "next/cache";
 import { notFound } from "next/navigation";
 
