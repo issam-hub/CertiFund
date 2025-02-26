@@ -28,6 +28,76 @@ func (app *application) registerUserHandler(c echo.Context) error {
 		Username:  input.Username,
 		Email:     input.Email,
 		Activated: false,
+		Role:      "user",
+	}
+
+	err := user.Password.Set(input.Password)
+	if err != nil {
+		return err
+	}
+
+	v := validator.New()
+
+	if data.ValidateUser(v, user); !v.Valid() {
+		return echo.NewHTTPError(http.StatusUnprocessableEntity, v.Errors)
+	}
+
+	err = app.models.Users.Insert(user)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrDuplicateEmail):
+			v.AddError("email", "Email address already exists")
+			return echo.NewHTTPError(http.StatusUnprocessableEntity, v.Errors)
+		default:
+			return err
+		}
+	}
+
+	token, err := app.models.Tokens.New(user.ID, 2*24*time.Hour, data.ScopeActivation)
+	if err != nil {
+		return err
+	}
+
+	envErr := godotenv.Load()
+	if envErr != nil {
+		log.Fatal("Error loading .env file")
+	}
+
+	app.background(func() {
+		data := map[string]interface{}{
+			"ActivationToken": token.PlainText,
+			"Username":        user.Username,
+			"Port":            os.Getenv("PORT"),
+		}
+		err = app.mailer.Send(user.Email, "user_welcome.tmpl", data)
+		if err != nil {
+			c.Logger().Error(err)
+		}
+	})
+
+	return c.JSON(http.StatusCreated, envelope{
+		"message": "User created successfully",
+		"user":    user,
+	})
+}
+
+func (app *application) createUserHandler(c echo.Context) error {
+	var input struct {
+		Username string `json:"username"`
+		Email    string `json:"email"`
+		Password string `json:"password"`
+		Role     string `json:"role"`
+	}
+
+	if err := c.Bind(&input); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+
+	user := &data.User{
+		Username:  input.Username,
+		Email:     input.Email,
+		Activated: false,
+		Role:      input.Role,
 	}
 
 	err := user.Password.Set(input.Password)
@@ -141,9 +211,16 @@ func (app *application) activateUserHandler(c echo.Context) error {
 	if err != nil {
 		return err
 	}
+
+	token, err := app.models.Tokens.New(user.ID, 24*time.Hour, data.ScopeAuth)
+	if err != nil {
+		return err
+	}
+
 	return c.JSON(http.StatusOK, envelope{
-		"message": "User activated successfully",
-		"user":    user,
+		"message":    "User activated successfully",
+		"user":       user,
+		"auth_token": token,
 	})
 }
 
@@ -216,4 +293,23 @@ func (app *application) loginUserHandler(c echo.Context) error {
 		"message":    "Authentication token created successfully",
 		"auth_token": token,
 	})
+}
+
+func (app *application) logoutUserHandler(c echo.Context) error {
+	id, err := app.readIDParam(c)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusNotFound, err.Error())
+	}
+
+	err = app.models.Users.Logout(id)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrNoRecordFound):
+			return echo.NewHTTPError(http.StatusNotFound, data.ErrNoRecordFound.Error())
+		default:
+			return err
+		}
+	}
+
+	return c.JSON(http.StatusOK, envelope{"message": "User logged out successfully"})
 }

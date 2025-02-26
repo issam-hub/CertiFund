@@ -5,23 +5,29 @@ import (
 )
 
 func (app *application) routes(e *echo.Echo) {
-	router := e.Group("/v1")
-	router.GET("/healthCheck", app.healthCheckHandler)
+	authGroup := e.Group("/v1")
+	authGroup.Use(app.Authenticate())
+
+	publicGroup := e.Group("/v1")
+
+	publicGroup.GET("/healthCheck", app.healthCheckHandler)
 
 	// project
-	router.POST("/projects/create", app.createProjectHandler)
-	router.GET("/projects/:id", app.getProjectHandler)
-	router.PATCH("/projects/:id", app.updateProjectHandler)
-	router.DELETE("/projects/:id", app.deleteProjectHandler)
+	authGroup.POST("/projects/create", app.createProjectHandler, app.RequirePermission("projects:create"))
+	publicGroup.GET("/projects/:id", app.getProjectHandler)
+	authGroup.PATCH("/projects/:id", app.updateProjectHandler, app.RequirePermission("projects:update"))
+	authGroup.DELETE("/projects/:id", app.deleteProjectHandler)
 
 	// image upload
-	router.POST("/projects/image/upload", app.fileUploadHandler)
+	authGroup.POST("/projects/image/upload", app.fileUploadHandler)
 
 	// user
-	router.POST("/users/create", app.registerUserHandler)
-	router.DELETE("/users/:id", app.deleteUserHandler)
-	router.GET("/users/activate", app.activateUserHandler)
-	router.GET("/users/:id", app.getUserHandler)
-	router.POST("/users/login", app.loginUserHandler)
+	publicGroup.POST("/users/signup", app.registerUserHandler)
+	authGroup.POST("/users/create", app.createUserHandler, app.RequirePermission("users:create"))
+	authGroup.DELETE("/users/:id", app.deleteUserHandler, app.RequirePermission("users:delete"))
+	publicGroup.GET("/users/activate", app.activateUserHandler)
+	authGroup.GET("/users/:id", app.getUserHandler, app.RequirePermission("users:read"))
+	publicGroup.POST("/users/login", app.loginUserHandler)
+	authGroup.POST("/users/:id", app.logoutUserHandler)
 
 }

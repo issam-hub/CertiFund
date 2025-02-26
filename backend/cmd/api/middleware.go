@@ -32,7 +32,7 @@ func (app *application) Authenticate() echo.MiddlewareFunc {
 		return func(c echo.Context) error {
 			c.Response().Header().Add("Vary", "Authorization")
 			authHeader := c.Request().Header.Get("Authorization")
-			if authHeader != "" {
+			if authHeader == "" {
 				return echo.NewHTTPError(http.StatusUnauthorized, "Missing authentication token")
 			}
 			headerParts := strings.Split(authHeader, " ")
@@ -54,7 +54,7 @@ func (app *application) Authenticate() echo.MiddlewareFunc {
 				switch {
 				case errors.Is(err, data.ErrNoRecordFound):
 					c.Response().Header().Set("WWW-Authenticate", "Bearer")
-					return echo.NewHTTPError(http.StatusUnauthorized, "Invalid authentication token")
+					return echo.NewHTTPError(http.StatusUnauthorized, "Invalid or expired authentication token")
 				default:
 					return err
 				}
@@ -63,5 +63,37 @@ func (app *application) Authenticate() echo.MiddlewareFunc {
 			c.Set("user", user)
 			return next(c)
 		}
+	}
+}
+
+func (app *application) RequireActivatedUser(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		user := c.Get("user").(*data.User)
+		if user == nil {
+			return echo.NewHTTPError(http.StatusUnauthorized, "You must be autenticated to access this resource")
+		}
+		if !user.Activated {
+			return echo.NewHTTPError(http.StatusForbidden, "your user account must be activated to access this resource")
+		}
+		return next(c)
+	}
+}
+
+func (app *application) RequirePermission(permission string) echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		fn := func(c echo.Context) error {
+			user := c.Get("user").(*data.User)
+			permissions, err := app.models.Permissions.GetAllForUser(user.ID)
+			if err != nil {
+				return err
+			}
+
+			if !permissions.Include(permission) {
+				return echo.NewHTTPError(http.StatusForbidden, "This account doesn't have the necessary permissions to access this resource")
+			}
+			return next(c)
+		}
+		// return app.RequireActivatedUser(fn)
+		return fn
 	}
 }
