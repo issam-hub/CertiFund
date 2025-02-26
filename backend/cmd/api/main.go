@@ -219,7 +219,6 @@ func main() {
 	e.Use(app.CustomRecover())
 	e.Use(middleware.RateLimiterWithConfig(config))
 	e.Use(middleware.CORS())
-	e.Use(app.Authenticate())
 
 	e.HTTPErrorHandler = customHTTPErrorHandler
 	app.routes(e)

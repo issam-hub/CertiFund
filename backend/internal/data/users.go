@@ -11,15 +11,22 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+var AnonymousUser = &User{}
+
 type User struct {
 	ID        int      `json:"id"`
 	Username  string   `json:"username"`
 	Email     string   `json:"email"`
 	Password  password `json:"-"`
 	Activated bool     `json:"activated"`
+	Role      string   `json:"role"`
 	ImageUrl  string   `json:"image_url"`
 	CreatedAt string   `json:"created_at"`
 	Version   int      `json:"-"`
+}
+
+func (u *User) IsAnonymous() bool {
+	return u == AnonymousUser
 }
 
 type password struct {
@@ -87,15 +94,25 @@ type UserModel struct {
 
 func (m UserModel) Insert(user *User) error {
 	query := `
-	INSERT INTO user_t (username, email, password_hash, activated)
-	VALUES ($1, $2, $3, $4)
+	INSERT INTO user_t (username, email, password_hash, activated, role_id)
+	VALUES ($1, $2, $3, $4, $5)
 	RETURNING user_id, created_at, version`
 
-	args := []interface{}{user.Username, user.Email, user.Password.hash, user.Activated}
+	roleID, err := m.GetRoleIdByName(user.Role)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return ErrNoRecordFound
+		default:
+			return err
+		}
+	}
+
+	args := []interface{}{user.Username, user.Email, user.Password.hash, user.Activated, roleID}
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	err := m.DB.QueryRowContext(ctx, query, args...).Scan(&user.ID, &user.CreatedAt, &user.Version)
+	err = m.DB.QueryRowContext(ctx, query, args...).Scan(&user.ID, &user.CreatedAt, &user.Version)
 	if err != nil {
 		switch {
 		case err.Error() == `pq: duplicate key value violates unique constraint "user_t_email_key"`:
@@ -109,11 +126,12 @@ func (m UserModel) Insert(user *User) error {
 
 func (m UserModel) GetByEmail(email string) (*User, error) {
 	query := `SELECT 
-	user_id, username, email, password_hash, activated, image_url, created_at, version
+	user_id, username, email, password_hash, activated, image_url, created_at, version, role_id
 	FROM user_t WHERE email = $1`
 
 	var user User
 	var ImgUrlVar sql.NullString
+	var roleID int
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -127,6 +145,7 @@ func (m UserModel) GetByEmail(email string) (*User, error) {
 		&user.ImageUrl,
 		&user.CreatedAt,
 		&user.Version,
+		&roleID,
 	)
 	if err != nil {
 		switch {
@@ -137,17 +156,31 @@ func (m UserModel) GetByEmail(email string) (*User, error) {
 		}
 	}
 
+	rolename, err := m.GetRoleNameByID(roleID)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, ErrNoRecordFound
+		default:
+			return nil, err
+		}
+	}
+
 	user.ImageUrl = ImgUrlVar.String
+
+	user.Role = *rolename
+
 	return &user, nil
 }
 
 func (m UserModel) GetByID(id int) (*User, error) {
 	query := `SELECT 
-	user_id, username, email, password_hash, activated, image_url, created_at, version
+	user_id, username, email, password_hash, activated, image_url, created_at, version, role_id
 	FROM user_t WHERE user_id = $1`
 
 	var user User
 	var ImgUrlVar sql.NullString
+	var roleID int
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -161,6 +194,7 @@ func (m UserModel) GetByID(id int) (*User, error) {
 		&ImgUrlVar,
 		&user.CreatedAt,
 		&user.Version,
+		&roleID,
 	)
 	if err != nil {
 		switch {
@@ -171,15 +205,38 @@ func (m UserModel) GetByID(id int) (*User, error) {
 		}
 	}
 
+	rolename, err := m.GetRoleNameByID(roleID)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, ErrNoRecordFound
+		default:
+			return nil, err
+		}
+	}
+
 	user.ImageUrl = ImgUrlVar.String
+
+	user.Role = *rolename
+
 	return &user, nil
 }
 
 func (m UserModel) Update(user *User) error {
 	query := `UPDATE user_t 
-	SET username = $1, email = $2, password_hash = $3, activated = $4, image_url = $5, version = version + 1
-	WHERE user_id = $6 AND version = $7
+	SET username = $1, email = $2, password_hash = $3, activated = $4, image_url = $5, version = version + 1, role_id = $6
+	WHERE user_id = $7 AND version = $8
 	RETURNING version`
+
+	roleID, err := m.GetRoleIdByName(user.Role)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return ErrNoRecordFound
+		default:
+			return err
+		}
+	}
 
 	args := []interface{}{
 		user.Username,
@@ -187,6 +244,7 @@ func (m UserModel) Update(user *User) error {
 		user.Password.hash,
 		user.Activated,
 		user.ImageUrl,
+		roleID,
 		user.ID,
 		user.Version,
 	}
@@ -194,7 +252,7 @@ func (m UserModel) Update(user *User) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	err := m.DB.QueryRowContext(ctx, query, args...).Scan(&user.Version)
+	err = m.DB.QueryRowContext(ctx, query, args...).Scan(&user.Version)
 	if err != nil {
 		switch {
 		case err.Error() == `pq: duplicate key value violates unique constraint "users_email_key"`:
@@ -239,7 +297,7 @@ func (m UserModel) GetByToken(tokenScope, tokenPlaintext string) (*User, error) 
 
 	query := `
 	SELECT user_t.user_id, user_t.created_at, user_t.username, user_t.email,
-	user_t.password_hash, user_t.image_url, user_t.activated, user_t.version
+	user_t.password_hash, user_t.image_url, user_t.activated, user_t.version, user_t.role_id
 	FROM user_t
 	INNER JOIN tokens
 	ON user_t.user_id = tokens.user_id
@@ -251,6 +309,7 @@ func (m UserModel) GetByToken(tokenScope, tokenPlaintext string) (*User, error) 
 
 	var user User
 	var ImgUrlVar sql.NullString
+	var roleID int
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -264,6 +323,7 @@ func (m UserModel) GetByToken(tokenScope, tokenPlaintext string) (*User, error) 
 		&ImgUrlVar,
 		&user.Activated,
 		&user.Version,
+		&roleID,
 	)
 	if err != nil {
 		switch {
@@ -274,6 +334,90 @@ func (m UserModel) GetByToken(tokenScope, tokenPlaintext string) (*User, error) 
 		}
 	}
 
+	rolename, err := m.GetRoleNameByID(roleID)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, ErrNoRecordFound
+		default:
+			return nil, err
+		}
+	}
+
 	user.ImageUrl = ImgUrlVar.String
+
+	user.Role = *rolename
+
 	return &user, nil
+}
+
+func (m UserModel) Logout(userID int) error {
+	if userID < 1 {
+		return ErrNoRecordFound
+	}
+	query := `
+	DELETE FROM tokens WHERE user_id = $1
+	`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	result, err := m.DB.ExecContext(ctx, query, userID)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return ErrNoRecordFound
+	}
+
+	return nil
+}
+
+func (m UserModel) GetRoleIdByName(rolename string) (*int, error) {
+	query := `
+	SELECT role_id FROM role_t WHERE rolename = $1
+	`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	var roleID int
+
+	err := m.DB.QueryRowContext(ctx, query, rolename).Scan(&roleID)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, ErrNoRecordFound
+		default:
+			return nil, err
+		}
+	}
+	return &roleID, nil
+}
+
+func (m UserModel) GetRoleNameByID(roleID int) (*string, error) {
+	query := `
+	SELECT rolename FROM role_t WHERE role_id = $1
+	`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	var rolename string
+
+	err := m.DB.QueryRowContext(ctx, query, roleID).Scan(&rolename)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, ErrNoRecordFound
+		default:
+			return nil, err
+		}
+	}
+	return &rolename, nil
 }

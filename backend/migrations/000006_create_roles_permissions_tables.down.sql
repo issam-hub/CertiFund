@@ -1,0 +1,7 @@
+DROP TABLE IF EXISTS role_permission;
+DROP TABLE IF EXISTS permission;
+ALTER TABLE user_t DROP COLUMN IF EXISTS role_id;
+DROP TABLE IF EXISTS role_t;
+
+
+
