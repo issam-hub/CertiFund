@@ -1,15 +1,15 @@
 "use client"
 import React, { useEffect, useState } from 'react';
-import { cn } from "@/app/lib/utils";
+import { cn } from "@/app/_lib/utils";
 import { Check, ChevronDown, Frown, Goal, Hourglass, LucideIcon, PartyPopper, Rocket, Target, Timer, Trash2, Trophy, X } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import Link from 'next/link';
-import { UpdateProjectSchema } from '@/app/lib/schemas/project';
+import { UpdateProjectSchema } from '@/app/_lib/schemas/project';
 import ProjectForm from '@/components/projectForm';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { deleteProject, updateProject } from '@/app/actions/projects';
-import { TOAST_ERROR_TITLE, TOAST_SUCCESS_TITLE } from '@/app/lib/constants';
+import { deleteProject, updateProject } from '@/app/_actions/projects';
+import { TOAST_ERROR_TITLE, TOAST_SUCCESS_TITLE } from '@/app/_lib/constants';
 import {
   AlertDialog,
   AlertDialogAction,

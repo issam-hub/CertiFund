@@ -1,6 +1,5 @@
-import { getProject } from "@/app/actions/projects"
-import ProjectOverview from "@/app/components/project/projectOverview"
-import { notFound} from "next/navigation"
+import { getProject } from "@/app/_actions/projects"
+import ProjectOverview from "@/app/_components/project/projectOverview"
 
 export default async function page({params}:{params: Promise<{id: string}>}) {
     const id = (await params).id

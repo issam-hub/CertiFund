@@ -1,5 +1,5 @@
 import React from 'react'
-import { healthCheck } from '../actions/matric/healthCheck'
+import { healthCheck } from '../_actions/matric/healthCheck'
 
 import { CheckCircle, AlertTriangle } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -7,7 +7,6 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 export default async function healthStatus() {
     const data = await healthCheck()
-    console.log(data);
     
   const isHealthy = data === "OK"
 

@@ -2,8 +2,8 @@
 import React, { useRef, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { useToast } from '@/hooks/use-toast';
-import { TOAST_ERROR_TITLE } from '@/app/lib/constants';
-import { apiKey } from '@/app/lib/config';
+import { TOAST_ERROR_TITLE } from '@/app/_lib/constants';
+import { apiKey } from '@/app/_lib/config';
 
 // Dynamically import the Editor component with SSR disabled
 const Editor = dynamic(() => import('@tinymce/tinymce-react').then(mod => mod.Editor), {
