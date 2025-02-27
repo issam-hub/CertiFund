@@ -1,10 +1,9 @@
 "use server"
 
-import { apiKey, apiUrl } from "@/app/_lib/config";
+import { apiUrl } from "@/app/_lib/config";
 import { CreateProjectSchema } from "@/app/_lib/schemas/project";
 import { BasicsFormData, FundingFormData, StoryFormData } from "@/app/_lib/types";
 import { formatDateTime } from "@/app/_lib/utils";
-import { revalidateTag } from "next/cache";
 import { notFound } from "next/navigation";
 
 export async function createProject(data: CreateProjectSchema){
@@ -18,20 +17,24 @@ export async function createProject(data: CreateProjectSchema){
         body: JSON.stringify(data)
     })
 
-    if(!res.ok){
-        const result = await res.json()
-        if(typeof result.error === "object"){
-            throw new Error(Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string)
-        }
-        throw new Error(result.error)
+    try {
+        if(!res.ok) {
+            const result = await res.json()
+            if(typeof result.error === "object"){
+                return {error: Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
+            }
+            return result
+          }    
+      
+          return await res.json();
+    }catch(error: any){
+        return {error: error.message}
     }
-
-    return await res.json()
 }
 
 export async function getProject(id: string) {
     const res = await fetch(`${apiUrl}/projects/${id}`, {next:{tags:["project"]}})
-    
+
     if(!res.ok){
         const result = await res.json()
         if(typeof result.error === "object"){
@@ -56,17 +59,19 @@ export async function updateProject(data: BasicsFormData|FundingFormData|StoryFo
         body: JSON.stringify(data)
     })
 
-    if(!res.ok){
-        const result = await res.json()
-        if(typeof result.error === "object"){
-            throw new Error(Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string)
-        }
-        throw new Error(result.error)
-    }else{
-        revalidateTag("project")
+    try {
+        if(!res.ok) {
+            const result = await res.json()
+            if(typeof result.error === "object"){
+                return {error: Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
+            }
+            return result
+        }  
+      
+          return await res.json();
+    }catch(error: any){
+        return {error: error.message}
     }
-
-    return await res.json()
 }
 
 export async function uploadImage(image: File){
@@ -77,25 +82,35 @@ export async function uploadImage(image: File){
         body: formData
     })
 
-    if(!res.ok){
-        const result = await res.json()
-        if(typeof result.error === "object"){
-            throw new Error(Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string)
-        }
-        throw new Error(result.error)
+    try {
+        if(!res.ok) {
+            const result = await res.json()
+            if(typeof result.error === "object"){
+                return {error: Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
+            }
+            return result
+          }    
+      
+          return await res.json();
+    }catch(error: any){
+        return {error: error.message}
     }
-
-    return await res.json()
 }
 
 export async function deleteProject(id: string){
     const res = await fetch(`${apiUrl}/projects/${id}`,{method:"DELETE"})
 
-    if(!res.ok){
-        const result = await res.json()
-        if(typeof result.error === "object"){
-            throw new Error(Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string)
-        }
-        throw new Error(result.error)
+    try {
+        if(!res.ok) {
+            const result = await res.json()
+            if(typeof result.error === "object"){
+                return {error: Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
+            }
+            return result
+          }    
+      
+          return await res.json();
+    }catch(error: any){
+        return {error: error.message}
     }
 }

@@ -89,15 +89,22 @@ export default function ProjectForm({ data, activeTab, onStepComplete }: Project
   });
 
   const handleBasicsSubmit = async (formData: BasicsFormData) => {
-    try {
-      let toBeSentFormData = formData
-      if(!data.project_img){
-        const result = await uploadImage(imageFile as File)
-        if(result.url){
-          toBeSentFormData['project_img'] = result.url
-        }
+    let toBeSentFormData = formData
+    if(!data.project_img){
+      const result = await uploadImage(imageFile as File)
+      if(result.error){
+        toast({
+          title: TOAST_ERROR_TITLE,
+          description: result.error,
+          variant: "destructive",
+        });
       }
-      await updateProject(formData, data.project_id as string)
+      if(result.url){
+        toBeSentFormData['project_img'] = result.url
+      }
+    }
+    const res = await updateProject(formData, data.project_id as string)
+    if(!res.error) {
 
       toast({
         title: TOAST_SUCCESS_TITLE,
@@ -106,19 +113,19 @@ export default function ProjectForm({ data, activeTab, onStepComplete }: Project
       });
       
       onStepComplete('basics');
-    } catch (error) {
+    } else {
       toast({
         title: TOAST_ERROR_TITLE,
-        description: (error as Error).message,
+        description: res.error,
         variant: "destructive",
       });
     }
   };
 
   const handleFundingSubmit = async (formData: FundingFormData) => {
-    try {
+    const result = await updateProject(formData, data.project_id as string)
+    if(!result.error) {
       // Handle funding step submission
-      await updateProject(formData, data.project_id as string)
       
       toast({
         title: TOAST_SUCCESS_TITLE,
@@ -127,10 +134,10 @@ export default function ProjectForm({ data, activeTab, onStepComplete }: Project
       });
       
       onStepComplete('funding');
-    } catch (error) {
+    } else {
       toast({
         title: TOAST_ERROR_TITLE,
-        description: (error as Error).message,
+        description: result.error,
         variant: "destructive",
       });
     }

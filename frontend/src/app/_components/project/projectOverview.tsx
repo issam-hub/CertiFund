@@ -377,8 +377,8 @@ export default function ProjectOverview({ data }: ProjectOverviewProps) {
                       });
                       return;
                     }
-                    try {
-                      await updateProject({status:"Pending Review"}, data.project_id as string)
+                    const result = await updateProject({status:"Pending Review"}, data.project_id as string)
+                    if(!result.error) {
                       toast({
                         title: TOAST_SUCCESS_TITLE,
                         description: "Project submitted successfully",
@@ -386,10 +386,10 @@ export default function ProjectOverview({ data }: ProjectOverviewProps) {
                       });
                     
                       markStepAsCompleted('submit');
-                    } catch (error) {
+                    } else {
                       toast({
                         title: TOAST_ERROR_TITLE,
-                        description: (error as Error).message,
+                        description: result.error,
                         variant: "destructive",
                       });
                     }
@@ -444,8 +444,8 @@ export default function ProjectOverview({ data }: ProjectOverviewProps) {
                   });
                   return;
                 }
-                try {
-                  await updateProject({status:"Pending Review"}, data.project_id as string)
+                const result = await updateProject({status:"Pending Review"}, data.project_id as string)
+                if(!result.error) {
                   toast({
                     title: TOAST_SUCCESS_TITLE,
                     description: "Project submitted successfully",
@@ -453,10 +453,10 @@ export default function ProjectOverview({ data }: ProjectOverviewProps) {
                   });
                 
                   markStepAsCompleted('submit');
-                } catch (error) {
+                } else {
                   toast({
                     title: TOAST_ERROR_TITLE,
-                    description: (error as Error).message,
+                    description: result.error,
                     variant: "destructive",
                   });
                 }
@@ -474,18 +474,18 @@ export default function ProjectOverview({ data }: ProjectOverviewProps) {
                   <span className='text-green-500 font-semibold'>Project approved</span>
                   <div className='text-xs text-slate-600'>Congratulations! Your campaign has been reviewed and approved. You're ready to start accepting backers.</div>
                   <Button onClick={async()=>{
-                    try {
-                      await updateProject({status:"Live"}, data.project_id as string)
+                    const result = await updateProject({status:"Live"}, data.project_id as string)
+                    if(!result.error) {
                       toast({
                         title: TOAST_SUCCESS_TITLE,
                         description: "Project launched successfully",
                         variant: "default",
                       });
                     
-                    } catch (error) {
+                    } else {
                       toast({
                         title: TOAST_ERROR_TITLE,
-                        description: (error as Error).message,
+                        description: result.error,
                         variant: "destructive",
                       });
                     }
@@ -596,8 +596,8 @@ export default function ProjectOverview({ data }: ProjectOverviewProps) {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={async()=>{
-              try {
-                await deleteProject(data.project_id as string)
+              const result = await deleteProject(data.project_id as string)
+              if(!result.error) {
                 toast({
                   title: TOAST_SUCCESS_TITLE,
                   description: "Project deleted successfully",
@@ -606,10 +606,10 @@ export default function ProjectOverview({ data }: ProjectOverviewProps) {
 
                 router.push('/',{scroll:true})
               
-              } catch (error) {
+              } else {
                 toast({
                   title: TOAST_ERROR_TITLE,
-                  description: (error as Error).message,
+                  description: result.error,
                   variant: "destructive",
                 });
               }
