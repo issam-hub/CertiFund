@@ -93,7 +93,7 @@
         <p>Hi <span class="username">{{.Username}}</span>,</p>
         <p>We're thrilled to have you join our crowdfunding community. Whether you're here to launch a project or support one, you're now part of a movement that turns great ideas into reality! 🚀</p>
         <p>Get started by <strong>exploring projects</strong> or <strong>creating your own campaign</strong> today.</p>
-        <a class="button" href="http://localhost:3000/users/activate?token={{.ActivationToken}}">Activate your account</a>
+        <a class="button" href="http://localhost:3000/activate/{{.UserID}}?token={{.ActivationToken}}">Activate your account</a>
         <p class="footer">If you have any questions, feel free to <a href="#">contact us</a>. We're here to help!</p>
         <p class="footer">&copy; 2025 CertiFund. All rights reserved.</p>
     </div>
