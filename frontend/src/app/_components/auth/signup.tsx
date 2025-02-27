@@ -39,9 +39,8 @@ export default function SignupPage() {
   async function onSubmit(values: FormSchema) {
     setIsLoading(true)
     const result = await signUp(values)
-    console.log("result: ", result)
 
-    try {
+    if(!result.error) {
       toast({
         title: TOAST_SUCCESS_TITLE,
         description: "You are signed up successfully",
@@ -50,10 +49,10 @@ export default function SignupPage() {
   
       router.push(`/activate/${result["user"].id}`)
       
-    } catch (error) {
+    } else {
       toast({
         title: TOAST_ERROR_TITLE,
-        description: (error as Error).message,
+        description: result.error,
         variant: "destructive",
       });
     }

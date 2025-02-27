@@ -17,8 +17,8 @@ export default function ActivatePage({id, activationToken}:{id:string, activatio
     useEffect(()=>{
       (async()=>{
         if(activationToken){
-          try {
-            await activateUser(activationToken);
+          const result = await activateUser(activationToken);
+          if(!result.error) {
             toast({
               title: TOAST_SUCCESS_TITLE,
               description: "User is activated successfully",
@@ -27,10 +27,10 @@ export default function ActivatePage({id, activationToken}:{id:string, activatio
       
             router.push('/', {scroll:true})
             
-          } catch (error) {
+          } else {
             toast({
               title: TOAST_ERROR_TITLE,
-              description: (error as Error).message,
+              description: result.error,
               variant: "destructive",
             });
           }
@@ -41,13 +41,13 @@ export default function ActivatePage({id, activationToken}:{id:string, activatio
     const handleResendEmail = async () => {
         setLoading(true)
         
-        try {
-          await reactivateUser(id)
+        const result = await reactivateUser(id)
+        if(!result.error) {
           setEmailSent(true)
-        }catch(error){
+        }else{
           toast({
             title: TOAST_ERROR_TITLE,
-            description: (error as Error).message,
+            description: result.error,
             variant: "destructive",
           });
         }

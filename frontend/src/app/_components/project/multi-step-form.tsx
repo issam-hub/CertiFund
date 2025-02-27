@@ -32,8 +32,8 @@ export default function MultiStepForm() {
   const router = useRouter()
 
   const onSubmit = async (data: CreateProjectSchema) => {    
-    try {
-      const result = await createProject(data);
+    const result = await createProject(data);
+    if(!result.error) {
       toast({
         title: TOAST_SUCCESS_TITLE,
         description: "Project is created successfully",
@@ -42,10 +42,10 @@ export default function MultiStepForm() {
 
       router.push(`/projects/${result['project']['project_id']}`, {scroll:true})
       
-    } catch (error) {
+    } else {
       toast({
         title: TOAST_ERROR_TITLE,
-        description: (error as Error).message,
+        description: result.error,
         variant: "destructive",
       });
     }

@@ -19,15 +19,19 @@ export async function signUp(data: FormSchema){
         body: JSON.stringify(toBesent)
     })
 
-    if(!res.ok){
-        const result = await res.json()
-        if(typeof result.error === "object"){
-            throw new Error(Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string)
-        }
-        throw new Error(result.error)
+    try {
+        if(!res.ok) {
+            const result = await res.json()
+            if(typeof result.error === "object"){
+                return {error: Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
+            }
+            return result
+          }    
+      
+          return await res.json();
+    }catch(error: any){
+        return {error: error.message}
     }
-
-    return await res.json()
 }
 
 export async function login(data: FormSchema){
@@ -44,45 +48,53 @@ export async function login(data: FormSchema){
         body: JSON.stringify(toBesent)
     })
 
-    if(!res.ok){
-        const result = await res.json()
-        if(typeof result.error === "object"){
-            throw new Error(Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string)
-        }
-        throw new Error(result.error)
+    try {
+        if(!res.ok) {
+            const result = await res.json()
+            if(typeof result.error === "object"){
+                return {error: Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
+            }
+            return result
+          }    
+      
+          return await res.json();
+    }catch(error: any){
+        return {error: error.message}
     }
-
-    return await res.json()
 }
 
 export async function activateUser(token: string){
     const res = await fetch(`${apiUrl}/users/activate?token=${token}`)
     
-    if(!res.ok){
-        const result = await res.json()
-        if(typeof result.error === "object"){
-            throw new Error(Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string)
-        }else{
-            throw new Error(result.error)
-        }
+    try {
+        if(!res.ok) {
+            const result = await res.json()
+            if(typeof result.error === "object"){
+                return {error: Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
+            }
+            return result
+          }    
+      
+          return await res.json();
+    }catch(error: any){
+        return {error: error.message}
     }
-
-    
-    return await res.json()
 }
 
 export async function reactivateUser(id: string){
     const res = await fetch(`${apiUrl}/users/reactivate/${id}`)
     
-    if(!res.ok){
-        const result = await res.json()
-        if(typeof result.error === "object"){
-            throw new Error(Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string)
-        }else{
-            throw new Error(result.error)
-        }
+    try {
+        if(!res.ok) {
+            const result = await res.json()
+            if(typeof result.error === "object"){
+                return {error: Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
+            }
+            return result
+          }    
+      
+          return await res.json();
+    }catch(error: any){
+        return {error: error.message}
     }
-
-    
-    return await res.json()
 }
