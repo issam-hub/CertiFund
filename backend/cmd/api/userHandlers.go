@@ -2,14 +2,11 @@ package main
 
 import (
 	"errors"
-	"log"
 	"net/http"
-	"os"
 	"projectx/internal/data"
 	"projectx/internal/validator"
 	"time"
 
-	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 )
 
@@ -58,16 +55,11 @@ func (app *application) registerUserHandler(c echo.Context) error {
 		return err
 	}
 
-	envErr := godotenv.Load()
-	if envErr != nil {
-		log.Fatal("Error loading .env file")
-	}
-
 	app.background(func() {
 		data := map[string]interface{}{
 			"ActivationToken": token.PlainText,
 			"Username":        user.Username,
-			"Port":            os.Getenv("PORT"),
+			"UserID":          user.ID,
 		}
 		err = app.mailer.Send(user.Email, "user_welcome.tmpl", data)
 		if err != nil {
@@ -127,16 +119,11 @@ func (app *application) createUserHandler(c echo.Context) error {
 		return err
 	}
 
-	envErr := godotenv.Load()
-	if envErr != nil {
-		log.Fatal("Error loading .env file")
-	}
-
 	app.background(func() {
 		data := map[string]interface{}{
 			"ActivationToken": token.PlainText,
 			"Username":        user.Username,
-			"Port":            os.Getenv("PORT"),
+			"UserID":          user.ID,
 		}
 		err = app.mailer.Send(user.Email, "user_welcome.tmpl", data)
 		if err != nil {
@@ -312,4 +299,44 @@ func (app *application) logoutUserHandler(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, envelope{"message": "User logged out successfully"})
+}
+
+func (app *application) resendActivationTokenHandler(c echo.Context) error {
+	id, err := app.readIDParam(c)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusNotFound, err.Error())
+	}
+
+	user, err := app.models.Users.GetByID(id)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrNoRecordFound):
+			return echo.NewHTTPError(http.StatusNotFound, "User not found")
+		default:
+			return err
+		}
+	}
+
+	if user.Activated == true {
+		return echo.NewHTTPError(http.StatusUnprocessableEntity, errors.New("User already activated"))
+	}
+
+	token, err := app.models.Tokens.New(user.ID, 2*24*time.Hour, data.ScopeActivation)
+	if err != nil {
+		return err
+	}
+
+	app.background(func() {
+		data := map[string]interface{}{
+			"ActivationToken": token.PlainText,
+			"Username":        user.Username,
+			"UserID":          user.ID,
+		}
+		err = app.mailer.Send(user.Email, "user_welcome.tmpl", data)
+		if err != nil {
+			c.Logger().Error(err)
+		}
+	})
+
+	return c.JSON(http.StatusOK, envelope{"message": "Activation token resent successfully"})
 }
