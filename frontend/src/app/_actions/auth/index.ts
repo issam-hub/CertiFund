@@ -1,7 +1,10 @@
 "use server"
 
-import { apiUrl } from "@/app/_lib/config"
-import { FormSchema } from "@/app/_lib/schemas/auth"
+import { apiUrl, TOKEN_COOKIE_NAME } from "@/app/_lib/config"
+import { FormSchema, LoginFormSchema } from "@/app/_lib/schemas/auth"
+import { authFetch } from "@/app/_lib/utils/auth"
+import { cookies } from "next/headers"
+import { redirect } from "next/navigation"
 
 export async function signUp(data: FormSchema){
 
@@ -34,11 +37,13 @@ export async function signUp(data: FormSchema){
     }
 }
 
-export async function login(data: FormSchema){
+export async function login(data: LoginFormSchema){
     let toBesent = {
         email: data.email,
         password: data.password
     }
+
+    const cookieStore = await cookies()
     
     const res = await fetch(`${apiUrl}/users/login`,{
         method:"POST",
@@ -57,15 +62,22 @@ export async function login(data: FormSchema){
             return result
           }    
       
-          return await res.json();
+          const data = await res.json();
+          cookieStore.set(TOKEN_COOKIE_NAME, data[TOKEN_COOKIE_NAME]["token"], {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            maxAge: 60 * 60 * 24 * 7, 
+            path: '/'
+          })
+          return data
     }catch(error: any){
         return {error: error.message}
     }
 }
 
 export async function activateUser(token: string){
+    const cookieStore = await cookies()
     const res = await fetch(`${apiUrl}/users/activate?token=${token}`)
-    
     try {
         if(!res.ok) {
             const result = await res.json()
@@ -73,9 +85,16 @@ export async function activateUser(token: string){
                 return {error: Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
             }
             return result
-          }    
+        }    
       
-          return await res.json();
+          const data = await res.json();
+          cookieStore.set(TOKEN_COOKIE_NAME, data[TOKEN_COOKIE_NAME]["token"], {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            maxAge: 60 * 60 * 24 * 7, // 1 week
+            path: '/'
+          })
+          return data
     }catch(error: any){
         return {error: error.message}
     }
@@ -83,6 +102,7 @@ export async function activateUser(token: string){
 
 export async function reactivateUser(id: string){
     const res = await fetch(`${apiUrl}/users/reactivate/${id}`)
+    const cookieStore = await cookies()
     
     try {
         if(!res.ok) {
@@ -93,8 +113,63 @@ export async function reactivateUser(id: string){
             return result
           }    
       
-          return await res.json();
+          const data = await res.json();
+          cookieStore.set(TOKEN_COOKIE_NAME, data[TOKEN_COOKIE_NAME]["token"], {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            maxAge: 60 * 60 * 24 * 7, // 1 week
+            path: '/'
+          })
+          return data
     }catch(error: any){
+        return {error: error.message}
+    }
+}
+
+export async function logout(id: string){
+    const res = await authFetch(`${apiUrl}/users/logout/${id}`,{method:"POST"})
+    const cookieStore = await cookies()
+    
+    try {
+        if(!res.ok) {
+            const result = await res.json()
+            if(typeof result.error === "object"){
+                return {error: Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
+            }
+            return result
+          }    
+      
+          cookieStore.delete(TOKEN_COOKIE_NAME);
+
+    }catch(error: any){
+        return {error: error.message}
+    }
+}
+
+export async function getCurrentUser(){
+    const cookieStore = await cookies()
+    const token = cookieStore.get(TOKEN_COOKIE_NAME)?.value;
+  
+    if (!token) {
+      return null;
+    }
+
+    const res = await authFetch(`${apiUrl}/users/me`)
+    
+    try {
+        if(!res.ok) {
+            const result = await res.json()
+            if(typeof result.error === "object"){
+                return {error: Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
+            }
+            cookieStore.delete(TOKEN_COOKIE_NAME);
+            return result
+          }    
+      
+          return res.json()
+
+    }catch(error: any){
+        cookieStore.delete(TOKEN_COOKIE_NAME);
         return {error: error.message}
     }
 }

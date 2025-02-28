@@ -1,7 +1,9 @@
 "use client"
 import { activateUser, reactivateUser } from '@/app/_actions/auth'
 import { TOAST_ERROR_TITLE, TOAST_SUCCESS_TITLE } from '@/app/_lib/constants'
+import { isAuthenticatedAtom, userAtom } from '@/app/_store/auth'
 import { useToast } from '@/hooks/use-toast'
+import { useAtom } from 'jotai'
 import { ArrowRight, Mail } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -10,6 +12,8 @@ import React, { useEffect, useState } from 'react'
 export default function ActivatePage({id, activationToken}:{id:string, activationToken?:string}) {
     const [emailSent, setEmailSent] = useState(false)
     const [loading, setLoading] = useState(false)
+    const [, setIsAuthenticated] = useAtom(isAuthenticatedAtom);
+    const [, setUser] = useAtom(userAtom);
 
     const {toast} = useToast()
     const router = useRouter()
@@ -24,6 +28,9 @@ export default function ActivatePage({id, activationToken}:{id:string, activatio
               description: "User is activated successfully",
               variant: "default",
             });
+
+            setIsAuthenticated(true);
+            setUser(result["user"])
       
             router.push('/', {scroll:true})
             
