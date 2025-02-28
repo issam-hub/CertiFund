@@ -13,3 +13,11 @@ export interface BasicsFormData {
   export interface StoryFormData {
     campaign: string
   }
+
+export type User = {
+  id: string;
+  email: string;
+  username: string;
+  role: string;
+  imageUrl:string;
+};

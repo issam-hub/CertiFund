@@ -199,7 +199,7 @@ func (app *application) activateUserHandler(c echo.Context) error {
 		return err
 	}
 
-	token, err := app.models.Tokens.New(user.ID, 24*time.Hour, data.ScopeAuth)
+	token, err := app.models.Tokens.New(user.ID, 7*24*time.Hour, data.ScopeAuth)
 	if err != nil {
 		return err
 	}
@@ -271,14 +271,15 @@ func (app *application) loginUserHandler(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusUnauthorized, "invalid authentication credentials")
 	}
 
-	token, err := app.models.Tokens.New(user.ID, 24*time.Hour, data.ScopeAuth)
+	token, err := app.models.Tokens.New(user.ID, 7*24*time.Hour, data.ScopeAuth)
 	if err != nil {
 		return err
 	}
 
 	return c.JSON(http.StatusCreated, envelope{
-		"message":    "Authentication token created successfully",
+		"message":    "User logged in successfully",
 		"auth_token": token,
+		"user":       user,
 	})
 }
 
@@ -339,4 +340,15 @@ func (app *application) resendActivationTokenHandler(c echo.Context) error {
 	})
 
 	return c.JSON(http.StatusOK, envelope{"message": "Activation token resent successfully"})
+}
+
+func (app *application) whoAmIHandler(c echo.Context) error {
+	user := c.Get("user").(*data.User)
+	if user == nil {
+		return echo.NewHTTPError(http.StatusUnauthorized, "You must be autenticated to access this resource")
+	}
+	return c.JSON(http.StatusOK, envelope{
+		"message": "Your identity is revealed successfully",
+		"user":    user,
+	})
 }

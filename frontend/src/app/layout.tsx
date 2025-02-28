@@ -2,6 +2,8 @@ import { Toaster } from "@/components/ui/toaster";
 import Header from "./_components/header";
 import "./globals.css";
 import { Inter, Montserrat } from "next/font/google";
+import { Provider as JotaiProvider } from 'jotai';
+import AuthInit from "./_components/global/authInit";
 
 const inter = Inter({ subsets: ["latin"],variable:"--font-inter",weight:["300","400","500","600","700", "800"]});
 const montserrat = Montserrat({subsets:["latin"], variable:"--font-montserrat", weight:["600", '700', "800"]})
@@ -16,9 +18,12 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${montserrat.variable}`}
       >
-        <Header>
-          {children}
-        </Header>
+        <JotaiProvider>
+          <AuthInit/>
+          <Header>
+            {children}
+          </Header>
+        </JotaiProvider>
         <Toaster/>
       </body>
     </html>

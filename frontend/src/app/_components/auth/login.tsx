@@ -11,18 +11,24 @@ import { Button } from "@/components/ui/button"
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
-import { formSchema, FormSchema, LoginFormSchema } from "@/app/_lib/schemas/auth"
+import { formSchema, FormSchema, loginFormSchema, LoginFormSchema } from "@/app/_lib/schemas/auth"
 import Image from "next/image"
 import { useToast } from "@/hooks/use-toast"
 import { TOAST_ERROR_TITLE, TOAST_SUCCESS_TITLE } from "@/app/_lib/constants"
+import { useAtom } from "jotai"
+import { isAuthenticatedAtom, userAtom } from "@/app/_store/auth"
+import { useRouter, useSearchParams } from "next/navigation"
+import { login } from "@/app/_actions/auth"
 
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const [, setIsAuthenticated] = useAtom(isAuthenticatedAtom);
+  const [, setUser] = useAtom(userAtom);
 
   const form = useForm<LoginFormSchema>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(loginFormSchema),
     defaultValues: {
       email: "",
       password: "",
@@ -30,27 +36,33 @@ export default function LoginPage() {
     },
   })
 
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectPath = searchParams.get('from') || '/';
+
   const {toast} = useToast()
 
   async function onSubmit(values: LoginFormSchema) {
     setIsLoading(true)
-    try {
+    const result = await login(values)
+    if(!result.error) {
       toast({
         title: TOAST_SUCCESS_TITLE,
-        description: "You are signed up successfully",
+        description: "You are signed ins successfully",
         variant: "default",
       });
-      setIsLoading(false)
       
-      
-    } catch (error) {
+      setIsAuthenticated(true);
+      setUser(result["user"])
+      router.push(redirectPath)
+    } else {
       toast({
         title: TOAST_ERROR_TITLE,
-        description: (error as Error).message,
+        description: result.error,
         variant: "destructive",
       });
-      setIsLoading(false)
     }
+    setIsLoading(false)
 
   }
 

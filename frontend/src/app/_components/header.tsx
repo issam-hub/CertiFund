@@ -1,4 +1,5 @@
 import Image from "next/image";
+import ProfileHeader from "./global/profileHeader";
 
 
 export default function Header({
@@ -8,8 +9,10 @@ export default function Header({
   }>) {
   return (
     <>
-        <header className="py-4 border-b border-slate-100">
-            <Image src={"/logo.svg"} width={73} height={65} alt="logo" className="mx-auto cursor-pointer"/>
+        <header className="py-4 border-b border-slate-100 flex justify-between items-center px-4 sm:px-10">
+            <div></div>
+            <Image src={"/logo.svg"} width={73} height={65} alt="logo" className="cursor-pointer"/>
+            <ProfileHeader/>
         </header>
         {children}
     </>

@@ -29,6 +29,7 @@ func (app *application) routes(e *echo.Echo) {
 	publicGroup.GET("/users/reactivate/:id", app.resendActivationTokenHandler)
 	authGroup.GET("/users/:id", app.getUserHandler, app.RequirePermission("users:read"))
 	publicGroup.POST("/users/login", app.loginUserHandler)
-	authGroup.POST("/users/:id", app.logoutUserHandler)
+	authGroup.POST("/users/logout/:id", app.logoutUserHandler)
+	authGroup.GET("/users/me", app.whoAmIHandler)
 
 }
