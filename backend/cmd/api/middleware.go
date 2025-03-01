@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"projectx/internal/data"
 	"projectx/internal/validator"
+	"strconv"
 	"strings"
 
 	"github.com/labstack/echo/v4"
@@ -93,7 +94,40 @@ func (app *application) RequirePermission(permission string) echo.MiddlewareFunc
 			}
 			return next(c)
 		}
-		// return app.RequireActivatedUser(fn)
-		return fn
+		return app.RequireActivatedUser(fn)
+	}
+}
+
+func (app *application) VerifyProjectOwnership() echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			user := c.Get("user").(*data.User)
+			if user.Role == "admin" {
+				return next(c)
+			}
+			projectIDParam := c.Param("id")
+			projectID, err := strconv.Atoi(projectIDParam)
+			if err != nil {
+				return echo.NewHTTPError(http.StatusNotFound, err.Error())
+			}
+
+			_, err = app.models.Projects.Get(projectID)
+			if err != nil {
+				switch {
+				case errors.Is(err, data.ErrNoRecordFound):
+					return echo.NewHTTPError(http.StatusNotFound, "Project not found")
+				default:
+					return err
+				}
+			}
+
+			isOwner, err := app.models.Projects.ProjectOwnership(projectID, user.ID)
+
+			if isOwner {
+				return next(c)
+			} else {
+				return c.JSON(http.StatusForbidden, envelope{"error": "You don't have ownership over this ressource"})
+			}
+		}
 	}
 }

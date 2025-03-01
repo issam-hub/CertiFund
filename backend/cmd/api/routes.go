@@ -14,7 +14,8 @@ func (app *application) routes(e *echo.Echo) {
 
 	// project
 	authGroup.POST("/projects/create", app.createProjectHandler, app.RequirePermission("projects:create"))
-	publicGroup.GET("/projects/:id", app.getProjectHandler)
+	authGroup.GET("/projects/:id", app.getProjectHandler, app.VerifyProjectOwnership())
+	publicGroup.GET("/projects/discover/:id", app.getProjectHandler)
 	authGroup.PATCH("/projects/:id", app.updateProjectHandler, app.RequirePermission("projects:update"))
 	authGroup.DELETE("/projects/:id", app.deleteProjectHandler)
 

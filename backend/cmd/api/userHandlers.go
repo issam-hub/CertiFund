@@ -256,7 +256,7 @@ func (app *application) loginUserHandler(c echo.Context) error {
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrNoRecordFound):
-			return echo.NewHTTPError(http.StatusUnauthorized, "invalid authentication credentials")
+			return echo.NewHTTPError(http.StatusUnauthorized, "Invalid authentication credentials")
 		default:
 			return err
 		}
@@ -268,7 +268,7 @@ func (app *application) loginUserHandler(c echo.Context) error {
 	}
 
 	if !match {
-		return echo.NewHTTPError(http.StatusUnauthorized, "invalid authentication credentials")
+		return echo.NewHTTPError(http.StatusUnauthorized, "Invalid authentication credentials")
 	}
 
 	token, err := app.models.Tokens.New(user.ID, 7*24*time.Hour, data.ScopeAuth)

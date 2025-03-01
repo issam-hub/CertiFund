@@ -26,14 +26,15 @@ export async function signUp(data: FormSchema){
         if(!res.ok) {
             const result = await res.json()
             if(typeof result.error === "object"){
-                return {error: Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
+                return {status:false, error: Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
             }
-            return result
+            return {status:false, ...result}
           }    
       
-          return await res.json();
+          const result = await res.json();
+          return {status:true, ...result}
     }catch(error: any){
-        return {error: error.message}
+        return {statuserror: error.message}
     }
 }
 
@@ -57,9 +58,9 @@ export async function login(data: LoginFormSchema){
         if(!res.ok) {
             const result = await res.json()
             if(typeof result.error === "object"){
-                return {error: Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
+                return {status:false, error: Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
             }
-            return result
+            return {status:false, ...result}
           }    
       
           const data = await res.json();
@@ -69,9 +70,9 @@ export async function login(data: LoginFormSchema){
             maxAge: 60 * 60 * 24 * 7, 
             path: '/'
           })
-          return data
+          return {status:true, ...data}
     }catch(error: any){
-        return {error: error.message}
+        return {status:false, error: error.message}
     }
 }
 
@@ -82,9 +83,9 @@ export async function activateUser(token: string){
         if(!res.ok) {
             const result = await res.json()
             if(typeof result.error === "object"){
-                return {error: Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
+                return {status:false, error: Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
             }
-            return result
+            return {status:false, ...result}
         }    
       
           const data = await res.json();
@@ -94,7 +95,7 @@ export async function activateUser(token: string){
             maxAge: 60 * 60 * 24 * 7, // 1 week
             path: '/'
           })
-          return data
+          return {status:true, ...data}
     }catch(error: any){
         return {error: error.message}
     }
@@ -108,9 +109,9 @@ export async function reactivateUser(id: string){
         if(!res.ok) {
             const result = await res.json()
             if(typeof result.error === "object"){
-                return {error: Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
+                return {status:false, error: Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
             }
-            return result
+            return {status:false, ...result}
           }    
       
           const data = await res.json();
@@ -120,7 +121,7 @@ export async function reactivateUser(id: string){
             maxAge: 60 * 60 * 24 * 7, // 1 week
             path: '/'
           })
-          return data
+          return {status:true, ...data}
     }catch(error: any){
         return {error: error.message}
     }
@@ -134,15 +135,16 @@ export async function logout(id: string){
         if(!res.ok) {
             const result = await res.json()
             if(typeof result.error === "object"){
-                return {error: Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
+                return {status:false, error: Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
             }
-            return result
-          }    
-      
-          cookieStore.delete(TOKEN_COOKIE_NAME);
+            return {status:false, ...result}
+          }  
 
+          const result = await res.json()
+          cookieStore.delete(TOKEN_COOKIE_NAME);
+          return {status:true, ...result}
     }catch(error: any){
-        return {error: error.message}
+        return {status:false, error: error.message}
     }
 }
 
@@ -160,16 +162,17 @@ export async function getCurrentUser(){
         if(!res.ok) {
             const result = await res.json()
             if(typeof result.error === "object"){
-                return {error: Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
+                return {status:false, error: Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
             }
             cookieStore.delete(TOKEN_COOKIE_NAME);
-            return result
+            return {status:false, ...result}
           }    
       
-          return res.json()
+          const result = await res.json()
+          return {status:true, ...result}
 
     }catch(error: any){
         cookieStore.delete(TOKEN_COOKIE_NAME);
-        return {error: error.message}
+        return {status:false, error: error.message}
     }
 }

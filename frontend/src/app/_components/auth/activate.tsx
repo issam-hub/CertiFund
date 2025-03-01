@@ -22,7 +22,7 @@ export default function ActivatePage({id, activationToken}:{id:string, activatio
       (async()=>{
         if(activationToken){
           const result = await activateUser(activationToken);
-          if(!result.error) {
+          if(result.status) {
             toast({
               title: TOAST_SUCCESS_TITLE,
               description: "User is activated successfully",
@@ -49,7 +49,7 @@ export default function ActivatePage({id, activationToken}:{id:string, activatio
         setLoading(true)
         
         const result = await reactivateUser(id)
-        if(!result.error) {
+        if(result.status) {
           setEmailSent(true)
         }else{
           toast({

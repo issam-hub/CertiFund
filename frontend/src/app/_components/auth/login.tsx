@@ -45,10 +45,10 @@ export default function LoginPage() {
   async function onSubmit(values: LoginFormSchema) {
     setIsLoading(true)
     const result = await login(values)
-    if(!result.error) {
+    if(result.status) {
       toast({
         title: TOAST_SUCCESS_TITLE,
-        description: "You are signed ins successfully",
+        description: "You are signed in successfully",
         variant: "default",
       });
       

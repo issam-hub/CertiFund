@@ -4,12 +4,14 @@ import { apiUrl } from "@/app/_lib/config";
 import { CreateProjectSchema } from "@/app/_lib/schemas/project";
 import { BasicsFormData, FundingFormData, StoryFormData } from "@/app/_lib/types";
 import { formatDateTime } from "@/app/_lib/utils";
+import { authFetch } from "@/app/_lib/utils/auth";
+import { revalidateTag } from "next/cache";
 import { notFound } from "next/navigation";
 
 export async function createProject(data: CreateProjectSchema){
     data['deadline'] = formatDateTime(data['deadline'] as string)
     
-    const res = await fetch(`${apiUrl}/projects/create`,{
+    const res = await authFetch(`${apiUrl}/projects/create`,{
         method:"POST",
         headers:{
             "Content-Type":"application/json"
@@ -21,37 +23,39 @@ export async function createProject(data: CreateProjectSchema){
         if(!res.ok) {
             const result = await res.json()
             if(typeof result.error === "object"){
-                return {error: Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
+                return {status:false, error: Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
             }
-            return result
+            return {status: false, ...result}
           }    
       
-          return await res.json();
+          const result = await res.json();
+          return {status:true, ...result}
     }catch(error: any){
-        return {error: error.message}
+        return {status: false, error: error.message}
     }
 }
 
 export async function getProject(id: string) {
-    const res = await fetch(`${apiUrl}/projects/${id}`, {next:{tags:["project"]}})
+    const res = await authFetch(`${apiUrl}/projects/${id}`, {cache:"no-store", next:{tags:["project"]}})
 
     if(!res.ok){
         const result = await res.json()
         if(typeof result.error === "object"){
-            throw new Error(Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string)
+            return {status:false, error:Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
         }else if(result.error === "Project not found"){
             notFound()
         }else{
-            throw new Error(result.error)
+            return {status:false, ...result}
         }
     }
 
     
-    return await res.json()
+    const result = await res.json()
+    return {status:true, ...result}
 }
 
 export async function updateProject(data: BasicsFormData|FundingFormData|StoryFormData|{status:string}, id: string){
-    const res = await fetch(`${apiUrl}/projects/${id}`,{
+    const res = await authFetch(`${apiUrl}/projects/${id}`,{
         method:"PATCH",
         headers:{
             "Content-Type":"application/json"
@@ -63,21 +67,24 @@ export async function updateProject(data: BasicsFormData|FundingFormData|StoryFo
         if(!res.ok) {
             const result = await res.json()
             if(typeof result.error === "object"){
-                return {error: Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
+                return {status:false, error: Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
             }
-            return result
+            return {status:false, ...result}
         }  
+
+        revalidateTag("project")
       
-          return await res.json();
+        const result = await res.json()
+        return {status:true, ...result}
     }catch(error: any){
-        return {error: error.message}
+        return {status:false, error: error.message}
     }
 }
 
 export async function uploadImage(image: File){
     const formData = new FormData()
     formData.set("file", image)
-    const res = await fetch(`${apiUrl}/projects/image/upload`,{
+    const res = await authFetch(`${apiUrl}/projects/image/upload`,{
         method:"POST",
         body: formData
     })
@@ -86,31 +93,33 @@ export async function uploadImage(image: File){
         if(!res.ok) {
             const result = await res.json()
             if(typeof result.error === "object"){
-                return {error: Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
+                return {status:false, error: Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
             }
-            return result
+            return {status: false, ...result}
           }    
       
-          return await res.json();
+          const result = await res.json();
+          return {status:true, ...result}
     }catch(error: any){
-        return {error: error.message}
+        return {status:false, error: error.message}
     }
 }
 
 export async function deleteProject(id: string){
-    const res = await fetch(`${apiUrl}/projects/${id}`,{method:"DELETE"})
+    const res = await authFetch(`${apiUrl}/projects/${id}`,{method:"DELETE"})
 
     try {
         if(!res.ok) {
             const result = await res.json()
             if(typeof result.error === "object"){
-                return {error: Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
+                return {status:false, error: Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
             }
-            return result
+            return {status:false, ...result}
           }    
       
-          return await res.json();
+          const result = await res.json();
+          return {status:true, ...result}
     }catch(error: any){
-        return {error: error.message}
+        return {status:false, error: error.message}
     }
 }

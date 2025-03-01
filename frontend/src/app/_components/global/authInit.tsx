@@ -17,7 +17,7 @@ export default function AuthInit() {
         if (isAuthenticated) {
           const res = await getCurrentUser()
           
-          if (res !== null && !res.error) {
+          if (res !== null && res.status) {
             setUser(res["user"]);
           } else {
             setIsAuthenticated(false);
