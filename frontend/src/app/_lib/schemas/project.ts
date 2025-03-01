@@ -8,5 +8,5 @@ export const createProjectSchema = z.object({
     deadline: z.string({required_error:"Deadline must be provided", invalid_type_error:"Deadline must be a date"})
 })
 
-export type CreateProjectSchema = z.infer<typeof createProjectSchema>
-export type UpdateProjectSchema = z.infer<typeof createProjectSchema>&{project_id?:string, project_img?:string, campaign?:string, status?:string, current_funding:number}
+export type CreateProjectSchema = z.infer<typeof createProjectSchema>&{creator_id: string}
+export type UpdateProjectSchema = z.infer<typeof createProjectSchema>&{project_id?:string, project_img?:string, campaign?:string, status?:string, current_funding:number, creator_id:string}

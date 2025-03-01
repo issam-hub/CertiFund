@@ -378,7 +378,7 @@ export default function ProjectOverview({ data }: ProjectOverviewProps) {
                       return;
                     }
                     const result = await updateProject({status:"Pending Review"}, data.project_id as string)
-                    if(!result.error) {
+                    if(result.status) {
                       toast({
                         title: TOAST_SUCCESS_TITLE,
                         description: "Project submitted successfully",
@@ -445,7 +445,7 @@ export default function ProjectOverview({ data }: ProjectOverviewProps) {
                   return;
                 }
                 const result = await updateProject({status:"Pending Review"}, data.project_id as string)
-                if(!result.error) {
+                if(result.status) {
                   toast({
                     title: TOAST_SUCCESS_TITLE,
                     description: "Project submitted successfully",
@@ -475,7 +475,7 @@ export default function ProjectOverview({ data }: ProjectOverviewProps) {
                   <div className='text-xs text-slate-600'>Congratulations! Your campaign has been reviewed and approved. You're ready to start accepting backers.</div>
                   <Button onClick={async()=>{
                     const result = await updateProject({status:"Live"}, data.project_id as string)
-                    if(!result.error) {
+                    if(result.status) {
                       toast({
                         title: TOAST_SUCCESS_TITLE,
                         description: "Project launched successfully",
@@ -597,7 +597,7 @@ export default function ProjectOverview({ data }: ProjectOverviewProps) {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={async()=>{
               const result = await deleteProject(data.project_id as string)
-              if(!result.error) {
+              if(result.status) {
                 toast({
                   title: TOAST_SUCCESS_TITLE,
                   description: "Project deleted successfully",

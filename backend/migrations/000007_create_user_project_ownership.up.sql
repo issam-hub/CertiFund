@@ -1,0 +1,1 @@
+ALTER TABLE project ADD COLUMN creator_id bigint REFERENCES user_t NOT NULL;

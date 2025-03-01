@@ -12,6 +12,8 @@ import { useToast } from "@/hooks/use-toast"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { createProject } from "@/app/_actions/projects"
 import { useRouter } from "next/navigation"
+import { useAtomValue } from "jotai"
+import { userAtom } from "@/app/_store/auth"
 
 
 export default function MultiStepForm() {
@@ -31,9 +33,23 @@ export default function MultiStepForm() {
   const { toast } = useToast()
   const router = useRouter()
 
-  const onSubmit = async (data: CreateProjectSchema) => {    
+  const user = useAtomValue(userAtom)
+
+  if(!user){
+    toast({
+      title: "Warning",
+      description: "You need to be signed up in order to create projects",
+      variant: "warning",
+    });
+    router.push("/login", {scroll:true})
+  }
+
+  const onSubmit = async (data: CreateProjectSchema) => {   
+    let toBeSent = data 
+    toBeSent["creator_id"] = user?.id as string
+
     const result = await createProject(data);
-    if(!result.error) {
+    if(result.status) {
       toast({
         title: TOAST_SUCCESS_TITLE,
         description: "Project is created successfully",

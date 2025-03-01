@@ -40,7 +40,7 @@ export default function SignupPage() {
     setIsLoading(true)
     const result = await signUp(values)
 
-    if(!result.error) {
+    if(result.status) {
       toast({
         title: TOAST_SUCCESS_TITLE,
         description: "You are signed up successfully",

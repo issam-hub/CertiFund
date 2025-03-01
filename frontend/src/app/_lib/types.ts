@@ -3,16 +3,16 @@ export interface BasicsFormData {
     title: string;
     description: string;
     categories: string[];
-  }
-  
-  export interface FundingFormData {
-    funding_goal: number;
-    deadline: string;
-  }
-  
-  export interface StoryFormData {
-    campaign: string
-  }
+}
+
+export interface FundingFormData {
+  funding_goal: number;
+  deadline: string;
+}
+
+export interface StoryFormData {
+  campaign: string;
+}
 
 export type User = {
   id: string;

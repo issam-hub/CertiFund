@@ -5,7 +5,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { UpdateProjectSchema, createProjectSchema } from '@/app/_lib/schemas/project';
 import { reverseDateTimeFormat } from "@/app/_lib/utils";
@@ -16,6 +15,8 @@ import { TOAST_SUCCESS_TITLE, TOAST_ERROR_TITLE } from "@/app/_lib/constants";
 import { updateProject, uploadImage } from '@/app/_actions/projects';
 import MultiSelect, { renderCategories } from './multiSelect';
 import { BasicsFormData, FundingFormData } from '@/app/_lib/types';
+import { userAtom } from '@/app/_store/auth';
+import { useAtomValue } from 'jotai';
 
 interface ProjectFormProps {
   data: UpdateProjectSchema;
@@ -37,15 +38,16 @@ export default function ProjectForm({ data, activeTab, onStepComplete }: Project
     setGetEditorContent(() => getContent);
   }, []);
 
+  const user = useAtomValue(userAtom)
+
+
   const handleSaveStory = async() => {
     if (getEditorContent) {
       const content = getEditorContent();
-      try {
-        // Handle funding step submission
-        await updateProject({
-          "campaign": content
-        }, data.project_id as string)
-        
+      const result = await updateProject({
+        "campaign": content
+      }, data.project_id as string)
+      if(result.status) {
         toast({
           title: TOAST_SUCCESS_TITLE,
           description: "Story saved successfully",
@@ -53,10 +55,10 @@ export default function ProjectForm({ data, activeTab, onStepComplete }: Project
         });
         
         onStepComplete('story');
-      } catch (error) {
+      } else {
         toast({
           title: TOAST_ERROR_TITLE,
-          description: (error as Error).message,
+          description: result.error,
           variant: "destructive",
         });
       }
@@ -73,7 +75,7 @@ export default function ProjectForm({ data, activeTab, onStepComplete }: Project
       project_img: data.project_img,
       title: data.title,
       description: data.description,
-      categories: data.categories
+      categories: data.categories,
     }
   });
 
@@ -84,7 +86,7 @@ export default function ProjectForm({ data, activeTab, onStepComplete }: Project
     })),
     defaultValues: {
       funding_goal: data.funding_goal,
-      deadline: reverseDateTimeFormat(data.deadline)
+      deadline: reverseDateTimeFormat(data.deadline),
     }
   });
 
@@ -92,7 +94,7 @@ export default function ProjectForm({ data, activeTab, onStepComplete }: Project
     let toBeSentFormData = formData
     if(!data.project_img){
       const result = await uploadImage(imageFile as File)
-      if(result.error){
+      if(!result.status){
         toast({
           title: TOAST_ERROR_TITLE,
           description: result.error,
@@ -103,8 +105,8 @@ export default function ProjectForm({ data, activeTab, onStepComplete }: Project
         toBeSentFormData['project_img'] = result.url
       }
     }
-    const res = await updateProject(formData, data.project_id as string)
-    if(!res.error) {
+    const res = await updateProject(toBeSentFormData, data.project_id as string)
+    if(res.status) {
 
       toast({
         title: TOAST_SUCCESS_TITLE,
@@ -124,9 +126,7 @@ export default function ProjectForm({ data, activeTab, onStepComplete }: Project
 
   const handleFundingSubmit = async (formData: FundingFormData) => {
     const result = await updateProject(formData, data.project_id as string)
-    if(!result.error) {
-      // Handle funding step submission
-      
+    if(result.status) {
       toast({
         title: TOAST_SUCCESS_TITLE,
         description: "Funding information saved successfully",

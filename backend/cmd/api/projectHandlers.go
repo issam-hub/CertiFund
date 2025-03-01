@@ -24,12 +24,25 @@ func (app *application) createProjectHandler(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "Error while processing data")
 	}
 
+	user := c.Get("user").(*data.User)
+
+	_, err := app.models.Users.GetByID(user.ID)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrNoRecordFound):
+			return echo.NewHTTPError(http.StatusNotFound, "User not found")
+		default:
+			return err
+		}
+	}
+
 	project := &data.Project{
 		Title:       input.Title,
 		Description: input.Description,
 		FundingGoal: input.FundingGoal,
 		Deadline:    input.Deadline,
 		Categories:  input.Categories,
+		CreatorID:   user.ID,
 	}
 
 	v := validator.New()
@@ -38,7 +51,7 @@ func (app *application) createProjectHandler(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusUnprocessableEntity, v.Errors)
 	}
 
-	err := app.models.Projects.Insert(project)
+	err = app.models.Projects.Insert(project)
 	if err != nil {
 		return err
 	}
@@ -104,6 +117,18 @@ func (app *application) updateProjectHandler(c echo.Context) error {
 	if err := c.Bind(&input); err != nil {
 		app.logger.Error(err.Error())
 		return echo.NewHTTPError(http.StatusBadRequest, "Error while processing data")
+	}
+
+	user := c.Get("user").(*data.User)
+
+	_, err = app.models.Users.GetByID(user.ID)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrNoRecordFound):
+			return echo.NewHTTPError(http.StatusNotFound, "User not found")
+		default:
+			return err
+		}
 	}
 
 	v := validator.New()

@@ -24,6 +24,7 @@ type Project struct {
 	Campaign       string         `json:"campaign"`
 	CreatedAt      time.Time      `json:"-"`
 	Version        int32          `json:"version"`
+	CreatorID      int            `json:"creator_id"`
 }
 
 type ProjectModel struct {
@@ -61,8 +62,8 @@ func (m ProjectModel) GetAll() ([]*Project, error) {
 func (m ProjectModel) Insert(project *Project) error {
 	query := `
 	INSERT INTO project 
-	(title, description, categories, funding_goal, deadline)
-	VALUES ($1, $2, $3, $4, $5)
+	(title, description, categories, funding_goal, deadline, creator_id)
+	VALUES ($1, $2, $3, $4, $5, $6)
 	RETURNING project_id, status, created_at, version
 	`
 	args := []interface{}{
@@ -71,6 +72,7 @@ func (m ProjectModel) Insert(project *Project) error {
 		project.Categories,
 		project.FundingGoal,
 		project.Deadline,
+		project.CreatorID,
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
@@ -86,7 +88,7 @@ func (m ProjectModel) Get(id int) (*Project, error) {
 	var project Project
 	var projectImgVar sql.NullString
 	var campaignVar sql.NullString
-	query := `SELECT project_id, title, description, categories, funding_goal, current_funding, deadline, status, projectimg, campaign, created_at, version FROM project WHERE project_id = $1`
+	query := `SELECT project_id, title, description, categories, funding_goal, current_funding, deadline, status, project_img, campaign, created_at, version, creator_id FROM project WHERE project_id = $1`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -104,6 +106,7 @@ func (m ProjectModel) Get(id int) (*Project, error) {
 		&campaignVar,
 		&project.CreatedAt,
 		&project.Version,
+		&project.CreatorID,
 	)
 	if err != nil {
 		switch {
@@ -123,7 +126,7 @@ func (m ProjectModel) Get(id int) (*Project, error) {
 func (m ProjectModel) Update(project *Project) error {
 	query := `
 		UPDATE project SET 
-		title = $1, description = $2, categories = $3, funding_goal = $4, current_funding = $5, deadline = $6, status = $7, projectimg = $8, campaign = $9, version = version + 1
+		title = $1, description = $2, categories = $3, funding_goal = $4, current_funding = $5, deadline = $6, status = $7, project_img = $8, campaign = $9, version = version + 1
 		WHERE project_id = $10 AND version = $11 RETURNING version
 	`
 
@@ -180,4 +183,27 @@ func (m ProjectModel) Delete(id int) error {
 	}
 
 	return nil
+}
+
+func (m ProjectModel) ProjectOwnership(projectID, creatorID int) (bool, error) {
+	query := `
+	SELECT EXISTS (
+		SELECT 1 FROM project p WHERE
+		p.project_id = $1 AND p.creator_id = $2
+	) AS is_project_owner
+	`
+
+	args := []interface{}{projectID, creatorID}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	var isProjectOwner bool
+
+	err := m.DB.QueryRowContext(ctx, query, args...).Scan(&isProjectOwner)
+	if err != nil {
+		return false, err
+	}
+
+	return isProjectOwner, nil
 }
