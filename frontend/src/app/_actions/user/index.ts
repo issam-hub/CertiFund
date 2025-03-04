@@ -61,3 +61,26 @@ export async function changePassword(data: PasswordChangeSchema){
         return {status:false, error: error.message}
     }
 }
+
+export async function deleteAccount(){
+    const res = await authFetch(`${apiUrl}/users/delete`,{
+        method:"DELETE"
+    })
+
+    try {
+        if(!res.ok) {
+            const result = await res.json()
+            if(typeof result.error === "object"){
+                return {status:false, error: Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
+            }
+            return {status:false, ...result}
+        }
+        
+        // ((await cookies()).delete(TOKEN_COOKIE_NAME))
+        
+        const result = await res.json()
+        return {status:true, ...result}
+    }catch(error: any){
+        return {status:false, error: error.message}
+    }
+}
