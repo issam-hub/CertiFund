@@ -458,3 +458,19 @@ func (app *application) changePasswordHandler(c echo.Context) error {
 
 	return c.JSON(http.StatusCreated, envelope{"message": "Password updated successfully"})
 }
+
+func (app *application) deleteAccountHandler(c echo.Context) error {
+	user := c.Get("user").(*data.User)
+
+	err := app.models.Users.Delete(user.ID)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrNoRecordFound):
+			return echo.NewHTTPError(http.StatusNotFound, data.ErrNoRecordFound.Error())
+		default:
+			return err
+		}
+	}
+
+	return c.JSON(http.StatusOK, envelope{"message": "User deleted successfully"})
+}
