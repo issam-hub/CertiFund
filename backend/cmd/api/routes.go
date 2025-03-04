@@ -27,6 +27,7 @@ func (app *application) routes(e *echo.Echo) {
 	publicGroup.POST("/users/signup", app.registerUserHandler)
 	authGroup.POST("/users/create", app.createUserHandler, app.RequirePermission("users:create"))
 	authGroup.DELETE("/users/:id", app.deleteUserHandler, app.RequirePermission("users:delete"))
+	authGroup.DELETE("/users/delete", app.deleteAccountHandler)
 	publicGroup.GET("/users/activate", app.activateUserHandler)
 	publicGroup.GET("/users/reactivate/:id", app.resendActivationTokenHandler)
 	authGroup.GET("/users/:id", app.getUserHandler, app.RequirePermission("users:read"))

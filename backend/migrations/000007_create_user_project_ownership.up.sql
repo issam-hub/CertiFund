@@ -1,1 +1,1 @@
-ALTER TABLE project ADD COLUMN creator_id bigint REFERENCES user_t NOT NULL;
+ALTER TABLE project ADD COLUMN creator_id bigint NOT NULL REFERENCES user_t ON DELETE CASCADE;
