@@ -25,7 +25,7 @@ import {Eye, EyeOff, Key, Lock, Trash2 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { passwordChangeSchema, PasswordChangeSchema } from "@/app/_lib/schemas/auth"
 import { TOAST_ERROR_TITLE, TOAST_SUCCESS_TITLE } from "@/app/_lib/constants"
-import { changePassword } from "@/app/_actions/user"
+import { changePassword, deleteAccount } from "@/app/_actions/user"
 
 
 export function SettingsPage() {
@@ -66,35 +66,27 @@ export function SettingsPage() {
   }
 
   async function handleDeleteAccount() {
-    // try {
-    //   setIsDeleting(true)
-    //   const result = await deleteAccount()
+      setIsDeleting(true)
+      const result = await deleteAccount()
 
-    //   if (result.error) {
-    //     toast({
-    //       title: "Error",
-    //       description: result.error,
-    //       variant: "destructive",
-    //     })
-    //     return
-    //   }
+      if (!result.status) {
+        toast({
+          title: "Error",
+          description: result.error,
+          variant: "destructive",
+        })
+        return
+      }
+      
+      setIsDeleting(false)
+      
+      toast({
+        title: "Account Deleted",
+        description: "Your account has been permanently deleted",
+      })
 
-    //   toast({
-    //     title: "Account Deleted",
-    //     description: "Your account has been permanently deleted",
-    //   })
-
-    //   router.push("/signup")
-    // } catch (error) {
-    //   toast({
-    //     title: "Error",
-    //     description: "Failed to delete account. Please try again.",
-    //     variant: "destructive",
-    //   })
-    // } finally {
-    //   setIsDeleting(false)
-    // }
-  }
+      router.push("/signup")
+    }
 
   return (
     <div className="container mx-auto mt-5 my-5">
