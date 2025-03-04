@@ -131,3 +131,36 @@ func (app *application) VerifyProjectOwnership() echo.MiddlewareFunc {
 		}
 	}
 }
+
+func (app *application) VerifyAccountOwnership() echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			user := c.Get("user").(*data.User)
+			if user.Role == "admin" {
+				return next(c)
+			}
+			userIDParam := c.Param("id")
+			userID, err := strconv.Atoi(userIDParam)
+			if err != nil {
+				return echo.NewHTTPError(http.StatusNotFound, err.Error())
+			}
+
+			_, err = app.models.Users.GetByID(userID)
+			if err != nil {
+				switch {
+				case errors.Is(err, data.ErrNoRecordFound):
+					return echo.NewHTTPError(http.StatusNotFound, "User not found")
+				default:
+					return err
+				}
+			}
+
+			isOwner := user.ID == userID
+			if isOwner {
+				return next(c)
+			} else {
+				return c.JSON(http.StatusForbidden, envelope{"error": "You don't have ownership over this ressource"})
+			}
+		}
+	}
+}

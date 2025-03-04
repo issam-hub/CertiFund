@@ -54,3 +54,18 @@ export const reverseDateTimeFormat = (dateTimeString: string): string => {
   
   return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
+
+export function formatWebsiteUrl(url: string): string {
+  if (!url) return ""
+  return url.replace(/^https?:\/\/(www\.)?/, "")
+}
+
+export function formatTwitterHandle(handle: string): string {
+  if (!handle) return ""
+  return handle.startsWith("@") ? handle : `@${handle}`
+}
+
+export function getTwitterUrl(handle: string): string {
+  const cleanHandle = handle.startsWith("@") ? handle.slice(1) : handle
+  return `https://twitter.com/${cleanHandle}`
+}
