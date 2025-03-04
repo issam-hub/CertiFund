@@ -27,6 +27,8 @@ export async function createProject(data: CreateProjectSchema){
             }
             return {status: false, ...result}
           }    
+
+          revalidateTag("projects-creator")
       
           const result = await res.json();
           return {status:true, ...result}
@@ -73,6 +75,8 @@ export async function updateProject(data: BasicsFormData|FundingFormData|StoryFo
         }  
 
         revalidateTag("project")
+        revalidateTag("projects-creator")
+        
       
         const result = await res.json()
         return {status:true, ...result}
@@ -96,7 +100,9 @@ export async function uploadImage(image: File){
                 return {status:false, error: Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
             }
             return {status: false, ...result}
-          }    
+          }
+          
+          revalidateTag("projects-creator")
       
           const result = await res.json();
           return {status:true, ...result}
@@ -115,11 +121,32 @@ export async function deleteProject(id: string){
                 return {status:false, error: Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
             }
             return {status:false, ...result}
-          }    
+          }
+          
+          revalidateTag("projects-creator")
       
           const result = await res.json();
           return {status:true, ...result}
     }catch(error: any){
         return {status:false, error: error.message}
     }
+}
+
+export async function getProjectByCurrUser() {
+    const res = await authFetch(`${apiUrl}/projects/me`, {cache:"no-store", next:{tags:["projects-creator"]}})
+
+    if(!res.ok){
+        const result = await res.json()
+        if(typeof result.error === "object"){
+            return {status:false, error:Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
+        }else if(result.error === "Project not found"){
+            notFound()
+        }else{
+            return {status:false, ...result}
+        }
+    }
+
+    
+    const result = await res.json()
+    return {status:true, ...result}
 }

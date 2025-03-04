@@ -352,3 +352,109 @@ func (app *application) whoAmIHandler(c echo.Context) error {
 		"user":    user,
 	})
 }
+
+func (app *application) updateProfileHandler(c echo.Context) error {
+	user := c.Get("user").(*data.User)
+
+	var input struct {
+		Username *string `json:"username,omitempty"`
+		Email    *string `json:"email,omitempty"`
+		ImageUrl *string `json:"image_url,omitempty"`
+		Bio      *string `json:"bio,omitempty"`
+		Website  *string `json:"website,omitempty"`
+		Twitter  *string `json:"twitter,omitempty"`
+	}
+
+	if err := c.Bind(&input); err != nil {
+		app.logger.Error(err.Error())
+		return echo.NewHTTPError(http.StatusBadRequest, "Error while processing data")
+	}
+
+	v := validator.New()
+
+	if input.Username != nil {
+		user.Username = *input.Username
+	}
+	if input.Email != nil {
+		user.Email = *input.Email
+	}
+	if input.ImageUrl != nil {
+		user.ImageUrl = *input.ImageUrl
+	}
+	if input.Bio != nil {
+		user.Bio = *input.Bio
+	}
+	if input.Website != nil {
+		user.Website = *input.Website
+	}
+	if input.Twitter != nil {
+		user.Twitter = *input.Twitter
+	}
+
+	if data.ValidateProfileUpdate(v, user); !v.Valid() {
+		return echo.NewHTTPError(http.StatusUnprocessableEntity, v.Errors)
+	}
+
+	err := app.models.Users.Update(user)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrDuplicateEmail):
+			v.AddError("email", "Email address already exists")
+			return echo.NewHTTPError(http.StatusUnprocessableEntity, v.Errors)
+		case errors.Is(err, data.ErrEditConflict):
+			return echo.NewHTTPError(http.StatusConflict, data.ErrEditConflict.Error())
+		default:
+			return err
+		}
+	}
+
+	return c.JSON(http.StatusCreated, envelope{
+		"message": "Profile updated successfully",
+		"user":    user,
+	})
+}
+
+func (app *application) changePasswordHandler(c echo.Context) error {
+	user := c.Get("user").(*data.User)
+
+	var input struct {
+		OldPassword string `json:"old_password"`
+		NewPassword string `json:"new_password"`
+	}
+
+	if err := c.Bind(&input); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+
+	match, err := user.Password.Matches(input.OldPassword)
+	if err != nil {
+		return err
+	}
+
+	if !match {
+		return echo.NewHTTPError(http.StatusUnauthorized, "Invalid authentication credentials")
+	}
+
+	v := validator.New()
+
+	if data.ValidPlainText(v, &input.OldPassword); !v.Valid() {
+		return echo.NewHTTPError(http.StatusUnprocessableEntity, v.Errors)
+	}
+
+	err = user.Password.Set(input.NewPassword)
+	if err != nil {
+		return err
+	}
+
+	err = app.models.Users.Update(user)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrEditConflict):
+			return echo.NewHTTPError(http.StatusConflict, data.ErrEditConflict.Error())
+		default:
+			return err
+		}
+	}
+
+	return c.JSON(http.StatusCreated, envelope{"message": "Password updated successfully"})
+}

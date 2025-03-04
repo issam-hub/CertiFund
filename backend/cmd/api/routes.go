@@ -18,6 +18,7 @@ func (app *application) routes(e *echo.Echo) {
 	publicGroup.GET("/projects/discover/:id", app.getProjectHandler)
 	authGroup.PATCH("/projects/:id", app.updateProjectHandler, app.RequirePermission("projects:update"))
 	authGroup.DELETE("/projects/:id", app.deleteProjectHandler)
+	authGroup.GET("/projects/me", app.getProjectsByCreatorHandler)
 
 	// image upload
 	authGroup.POST("/projects/image/upload", app.fileUploadHandler)
@@ -32,5 +33,7 @@ func (app *application) routes(e *echo.Echo) {
 	publicGroup.POST("/users/login", app.loginUserHandler)
 	authGroup.POST("/users/logout/:id", app.logoutUserHandler)
 	authGroup.GET("/users/me", app.whoAmIHandler)
+	authGroup.PATCH("/users/update", app.updateProfileHandler, app.RequirePermission("users:update"))
+	authGroup.PATCH("/users/passwordChange", app.changePasswordHandler)
 
 }

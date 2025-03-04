@@ -28,8 +28,8 @@ export default function ProfileHeader() {
             <DropdownMenu>
                 <DropdownMenuTrigger className="rounded-full">
                     {
-                        user?.imageUrl ? (
-                            <Image src={user?.imageUrl} alt="profile" height={28} width={28} />
+                        user?.image_url ? (
+                            <Image src={user?.image_url} alt="profile" height={36} width={36} className="rounded-full" />
                         ):(
                             <CircleUserRound className="h-9 w-9 text-mainColor" />
                         )
@@ -38,7 +38,13 @@ export default function ProfileHeader() {
                 <DropdownMenuContent className="mr-10">
                     <DropdownMenuLabel>
                         <div className="flex items-center gap-2">
-                            <CircleUserRound className="h-9 w-9 text-mainColor" />
+                            {
+                                user?.image_url ? (
+                                    <Image src={user?.image_url} alt="profile" height={36} width={36} className="rounded-full" />
+                                ):(
+                                    <CircleUserRound className="h-9 w-9 text-mainColor" />
+                                )
+                            }
                             <div className="flex flex-col">
                                 <span className="text-base">{user?.username}</span>
                                 <span className="text-slate-500 text-xs">{user?.email}</span>
@@ -46,21 +52,25 @@ export default function ProfileHeader() {
                         </div>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem className="cursor-pointer px-0 py-0">
+                    <DropdownMenuItem className="px-0 py-0">
                         <Link href={"/projects/new"} className="px-2 py-1.5 flex gap-2 items-center w-full">
                             <WandSparkles style={{height:"18px", width:"18px"}} className="text-slate-500"/>
                             Create project
                         </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem className="cursor-pointer">
-                        <UserRoundPen style={{height:"18px", width:"18px"}} className="text-slate-500" />
-                        Profile
+                    <DropdownMenuItem className="px-0 py-0">
+                        <Link href={`/settings/profile`} className="px-2 py-1.5 flex gap-2 items-center w-full">
+                            <UserRoundPen style={{height:"18px", width:"18px"}} className="text-slate-500" />
+                            Profile
+                        </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem className="cursor-pointer">
-                        <Settings style={{height:"18px", width:"18px"}} className="text-slate-500" />
-                        Settings
+                    <DropdownMenuItem className="cursor-pointer px-0 py-0">
+                        <Link href={`/settings`} className="px-2 py-1.5 flex gap-2 items-center w-full">
+                            <Settings style={{height:"18px", width:"18px"}} className="text-slate-500" />
+                            Settings
+                        </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem className="cursor-pointer" onClick={async()=>{

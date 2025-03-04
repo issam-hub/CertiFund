@@ -20,6 +20,7 @@ export const config = {
   matcher: [
     "/projects/:path",
     "/login",
-    "/singup"
+    "/singup",
+    "/settings/profile/:path*"
   ],
 }

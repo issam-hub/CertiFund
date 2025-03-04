@@ -36,7 +36,7 @@ INSERT INTO role_permission (role_id, permission_id) VALUES (1, 1), (1, 2), (1, 
 
 INSERT INTO role_permission (role_id, permission_id) VALUES (2, 2), (2, 4), (2, 5), (2, 3), (2, 6), (2, 7);
 
-INSERT INTO role_permission (role_id, permission_id) VALUES (3, 1), (3, 2), (3, 3), (3, 4), (3, 6), (3, 11);
+INSERT INTO role_permission (role_id, permission_id) VALUES (3, 1), (3, 2), (3, 3), (3, 4), (3, 6), (3, 7), (3, 8), (3, 11);
 
 ALTER TABLE user_t ADD COLUMN role_id bigint REFERENCES role_t;
 

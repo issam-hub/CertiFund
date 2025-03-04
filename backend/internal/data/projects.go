@@ -207,3 +207,55 @@ func (m ProjectModel) ProjectOwnership(projectID, creatorID int) (bool, error) {
 
 	return isProjectOwner, nil
 }
+
+func (m ProjectModel) GetAllByCreator(creatorID int) ([]*Project, error) {
+	query := `
+		SELECT project_id, title, description, categories, funding_goal, current_funding, deadline, status, project_img, campaign, created_at, version, creator_id
+		FROM project WHERE creator_id = $1
+	`
+
+	projects := []*Project{}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	rows, err := m.DB.QueryContext(ctx, query, creatorID)
+	if err != nil {
+		return nil, err
+	}
+
+	for rows.Next() {
+		project := &Project{}
+		var projectImgVar sql.NullString
+		var campaignVar sql.NullString
+
+		err := rows.Scan(
+			&project.ID,
+			&project.Title,
+			&project.Description,
+			&project.Categories,
+			&project.FundingGoal,
+			&project.CurrentFunding,
+			&project.Deadline,
+			&project.Status,
+			&projectImgVar,
+			&campaignVar,
+			&project.CreatedAt,
+			&project.Version,
+			&project.CreatorID,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		project.ProjectImg = projectImgVar.String
+		project.Campaign = campaignVar.String
+
+		projects = append(projects, project)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return projects, nil
+}

@@ -201,3 +201,28 @@ func (app *application) deleteProjectHandler(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, envelope{"message": "Project deleted successfully"})
 }
+
+func (app *application) getProjectsByCreatorHandler(c echo.Context) error {
+	user := c.Get("user").(*data.User)
+
+	_, err := app.models.Users.GetByID(user.ID)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrNoRecordFound):
+			return echo.NewHTTPError(http.StatusNotFound, "User not found")
+		default:
+			return err
+		}
+	}
+
+	projects, err := app.models.Projects.GetAllByCreator(user.ID)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(http.StatusOK, envelope{
+		"message":  "projects returned successfully",
+		"projects": projects,
+	})
+
+}

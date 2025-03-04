@@ -19,5 +19,9 @@ export type User = {
   email: string;
   username: string;
   role: string;
-  imageUrl:string;
+  image_url:string;
+  created_at:string;
+  bio:string;
+  website:string;
+  twitter:string;
 };

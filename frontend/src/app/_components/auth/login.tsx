@@ -8,7 +8,7 @@ import * as z from "zod"
 import { ArrowRight, Eye, EyeOff, Github, Loader2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { formSchema, FormSchema, loginFormSchema, LoginFormSchema } from "@/app/_lib/schemas/auth"
