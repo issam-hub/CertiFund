@@ -5,6 +5,7 @@ import { PasswordChangeSchema, ProfileSchema } from "@/app/_lib/schemas/auth";
 import { authFetch } from "@/app/_lib/utils/auth";
 import { revalidateTag } from "next/cache";
 import { cookies } from "next/headers";
+import { notFound } from "next/navigation";
 
 export async function updateProfile(data: Partial<ProfileSchema>&{image_url?:string}){
     const res = await authFetch(`${apiUrl}/users/update`,{
@@ -83,4 +84,23 @@ export async function deleteAccount(){
     }catch(error: any){
         return {status:false, error: error.message}
     }
+}
+
+export async function getUser(id: string) {
+    const res = await fetch(`${apiUrl}/users/discover/${id}`, {cache:"no-store", next:{tags:["user"]}})
+
+    if(!res.ok){
+        const result = await res.json()
+        if(typeof result.error === "object"){
+            return {status:false, error:Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
+        }else if(result.error === "User not found"){
+            notFound()
+        }else{
+            return {status:false, ...result}
+        }
+    }
+
+    
+    const result = await res.json()
+    return {status:true, ...result}
 }

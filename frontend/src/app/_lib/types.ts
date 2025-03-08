@@ -25,3 +25,11 @@ export type User = {
   website:string;
   twitter:string;
 };
+
+export interface ProjectsFilters {
+  page?:string
+  search?:string
+  categories?: string[]
+  limit?:string
+  sort?:string
+}

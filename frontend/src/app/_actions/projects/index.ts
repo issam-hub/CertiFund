@@ -150,3 +150,22 @@ export async function getProjectByCurrUser() {
     const result = await res.json()
     return {status:true, ...result}
 }
+
+
+export async function getProjects(page?:string, search?:string, categories?: string[], limit?:string, sort?:string){
+    let formatCategories = categories?.length === 0 ? "" : categories?.length === 1 ? (categories[0]) : categories?.reduce((acc,curr)=> acc+`,`+curr)
+    formatCategories = formatCategories?.replaceAll(" ", "+").replaceAll("&", "%26")
+    const res = await authFetch(`${apiUrl}/projects?title=${search}&categories=${formatCategories}&sort=${sort}&page=${page}&page_size=${limit}`, {cache:"no-store", next:{tags:["projects"]}})
+
+    if(!res.ok){
+        const result = await res.json()
+        if(typeof result.error === "object"){
+            return {status:false, error:Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
+        }
+        return {status:false, ...result}
+    }
+
+    
+    const result = await res.json()
+    return {status:true, ...result}
+}

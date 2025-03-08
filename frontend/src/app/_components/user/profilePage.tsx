@@ -12,6 +12,7 @@ import { userAtom } from "@/app/_store/auth"
 import { UpdateProjectSchema } from "@/app/_lib/schemas/project"
 import { formatTwitterHandle, formatWebsiteUrl, getTwitterUrl } from "@/app/_lib/utils"
 import LoadingProfilePage from "./loadingProfile"
+import { BLUR_IMAGE_URL } from "@/app/_lib/constants"
 
 export default function ProfilePage({projects}:{projects: UpdateProjectSchema[]}) {
     const user = useAtomValue(userAtom)
@@ -138,7 +139,6 @@ export default function ProfilePage({projects}:{projects: UpdateProjectSchema[]}
 }
 
 function ProjectCard({ project } :{project:UpdateProjectSchema}) {
-  const blurDataURL = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQH/2wBDAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQH/wAARCAAKAAoDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD+Nv4N/DX4S+IPg18L9Q1r4T/C/UtS1H4c+Gb+/wBQ1DwD4QvL3UL65sIJLi8vLu40eSe6vJ5maW4uJ5ZJ55naWV3kYsfpQfsb/sq/9G2/A3/w3vhn/wCVlFFeRVx2YRqTjHGYlRi2oq+IqWSbsld1LLRaK9l0R0QwtBxTdGm5NJttU4Xbejbe19dbvq2f/9k="
   const currentFund = ((project.current_funding * 100) / project.funding_goal).toFixed(2)
   let statusColor;
   switch(project.status){
@@ -165,7 +165,7 @@ function ProjectCard({ project } :{project:UpdateProjectSchema}) {
           src={project.project_img || "/placeholder.svg"} 
           alt={project.title}
           placeholder="blur"
-          blurDataURL={blurDataURL}
+          blurDataURL={BLUR_IMAGE_URL}
           fill
           className="object-cover"
         />
