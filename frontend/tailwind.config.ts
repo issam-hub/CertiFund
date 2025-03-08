@@ -50,19 +50,41 @@ export default {
   				'4': 'hsl(var(--chart-4))',
   				'5': 'hsl(var(--chart-5))'
   			},
-			mainColor: "#1F2937",
-			secondaryColor: "#1E3A8A",
-			accentColor: "#3B82F6",
-			lightAccentColor: "#93C5FD",
+  			mainColor: '#1F2937',
+  			secondaryColor: '#1E3A8A',
+  			accentColor: '#3B82F6',
+  			lightAccentColor: '#93C5FD'
   		},
   		borderRadius: {
   			lg: 'var(--radius)',
   			md: 'calc(var(--radius) - 2px)',
   			sm: 'calc(var(--radius) - 4px)'
   		},
-		transitionProperty:{
-			'width':'width'
-		}
+  		transitionProperty: {
+  			width: 'width'
+  		},
+  		keyframes: {
+  			'accordion-down': {
+  				from: {
+  					height: '0'
+  				},
+  				to: {
+  					height: 'var(--radix-accordion-content-height)'
+  				}
+  			},
+  			'accordion-up': {
+  				from: {
+  					height: 'var(--radix-accordion-content-height)'
+  				},
+  				to: {
+  					height: '0'
+  				}
+  			}
+  		},
+  		animation: {
+  			'accordion-down': 'accordion-down 0.2s ease-out',
+  			'accordion-up': 'accordion-up 0.2s ease-out'
+  		}
   	}
   },
   plugins: [require("tailwindcss-animate")],

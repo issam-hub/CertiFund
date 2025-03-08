@@ -257,43 +257,47 @@ export default function ProjectOverview({ data }: ProjectOverviewProps) {
         }
       </div>
 
-      <div>
-        <h2 className="text-2xl mb-4 text-slate-600">Rules</h2>
-        <TimelineStep 
-          stepId="rules" 
-          title="Project Rules" 
-          stepNumber="1"
-          isCompleted={isStepCompleted("rules")}
-          onStepClick={() => setExpandedStep(expandedStep === "rules" ? "" : "rules")}
-        >
-          {expandedStep === "rules" && (
-            <div className="space-y-4">
-              {projectRules.map((rule, index) => (
-                <div key={index} className="flex items-start gap-3">
-                  <div className="mt-1">
-                    <Check className="h-4 w-4 text-primary" />
+      {
+        data.status === "Draft" && (
+          <div>
+          <h2 className="text-2xl mb-4 text-slate-600">Rules</h2>
+          <TimelineStep 
+            stepId="rules" 
+            title="Project Rules" 
+            stepNumber="1"
+            isCompleted={isStepCompleted("rules")}
+            onStepClick={() => setExpandedStep(expandedStep === "rules" ? "" : "rules")}
+          >
+            {expandedStep === "rules" && (
+              <div className="space-y-4">
+                {projectRules.map((rule, index) => (
+                  <div key={index} className="flex items-start gap-3">
+                    <div className="mt-1">
+                      <Check className="h-4 w-4 text-primary" />
+                    </div>
+                    <p>{rule}</p>
                   </div>
-                  <p>{rule}</p>
+                ))}
+                <div>
+                  <Button
+                    className="w-full mt-4 bg-secondaryColor hover:bg-secondaryColor"
+                    onClick={handleAgreeToRules}
+                  >
+                    I Agree to These Rules
+                  </Button>
+                  <Link
+                    href={"#"}
+                    className="text-sm text-muted-foreground underline block text-center mt-2"
+                  >
+                    For more details check our rules
+                  </Link>
                 </div>
-              ))}
-              <div>
-                <Button
-                  className="w-full mt-4 bg-secondaryColor hover:bg-secondaryColor"
-                  onClick={handleAgreeToRules}
-                >
-                  I Agree to These Rules
-                </Button>
-                <Link
-                  href={"#"}
-                  className="text-sm text-muted-foreground underline block text-center mt-2"
-                >
-                  For more details check our rules
-                </Link>
               </div>
-            </div>
-          )}
-        </TimelineStep>
-      </div>
+            )}
+          </TimelineStep>
+        </div>
+        )
+      }
 
       <div>
         <h2 className="text-2xl mb-4 text-slate-600">Project Details</h2>
