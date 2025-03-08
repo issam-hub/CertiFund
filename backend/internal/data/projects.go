@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"projectx/internal/validator"
 	"strings"
 	"time"
@@ -55,8 +56,81 @@ func ValidateProject(v *validator.Validator, project *Project) {
 	}
 }
 
-func (m ProjectModel) GetAll() ([]*Project, error) {
-	return nil, nil
+func ValidateCategories(v *validator.Validator, categories []string) {
+	categoriesList := []string{"technology", "art", "music", "games", "film & video", "publishing & writing", "design", "food & craft", "social good", "miscellaneous"}
+	v.Check(validator.Unique(categories), "categories", "Categories must contain unique items")
+	for _, category := range categoriesList {
+		v.Check(validator.In(category, categories...), "categories", "Invalid category")
+	}
+}
+
+func ValidateTitle(v *validator.Validator, title string) {
+	v.Check(len(title) <= 100, "title", "Title should be less than or equal to 100 character")
+}
+
+func (m ProjectModel) GetAll(title string, categories []string, filters Filter) ([]*Project, MetaData, error) {
+	offset := (filters.Page - 1) * filters.PageSize
+
+	query := fmt.Sprintf(`
+	SELECT COUNT(*) OVER(), project_id, title, description, categories, funding_goal, current_funding, deadline, status, project_img, campaign, created_at, version, creator_id
+	FROM project
+	WHERE (to_tsvector('simple', title) @@ plainto_tsquery('simple', $1) OR $1='') 
+	AND (categories && $2 OR $2 = '{}')
+	AND status = 'Live'
+	ORDER BY %s %s, project_id ASC
+	LIMIT $3 OFFSET $4
+	`, filters.sortColumn(), filters.sortDirection())
+
+	projects := []*Project{}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	args := []interface{}{title, pq.Array(categories), filters.PageSize, offset}
+
+	rows, err := m.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, MetaData{}, err
+	}
+
+	totalRecords := 0
+	for rows.Next() {
+		project := &Project{}
+		var projectImgVar sql.NullString
+		var campaignVar sql.NullString
+
+		err := rows.Scan(
+			&totalRecords,
+			&project.ID,
+			&project.Title,
+			&project.Description,
+			&project.Categories,
+			&project.FundingGoal,
+			&project.CurrentFunding,
+			&project.Deadline,
+			&project.Status,
+			&projectImgVar,
+			&campaignVar,
+			&project.CreatedAt,
+			&project.Version,
+			&project.CreatorID,
+		)
+		if err != nil {
+			return nil, MetaData{}, err
+		}
+
+		project.ProjectImg = projectImgVar.String
+		project.Campaign = campaignVar.String
+
+		projects = append(projects, project)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, MetaData{}, err
+	}
+
+	metaData := calculateMetadata(totalRecords, filters.Page, filters.PageSize)
+
+	return projects, metaData, nil
 }
 
 func (m ProjectModel) Insert(project *Project) error {

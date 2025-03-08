@@ -64,6 +64,38 @@ func (app *application) createProjectHandler(c echo.Context) error {
 	})
 }
 
+func (app *application) getProjectsHandler(c echo.Context) error {
+	var input struct {
+		Title      string
+		Categories []string
+		data.Filter
+	}
+
+	v := validator.New()
+
+	input.Title = c.QueryParam("title")
+	input.Categories = app.readCSV(c.QueryParams(), "categories", []string{})
+	input.Page = app.readInt(c.QueryParams(), "page", 1, v)
+	input.PageSize = app.readInt(c.QueryParams(), "page_size", 5, v)
+	input.Sort = app.readString(c.QueryParams(), "sort", "project_id")
+	input.SortSafeList = []string{"project_id", "title", "deadline", "funding_goal", "created_at", "-project_id", "-title", "-deadline", "-funding_goal", "-created_at"}
+
+	if data.ValidateFilters(v, &input.Filter); !v.Valid() {
+		return echo.NewHTTPError(http.StatusUnprocessableEntity, v.Errors)
+	}
+
+	projects, metaData, err := app.models.Projects.GetAll(input.Title, input.Categories, input.Filter)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(http.StatusOK, envelope{
+		"message":  "Projects returned successfully",
+		"metadata": metaData,
+		"projects": projects,
+	})
+}
+
 func (app *application) getProjectHandler(c echo.Context) error {
 	id, err := app.readIDParam(c)
 	if err != nil {
