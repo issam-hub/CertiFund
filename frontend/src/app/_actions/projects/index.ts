@@ -152,7 +152,8 @@ export async function getProjectByCurrUser() {
 }
 
 
-export async function getProjects(page?:string, search?:string, categories?: string[], limit?:string, sort?:string){
+export async function getProjects(page?:number, search?:string, categories?: string[], limit?:string, sort?:string){
+    sort = sort === "most_funded" ? "-(current_funding*100)/funding_goal" : sort
     let formatCategories = categories?.length === 0 ? "" : categories?.length === 1 ? (categories[0]) : categories?.reduce((acc,curr)=> acc+`,`+curr)
     formatCategories = formatCategories?.replaceAll(" ", "+").replaceAll("&", "%26")
     const res = await authFetch(`${apiUrl}/projects?title=${search}&categories=${formatCategories}&sort=${sort}&page=${page}&page_size=${limit}`, {cache:"no-store", next:{tags:["projects"]}})

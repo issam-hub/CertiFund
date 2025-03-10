@@ -78,7 +78,7 @@ func (app *application) getProjectsHandler(c echo.Context) error {
 	input.Page = app.readInt(c.QueryParams(), "page", 1, v)
 	input.PageSize = app.readInt(c.QueryParams(), "page_size", 5, v)
 	input.Sort = app.readString(c.QueryParams(), "sort", "project_id")
-	input.SortSafeList = []string{"project_id", "title", "deadline", "funding_goal", "created_at", "-project_id", "-title", "-deadline", "-funding_goal", "-created_at"}
+	input.SortSafeList = []string{"project_id", "title", "deadline", "funding_goal", "created_at", "-project_id", "-title", "-deadline", "-funding_goal", "-created_at", "-(current_funding*100)/funding_goal"}
 
 	if data.ValidateFilters(v, &input.Filter); !v.Valid() {
 		return echo.NewHTTPError(http.StatusUnprocessableEntity, v.Errors)

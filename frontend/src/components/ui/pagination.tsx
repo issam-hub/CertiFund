@@ -2,8 +2,8 @@ import * as React from "react"
 import Link from "next/link"
 import { ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react"
 
-import { type ButtonProps, buttonVariants } from "@/components/ui/button"
 import { cn } from "@/app/_lib/utils"
+import { type ButtonProps, buttonVariants } from "@/components/ui/button"
 
 const Pagination = ({ className, ...props }: React.ComponentProps<"nav">) => (
   <nav
@@ -40,8 +40,7 @@ const PaginationLink = ({ className, isActive, size = "icon", ...props }: Pagina
         variant: isActive ? "outline" : "ghost",
         size,
       }),
-      isActive && "bg-accent text-secondary border-accent hover:bg-accent/90 hover:text-secondary",
-      "h-9 w-9",
+      isActive && "bg-accent text-secondary-foreground border-accent hover:bg-accent/90 hover:text-secondary-foreground",
       className,
     )}
     {...props}
@@ -49,11 +48,28 @@ const PaginationLink = ({ className, isActive, size = "icon", ...props }: Pagina
 )
 PaginationLink.displayName = "PaginationLink"
 
+const PaginationNumber = ({ className, isActive, ...props }: PaginationLinkProps) => (
+  <PaginationLink
+    aria-current={isActive ? "page" : undefined}
+    className={cn(
+      buttonVariants({
+        variant: isActive ? "outline" : "ghost",
+        size: "icon",
+      }),
+      isActive && "bg-accent text-secondary-foreground border-accent hover:bg-accent/90 hover:text-secondary-foreground",
+      "h-9 w-9",
+      className,
+    )}
+    {...props}
+  />
+)
+PaginationNumber.displayName = "PaginationNumber"
+
 const PaginationPrevious = ({ className, ...props }: React.ComponentProps<typeof PaginationLink>) => (
   <PaginationLink
     aria-label="Go to previous page"
     size="default"
-    className={cn("gap-1 pl-2.5 pr-3.5", className)}
+    className={cn("gap-1 px-2", className)}
     {...props}
   >
     <ChevronLeft className="h-4 w-4" />
@@ -66,7 +82,7 @@ const PaginationNext = ({ className, ...props }: React.ComponentProps<typeof Pag
   <PaginationLink
     aria-label="Go to next page"
     size="default"
-    className={cn("gap-1 pl-2.5 pr-3.5", className)}
+    className={cn("gap-1 px-2", className)}
     {...props}
   >
     <span>Next</span>
@@ -89,7 +105,7 @@ export {
   PaginationEllipsis,
   PaginationItem,
   PaginationLink,
+  PaginationNumber,
   PaginationNext,
   PaginationPrevious,
 }
-

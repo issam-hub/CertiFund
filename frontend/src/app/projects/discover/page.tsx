@@ -11,8 +11,8 @@ export default async function SearchPage({
 }) {
     const search = await searchParams
   const query = typeof search.q === "string" ? search.q : ""
-  const category = typeof search.category === "string" ? search.category : ""
-  const sort = typeof search.sort === "string" ? search.sort : "newest"
+  const categories = typeof search.categories === "string" ? search.categories : ""
+  const sort = typeof search.sort === "string" ? search.sort : "-created_at"
   const page = typeof search.page === "string" ? Number.parseInt(search.page) : 1
 
   return (
@@ -26,7 +26,7 @@ export default async function SearchPage({
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 mt-8">
         <div className="lg:col-span-1">
-          <SearchFilters selectedCategory={category} sort={sort} />
+          <SearchFilters selectedCategory={categories} sort={sort} />
         </div>
 
         <div className="lg:col-span-3">
@@ -38,7 +38,7 @@ export default async function SearchPage({
               </div>
             }
           >
-            <SearchResults query={query} category={category} sort={sort} page={page} />
+            <SearchResults query={query} category={categories} sort={sort} page={page} />
           </Suspense>
         </div>
       </div>
