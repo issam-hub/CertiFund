@@ -18,29 +18,33 @@ import { Badge } from "@/components/ui/badge"
 
 // Categories for the crowdfunding platform
 const categories = [
-  { id: "tech", name: "Technology" },
+  { id: "technology", name: "Technology" },
   { id: "design", name: "Design" },
   { id: "art", name: "Art" },
-  { id: "film", name: "Film & Video" },
+  { id: "film-video", name: "Film & Video" },
   { id: "music", name: "Music" },
   { id: "games", name: "Games" },
-  { id: "publishing", name: "Publishing" },
-  { id: "food", name: "Food" },
-  { id: "fashion", name: "Fashion" },
-  { id: "science", name: "Science" },
+  { id: "publishing-writing", name: "Publishing & Writing" },
+  { id: "food-craft", name: "Food & Craft" },
+  { id: "socialGood", name: "Social Good" },
+  { id: "miscellaneous", name: "Miscellaneous" },
 ]
 
 // Sorting options
 const sortOptions = [
-  { value: "newest", label: "Newest" },
-  { value: "most-funded", label: "Most Funded" },
-  { value: "ending-soon", label: "Ending Soon" },
+  { value: "-created_at", label: "Newest" },
+  { value: "most_funded", label: "Most Funded" },
+  { value: "deadline", label: "Ending Soon" },
+  { value: "-funding_goal", label: "Highest Goal" },
+  { value: "funding_goal", label: "Lowest Goal" },
+  { value: "title", label: "A-Z" },
+  { value: "-title", label: "Z-A" },
 ]
 
 export function SearchFilters({
   selectedCategory = "",
   validatedOnly = false,
-  sort = "newest",
+  sort = "-created_at",
 }: {
   selectedCategory?: string
   validatedOnly?: boolean
@@ -58,20 +62,20 @@ export function SearchFilters({
 
     // Handle categories
     if (selectedCategories.length > 0) {
-      params.set("category", selectedCategories.join(","))
+      params.set("categories", selectedCategories.join(","))
     } else {
-      params.delete("category")
+      params.delete("categories")
     }
 
-    // Handle validation filter
-    if (isValidatedOnly) {
-      params.set("validated", "true")
-    } else {
-      params.delete("validated")
-    }
+    // // Handle validation filter
+    // if (isValidatedOnly) {
+    //   params.set("validated", "true")
+    // } else {
+    //   params.delete("validated")
+    // }
 
     // Handle sort
-    if (selectedSort !== "newest") {
+    if (selectedSort !== "-created_at") {
       params.set("sort", selectedSort)
     } else {
       params.delete("sort")
@@ -103,7 +107,7 @@ export function SearchFilters({
   const clearFilters = () => {
     setSelectedCategories([])
     setIsValidatedOnly(false)
-    setSelectedSort("newest")
+    setSelectedSort("-created_at")
   }
 
   return (

@@ -90,12 +90,13 @@ func ValidateProfileUpdate(v *validator.Validator, user *User) {
 	v.Check(user.Username != "", "username", "Username must be provided")
 	v.Check(validator.MaxChars(user.Username, 50), "username", "Username cannot be more than 50 characters")
 
-	// email validation
 	ValidateEmail(v, user.Email)
 
 	v.Check(validator.MaxChars(user.Bio, 500), "bio", "Bio cannot be more than 500 characters")
 
-	v.Check(validator.Matches(user.Website, validator.UrlRX), "website", "Website is invalid")
+	if user.Website != "" {
+		v.Check(validator.Matches(user.Website, validator.UrlRX), "website", "Website is invalid")
+	}
 	v.Check(validator.MaxChars(user.Twitter, 50), "twitter", "Twitter handle cannot be more than 50 characters")
 }
 

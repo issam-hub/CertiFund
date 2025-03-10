@@ -8,14 +8,14 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { ArrowLeft, Upload, X } from "lucide-react"
 import Link from "next/link"
-import { useAtomValue } from "jotai"
+import { useAtom, useAtomValue } from "jotai"
 import { userAtom } from "@/app/_store/auth"
 import { profileSchema, ProfileSchema } from "@/app/_lib/schemas/auth"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useToast } from "@/hooks/use-toast"
 import { updateProfile } from "@/app/_actions/user"
 import { uploadImage } from "@/app/_actions/projects"
@@ -27,91 +27,115 @@ const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/gif"]
 
 export default function EditProfilePage() {
   const router = useRouter()
-    const user = useAtomValue(userAtom)
-    const [previewImage, setPreviewImage] = useState<string | null>(null)
-    const {toast} = useToast()
+  const [user, setUser] = useAtom(userAtom);
+  const [previewImage, setPreviewImage] = useState<string | null>(null)
+  const {toast} = useToast()
+  const [formInitialized, setFormInitialized] = useState(false)
+  
+  // Initialize the form with default values
+  const form = useForm<ProfileSchema>({
+    resolver: zodResolver(profileSchema),
+    defaultValues: {
+      username: user?.username || "",
+      email: user?.email || "",
+      bio: user?.bio || "",
+      website: user?.website || "",
+      twitter: user?.twitter || "",
+    },
+    mode: "onChange",
+  });
 
-      const form = useForm<ProfileSchema>({
-        resolver: zodResolver(profileSchema),
-        defaultValues: {
-          username: user?.username,
-          email:user?.email,
-          bio: user?.bio,
-          website: user?.website,
-          twitter:user?.twitter
-        },
-        mode: "onChange",
+  // Update form values when user data becomes available
+  useEffect(() => {
+    if (user && !formInitialized) {
+      form.reset({
+        username: user.username,
+        email: user.email,
+        bio: user.bio || "",
+        website: user.website || "",
+        twitter: user.twitter || "",
+      });
+      setFormInitialized(true);
+    }
+  }, [user, form, formInitialized]);
+
+  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    if (file.size > MAX_FILE_SIZE) {
+      toast({
+        title: "Error",
+        description: "Image size must be less than 2MB",
+        variant: "destructive",
       })
-
-      const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0]
-        if (!file) return
-    
-        if (file.size > MAX_FILE_SIZE) {
-          toast({
-            title: "Error",
-            description: "Image size must be less than 5MB",
-            variant: "destructive",
-          })
-          return
-        }
-    
-        if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
-          toast({
-            title: "Error",
-            description: "Please upload a valid image file (JPEG, PNG, or GIF)",
-            variant: "destructive",
-          })
-          return
-        }
-    
-        const reader = new FileReader()
-        reader.onloadend = () => {
-          setPreviewImage(reader.result as string)
-        }
-        reader.readAsDataURL(file)
-      }
-
-    const clearImagePreview = () => {
-        setPreviewImage(null)
-        const fileInput = document.getElementById("profile-image") as HTMLInputElement
-        if (fileInput) fileInput.value = ""
+      return
     }
 
-    async function onSubmit(data: ProfileSchema) {
-      let toBeSent: Partial<ProfileSchema>&{image_url?:string} = data
-      const fileInput = document.getElementById("profile-image") as HTMLInputElement
-      if (fileInput?.files?.[0] && !user?.image_url) {
-        const result = await uploadImage(fileInput.files[0])
-        if(!result.status){
-          toast({
-            title: TOAST_ERROR_TITLE,
-            description: result.error,
-            variant: "destructive",
-          });
-        }
-        if(result.url){
-          toBeSent['image_url'] = result.url
-        }
-      }
-      // Call the server action
-      const result = await updateProfile(toBeSent)
+    if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
+      toast({
+        title: "Error",
+        description: "Please upload a valid image file (JPEG, PNG, or GIF)",
+        variant: "destructive",
+      })
+      return
+    }
 
-      if (!result.status) {
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      setPreviewImage(reader.result as string)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const clearImagePreview = () => {
+    setPreviewImage(null)
+    const fileInput = document.getElementById("profile-image") as HTMLInputElement
+    if (fileInput) fileInput.value = ""
+  }
+
+  async function onSubmit(data: ProfileSchema) {
+    let toBeSent: Partial<ProfileSchema>&{image_url?:string} = data
+    const fileInput = document.getElementById("profile-image") as HTMLInputElement
+    if (fileInput?.files?.[0] && !user?.image_url) {
+      const result = await uploadImage(fileInput.files[0])
+      if(!result.status){
         toast({
           title: TOAST_ERROR_TITLE,
           description: result.error,
           variant: "destructive",
-        })
-        return
+        });
       }
+      if(result.url){
+        toBeSent['image_url'] = result.url
+      }
+    }
+    // Call the server action
+    const result = await updateProfile(toBeSent)
 
+    if (!result.status) {
       toast({
-        title: TOAST_SUCCESS_TITLE,
-        description: "Your profile has been updated successfully",
+        title: TOAST_ERROR_TITLE,
+        description: result.error,
+        variant: "destructive",
       })
+      return
     }
 
+    setUser(result["user"])
+
+    router.push("/settings/profile")
+
+    toast({
+      title: TOAST_SUCCESS_TITLE,
+      description: "Your profile has been updated successfully",
+    })
+  }
+  
+  if(!user) {
+    return <div>Loading...</div>;
+  }
+  
   return (
     <div className="min-h-[calc(100vh-90px)] bg-gray-50">
       {/* Header */}
@@ -143,9 +167,12 @@ export default function EditProfilePage() {
               <div className="flex items-center gap-6">
                 <div className="relative">
                   <Avatar className="h-24 w-24 border-4 border-accentColor">
-                    <AvatarImage src={previewImage || "/placeholder.svg?height=128&width=128"} alt="Profile preview" />
+                    <AvatarImage 
+                      src={previewImage || user.image_url || "/placeholder.svg?height=128&width=128"} 
+                      alt="Profile preview" 
+                    />
                     <AvatarFallback className="bg-secondaryColor text-white text-xl">
-                        {user?.username[0].toUpperCase()}
+                        {user?.username?.[0]?.toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                   {previewImage && (
@@ -251,7 +278,7 @@ export default function EditProfilePage() {
                   <FormItem>
                     <div className="flex justify-between items-center mb-3">
                         <FormLabel className="font-semibold">Bio:</FormLabel>
-                        <span className="text-xs text-gray-500">{form.watch("bio").length}/500 characters</span>
+                        <span className="text-xs text-gray-500">{form.getValues("bio") ? form.watch("bio").length : 0}/500 characters</span>
                     </div>
                     <FormControl>
                       <Textarea rows={5} placeholder="Tell others about yourself" {...field} />
