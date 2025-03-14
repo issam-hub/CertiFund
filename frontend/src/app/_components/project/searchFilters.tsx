@@ -32,7 +32,7 @@ const categories = [
 
 // Sorting options
 const sortOptions = [
-  { value: "-created_at", label: "Newest" },
+  { value: "-updated_at", label: "Newest" },
   { value: "most_funded", label: "Most Funded" },
   { value: "deadline", label: "Ending Soon" },
   { value: "-funding_goal", label: "Highest Goal" },

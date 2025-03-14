@@ -20,6 +20,7 @@ type User struct {
 	Role      string   `json:"role"`
 	ImageUrl  string   `json:"image_url"`
 	CreatedAt string   `json:"created_at"`
+	UpdatedAt string   `json:"updated_at"`
 	Version   int      `json:"-"`
 	Bio       string   `json:"bio"`
 	Website   string   `json:"website"`
@@ -108,7 +109,7 @@ func (m UserModel) Insert(user *User) error {
 	query := `
 	INSERT INTO user_t (username, email, password_hash, activated, bio, role_id)
 	VALUES ($1, $2, $3, $4, $5, $6)
-	RETURNING user_id, created_at, version`
+	RETURNING user_id, created_at, updated_at, version`
 
 	roleID, err := m.GetRoleIdByName(user.Role)
 	if err != nil {
@@ -124,7 +125,7 @@ func (m UserModel) Insert(user *User) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	err = m.DB.QueryRowContext(ctx, query, args...).Scan(&user.ID, &user.CreatedAt, &user.Version)
+	err = m.DB.QueryRowContext(ctx, query, args...).Scan(&user.ID, &user.CreatedAt, &user.UpdatedAt, &user.Version)
 	if err != nil {
 		switch {
 		case err.Error() == `pq: duplicate key value violates unique constraint "user_t_email_key"`:
@@ -138,7 +139,7 @@ func (m UserModel) Insert(user *User) error {
 
 func (m UserModel) GetByEmail(email string) (*User, error) {
 	query := `SELECT 
-	user_id, username, email, password_hash, activated, image_url, created_at, version, bio, website, twitter, role_id
+	user_id, username, email, password_hash, activated, image_url, created_at, updated_at, version, bio, website, twitter, role_id
 	FROM user_t WHERE email = $1`
 
 	var user User
@@ -159,6 +160,7 @@ func (m UserModel) GetByEmail(email string) (*User, error) {
 		&user.Activated,
 		&ImgUrlVar,
 		&user.CreatedAt,
+		&user.UpdatedAt,
 		&user.Version,
 		&BioVar,
 		&WebsiteVar,
@@ -196,7 +198,7 @@ func (m UserModel) GetByEmail(email string) (*User, error) {
 
 func (m UserModel) GetByID(id int) (*User, error) {
 	query := `SELECT 
-	user_id, username, email, password_hash, activated, image_url, created_at, version, bio, website, twitter, role_id
+	user_id, username, email, password_hash, activated, image_url, created_at, updated_at, version, bio, website, twitter, role_id
 	FROM user_t WHERE user_id = $1`
 
 	var user User
@@ -217,6 +219,7 @@ func (m UserModel) GetByID(id int) (*User, error) {
 		&user.Activated,
 		&ImgUrlVar,
 		&user.CreatedAt,
+		&user.UpdatedAt,
 		&user.Version,
 		&BioVar,
 		&WebsiteVar,
@@ -256,7 +259,7 @@ func (m UserModel) Update(user *User) error {
 	query := `UPDATE user_t 
 	SET username = $1, email = $2, password_hash = $3, activated = $4, image_url = $5, version = version + 1, bio = $6, website = $7, twitter = $8, role_id = $9
 	WHERE user_id = $10 AND version = $11
-	RETURNING version`
+	RETURNING updated_at, version`
 
 	roleID, err := m.GetRoleIdByName(user.Role)
 	if err != nil {
@@ -285,7 +288,7 @@ func (m UserModel) Update(user *User) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	err = m.DB.QueryRowContext(ctx, query, args...).Scan(&user.Version)
+	err = m.DB.QueryRowContext(ctx, query, args...).Scan(&user.UpdatedAt, &user.Version)
 	if err != nil {
 		switch {
 		case err.Error() == `pq: duplicate key value violates unique constraint "users_email_key"`:
@@ -329,7 +332,7 @@ func (m UserModel) GetByToken(tokenScope, tokenPlaintext string) (*User, error) 
 	tokenHash := sha256.Sum256([]byte(tokenPlaintext))
 
 	query := `
-	SELECT user_t.user_id, user_t.created_at, user_t.username, user_t.email,
+	SELECT user_t.user_id, user_t.created_at, user_t.updated_at, user_t.username, user_t.email,
 	user_t.password_hash, user_t.image_url, user_t.activated, user_t.version, user_t.bio, user_t.website, user_t.twitter, user_t.role_id
 	FROM user_t
 	INNER JOIN tokens
@@ -353,6 +356,7 @@ func (m UserModel) GetByToken(tokenScope, tokenPlaintext string) (*User, error) 
 	err := m.DB.QueryRowContext(ctx, query, args...).Scan(
 		&user.ID,
 		&user.CreatedAt,
+		&user.UpdatedAt,
 		&user.Username,
 		&user.Email,
 		&user.Password.hash,
