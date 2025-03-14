@@ -24,6 +24,7 @@ type Project struct {
 	ProjectImg     string         `json:"project_img"`
 	Campaign       string         `json:"campaign"`
 	CreatedAt      time.Time      `json:"-"`
+	UpdatedAt      time.Time      `json:"-"`
 	Version        int32          `json:"version"`
 	CreatorID      int            `json:"creator_id"`
 }
@@ -72,7 +73,7 @@ func (m ProjectModel) GetAll(title string, categories []string, filters Filter) 
 	offset := (filters.Page - 1) * filters.PageSize
 
 	query := fmt.Sprintf(`
-	SELECT COUNT(*) OVER(), project_id, title, description, categories, funding_goal, current_funding, deadline, status, project_img, campaign, created_at, version, creator_id
+	SELECT COUNT(*) OVER(), project_id, title, description, categories, funding_goal, current_funding, deadline, status, project_img, campaign, created_at, updated_at, version, creator_id
 	FROM project
 	WHERE (to_tsvector('simple', title) @@ plainto_tsquery('simple', $1) OR $1='') 
 	AND (categories && $2 OR $2 = '{}')
@@ -112,6 +113,7 @@ func (m ProjectModel) GetAll(title string, categories []string, filters Filter) 
 			&projectImgVar,
 			&campaignVar,
 			&project.CreatedAt,
+			&project.UpdatedAt,
 			&project.Version,
 			&project.CreatorID,
 		)
@@ -138,7 +140,7 @@ func (m ProjectModel) Insert(project *Project) error {
 	INSERT INTO project 
 	(title, description, categories, funding_goal, deadline, creator_id)
 	VALUES ($1, $2, $3, $4, $5, $6)
-	RETURNING project_id, status, created_at, version
+	RETURNING project_id, status, created_at, updated_at, version
 	`
 	args := []interface{}{
 		project.Title,
@@ -152,7 +154,7 @@ func (m ProjectModel) Insert(project *Project) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	return m.DB.QueryRowContext(ctx, query, args...).Scan(&project.ID, &project.Status, &project.CreatedAt, &project.Version)
+	return m.DB.QueryRowContext(ctx, query, args...).Scan(&project.ID, &project.Status, &project.CreatedAt, &project.UpdatedAt, &project.Version)
 }
 
 func (m ProjectModel) Get(id int) (*Project, error) {
@@ -162,7 +164,7 @@ func (m ProjectModel) Get(id int) (*Project, error) {
 	var project Project
 	var projectImgVar sql.NullString
 	var campaignVar sql.NullString
-	query := `SELECT project_id, title, description, categories, funding_goal, current_funding, deadline, status, project_img, campaign, created_at, version, creator_id FROM project WHERE project_id = $1`
+	query := `SELECT project_id, title, description, categories, funding_goal, current_funding, deadline, status, project_img, campaign, created_at, updated_at, version, creator_id FROM project WHERE project_id = $1`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -179,6 +181,7 @@ func (m ProjectModel) Get(id int) (*Project, error) {
 		&projectImgVar,
 		&campaignVar,
 		&project.CreatedAt,
+		&project.UpdatedAt,
 		&project.Version,
 		&project.CreatorID,
 	)
@@ -201,7 +204,7 @@ func (m ProjectModel) Update(project *Project) error {
 	query := `
 		UPDATE project SET 
 		title = $1, description = $2, categories = $3, funding_goal = $4, current_funding = $5, deadline = $6, status = $7, project_img = $8, campaign = $9, version = version + 1
-		WHERE project_id = $10 AND version = $11 RETURNING version
+		WHERE project_id = $10 AND version = $11 RETURNING updated_at, version
 	`
 
 	args := []interface{}{
@@ -221,7 +224,7 @@ func (m ProjectModel) Update(project *Project) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	err := m.DB.QueryRowContext(ctx, query, args...).Scan(&project.Version)
+	err := m.DB.QueryRowContext(ctx, query, args...).Scan(&project.UpdatedAt, &project.Version)
 	if err != nil {
 		switch {
 		case errors.Is(err, sql.ErrNoRows):
@@ -284,7 +287,7 @@ func (m ProjectModel) ProjectOwnership(projectID, creatorID int) (bool, error) {
 
 func (m ProjectModel) GetAllByCreator(creatorID int) ([]*Project, error) {
 	query := `
-		SELECT project_id, title, description, categories, funding_goal, current_funding, deadline, status, project_img, campaign, created_at, version, creator_id
+		SELECT project_id, title, description, categories, funding_goal, current_funding, deadline, status, project_img, campaign, created_at, updated_at, version, creator_id
 		FROM project WHERE creator_id = $1
 	`
 
@@ -315,6 +318,7 @@ func (m ProjectModel) GetAllByCreator(creatorID int) ([]*Project, error) {
 			&projectImgVar,
 			&campaignVar,
 			&project.CreatedAt,
+			&project.UpdatedAt,
 			&project.Version,
 			&project.CreatorID,
 		)
