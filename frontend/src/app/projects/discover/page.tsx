@@ -12,7 +12,7 @@ export default async function SearchPage({
     const search = await searchParams
   const query = typeof search.q === "string" ? search.q : ""
   const categories = typeof search.categories === "string" ? search.categories : ""
-  const sort = typeof search.sort === "string" ? search.sort : "-created_at"
+  const sort = typeof search.sort === "string" ? search.sort : "-updated_at"
   const page = typeof search.page === "string" ? Number.parseInt(search.page) : 1
 
   return (

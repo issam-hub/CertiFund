@@ -115,12 +115,6 @@ export async function reactivateUser(id: string){
           }    
       
           const data = await res.json();
-          cookieStore.set(TOKEN_COOKIE_NAME, data[TOKEN_COOKIE_NAME]["token"], {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            maxAge: 60 * 60 * 24 * 7, // 1 week
-            path: '/'
-          })
           return {status:true, ...data}
     }catch(error: any){
         return {error: error.message}

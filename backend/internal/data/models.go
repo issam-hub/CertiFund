@@ -8,8 +8,8 @@ import (
 var (
 	ErrNoRecordFound   = errors.New("record not found")
 	ErrEditConflict    = errors.New("edit conflict")
-	ErrFailedOpening   = errors.New("Failed to open file")
-	ErrFailedUploading = errors.New("Failed to upload the image")
+	ErrFailedOpening   = errors.New("failed to open file")
+	ErrFailedUploading = errors.New("failed to upload the image")
 )
 
 type Models struct {
@@ -17,6 +17,7 @@ type Models struct {
 	Users       UserModel
 	Permissions PermissionModel
 	Tokens      TokenModel
+	Backing     BackingModel
 }
 
 func NewModels(db *sql.DB) Models {
@@ -25,5 +26,6 @@ func NewModels(db *sql.DB) Models {
 		Users:       UserModel{DB: db},
 		Permissions: PermissionModel{DB: db},
 		Tokens:      TokenModel{DB: db},
+		Backing:     BackingModel{DB: db},
 	}
 }

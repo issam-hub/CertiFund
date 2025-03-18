@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS project (
     status project_status NOT NULL DEFAULT 'Draft',
     created_at timestamp(0) with time zone NOT NULL DEFAULT NOW(),
     updated_at timestamp(0) with time zone NOT NULL DEFAULT NOW(),
+    launched_at timestamp(0) with time zone NOT NULL DEFAULT '1970-01-01T00:00:00+01:00',
     version integer NOT NULL DEFAULT 1
 );
 

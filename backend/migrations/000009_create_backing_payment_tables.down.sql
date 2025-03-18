@@ -1,0 +1,4 @@
+DROP FUNCTION IF EXISTS update_modified_column CASCADE;
+DROP TABLE IF EXISTS cancellation;
+DROP TABLE IF EXISTS payment;
+DROP TABLE IF EXISTS backing;

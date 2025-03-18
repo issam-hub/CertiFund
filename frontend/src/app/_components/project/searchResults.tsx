@@ -73,7 +73,7 @@ export async function SearchResults({
                   href={`/projects/discover?${new URLSearchParams({
                     ...(query ? { q: query } : {}),
                     ...(category ? { category } : {}),
-                    ...(sort !== "-created_at" ? { sort } : {}),
+                    ...(sort !== "-updated_at" ? { sort } : {}),
                     ...(validatedOnly ? { validated: "true" } : {}),
                     page: String(Math.max(1, metadata.current_page - 1)),
                   })}`}
@@ -88,7 +88,7 @@ export async function SearchResults({
                     href={`/projects/discover?${new URLSearchParams({
                       ...(query ? { q: query } : {}),
                       ...(category ? { category } : {}),
-                      ...(sort !== "-created_at" ? { sort } : {}),
+                      ...(sort !== "-updated_at" ? { sort } : {}),
                       ...(validatedOnly ? { validated: "true" } : {}),
                       page: "1",
                     })}`}
@@ -112,7 +112,7 @@ export async function SearchResults({
                     href={`/projects/discover?${new URLSearchParams({
                       ...(query ? { q: query } : {}),
                       ...(category ? { category } : {}),
-                      ...(sort !== "-created_at" ? { sort } : {}),
+                      ...(sort !== "-updated_at" ? { sort } : {}),
                       ...(validatedOnly ? { validated: "true" } : {}),
                       page: String(metadata.current_page - 1),
                     })}`}
@@ -128,7 +128,7 @@ export async function SearchResults({
                   href={`/projects/discover?${new URLSearchParams({
                     ...(query ? { q: query } : {}),
                     ...(category ? { category } : {}),
-                    ...(sort !== "-created_at" ? { sort } : {}),
+                    ...(sort !== "-updated_at" ? { sort } : {}),
                     ...(validatedOnly ? { validated: "true" } : {}),
                     page: String(metadata.current_page),
                   })}`}
@@ -145,7 +145,7 @@ export async function SearchResults({
                     href={`/projects/discover?${new URLSearchParams({
                       ...(query ? { q: query } : {}),
                       ...(category ? { category } : {}),
-                      ...(sort !== "-created_at" ? { sort } : {}),
+                      ...(sort !== "-updated_at" ? { sort } : {}),
                       ...(validatedOnly ? { validated: "true" } : {}),
                       page: String(metadata.current_page + 1),
                     })}`}
@@ -169,7 +169,7 @@ export async function SearchResults({
                     href={`/projects/discover?${new URLSearchParams({
                       ...(query ? { q: query } : {}),
                       ...(category ? { category } : {}),
-                      ...(sort !== "-created_at" ? { sort } : {}),
+                      ...(sort !== "-updated_at" ? { sort } : {}),
                       ...(validatedOnly ? { validated: "true" } : {}),
                       page: String(metadata.last_page),
                     })}`}
@@ -184,7 +184,7 @@ export async function SearchResults({
                   href={`/projects/discover?${new URLSearchParams({
                     ...(query ? { q: query } : {}),
                     ...(category ? { category } : {}),
-                    ...(sort !== "-created_at" ? { sort } : {}),
+                    ...(sort !== "-updated_at" ? { sort } : {}),
                     ...(validatedOnly ? { validated: "true" } : {}),
                     page: String(Math.min(metadata.last_page, metadata.current_page + 1)),
                   })}`}

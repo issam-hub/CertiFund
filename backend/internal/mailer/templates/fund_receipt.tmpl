@@ -1,4 +1,4 @@
-{{define "subject"}}Welcome to CertiFund - Let's Bring Ideas to Life! 🚀{{end}}
+{{define "subject"}}CertiFund - Payment Receipt #{{.TransactionID}}{{end}}
 
 {{define "htmlBody"}}
 <!DOCTYPE html>
@@ -6,7 +6,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Welcome to CertiFund!</title>
+    <title>Payment Receipt - CertiFund</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         
@@ -51,24 +51,59 @@
             text-align: center;
         }
         
-        .welcome-title {
+        .receipt-title {
             font-size: 24px;
             font-weight: 700;
             color: #1e40af;
             margin-bottom: 20px;
         }
         
-        .username {
-            font-weight: 600;
-            font-size: 22px;
-            color: #1e40af;
-            display: inline-block;
+        .success-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
         }
         
         p {
             margin: 16px 0;
             color: #4b5563;
             font-size: 16px;
+        }
+        
+        .receipt-box {
+            background-color: #f8fafc;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 25px;
+            margin: 25px 0;
+            text-align: left;
+        }
+        
+        .receipt-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .receipt-row:last-child {
+            border-bottom: none;
+        }
+        
+        .receipt-label {
+            font-weight: 500;
+            color: #6b7280;
+        }
+        
+        .receipt-value {
+            font-weight: 600;
+            color: #374151;
+        }
+        
+        .amount {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1e40af;
+            margin: 15px 0;
         }
         
         .button {
@@ -138,8 +173,12 @@
                 padding: 20px;
             }
             
-            .welcome-title {
+            .receipt-title {
                 font-size: 22px;
+            }
+            
+            .receipt-box {
+                padding: 15px;
             }
         }
     </style>
@@ -151,25 +190,36 @@
         </div>
         
         <div class="email-body">
-            <div class="welcome-title">Welcome to CertiFund! 🎉</div>
+            <div class="success-icon">✅</div>
+            <div class="receipt-title">Payment Successful!</div>
             
-            <p>Hi <span class="username">{{.Username}}</span>,</p>
+            <p>Thank you for your payment. Your transaction has been completed successfully.</p>
             
-            <p>We're thrilled to have you join our crowdfunding community. Whether you're here to launch a project or support one, you're now part of a movement that turns great ideas into reality! 🚀</p>
+            <div class="receipt-box">
+                <div class="receipt-row">
+                    <span class="receipt-label">Transaction ID:</span>
+                    <span class="receipt-value">{{.TransactionID}}</span>
+                </div>
+                <div class="receipt-row">
+                    <span class="receipt-label">Date:</span>
+                    <span class="receipt-value">{{.TransactionDate}}</span>
+                </div>
+                <div class="receipt-row">
+                    <span class="receipt-label">Payment Method:</span>
+                    <span class="receipt-value">{{.PaymentMethod}}</span>
+                </div>
+            </div>
             
-            <p>Get started by <strong>exploring projects</strong> or <strong>creating your own campaign</strong> today.</p>
-            
-            <a class="button" href="http://localhost:3000/activate/{{.UserID}}?token={{.ActivationToken}}">
-                Activate your account
-            </a>
-            
+            <p>Amount Paid:</p>
+            <div class="amount">{{.Amount}} DA</div>
+
             <div class="divider"></div>
             
-            <p>Need help getting started? Check out our <a href="#" class="footer-link">quick start guide</a> or <a href="#" class="footer-link">browse popular projects</a>.</p>
+            <p>Your contribution is helping bring innovative ideas to life. <a href="{{.ProjectURL}}" class="footer-link">View the project</a> you've supported.</p>
         </div>
         
         <div class="email-footer">
-            <p>If you have any questions, feel free to <a href="#" class="footer-link">contact our support team</a>.</p>
+            <p>If you have any questions about this payment, please <a href="#" class="footer-link">contact our support team</a>.</p>
             
             <div class="social-links">
                 <a href="#" class="social-icon">📱</a>

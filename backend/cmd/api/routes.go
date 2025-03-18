@@ -17,7 +17,7 @@ func (app *application) routes(e *echo.Echo) {
 	authGroup.GET("/projects/:id", app.getProjectHandler, app.VerifyProjectOwnership())
 	publicGroup.GET("/projects/discover/:id", app.getProjectHandler)
 	publicGroup.GET("/projects", app.getProjectsHandler)
-	authGroup.PATCH("/projects/:id", app.updateProjectHandler, app.RequirePermission("projects:update"))
+	authGroup.PATCH("/projects/:id", app.updateProjectHandler, app.RequirePermission("projects:update"), app.VerifyProjectOwnership())
 	authGroup.DELETE("/projects/:id", app.deleteProjectHandler)
 	authGroup.GET("/projects/me", app.getProjectsByCreatorHandler)
 
@@ -39,4 +39,10 @@ func (app *application) routes(e *echo.Echo) {
 	authGroup.PATCH("/users/update", app.updateProfileHandler, app.RequirePermission("users:update"))
 	authGroup.PATCH("/users/passwordChange", app.changePasswordHandler)
 
+	// backing
+	authGroup.POST("/backing/backIntent/:id", app.createPaymentIntentHandler, app.RequirePermission("backing:create"), app.VerifyProjectNonOwnership())
+	authGroup.POST("/backing/backProject/:id", app.recordBackingHandler, app.RequirePermission("backing:create"), app.VerifyProjectNonOwnership())
+	publicGroup.GET("/backing/projectBackers/:id", app.backersCountByProjectHandler)
+	authGroup.GET("/backing/didIbackIt/:id", app.didIBackThisProjectHandler)
+	authGroup.POST("/backing/refund/:id", app.refundHandler, app.RequirePermission("backing:create"))
 }

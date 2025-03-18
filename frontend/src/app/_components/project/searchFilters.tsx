@@ -44,7 +44,7 @@ const sortOptions = [
 export function SearchFilters({
   selectedCategory = "",
   validatedOnly = false,
-  sort = "-created_at",
+  sort = "-updated_at",
 }: {
   selectedCategory?: string
   validatedOnly?: boolean
@@ -75,7 +75,7 @@ export function SearchFilters({
     // }
 
     // Handle sort
-    if (selectedSort !== "-created_at") {
+    if (selectedSort !== "-updated_at") {
       params.set("sort", selectedSort)
     } else {
       params.delete("sort")
@@ -107,7 +107,7 @@ export function SearchFilters({
   const clearFilters = () => {
     setSelectedCategories([])
     setIsValidatedOnly(false)
-    setSelectedSort("-created_at")
+    setSelectedSort("-updated_at")
   }
 
   return (

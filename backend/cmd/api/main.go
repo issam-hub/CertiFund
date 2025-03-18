@@ -21,6 +21,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	_ "github.com/lib/pq"
+	"github.com/stripe/stripe-go/v72"
 	"golang.org/x/time/rate"
 )
 
@@ -101,6 +102,7 @@ func main() {
 
 	port := os.Getenv("PORT")
 	realPort, _ := strconv.Atoi(port)
+
 	dsn := os.Getenv("DSN")
 	rps := os.Getenv("RPS")
 	realRps, _ := strconv.ParseFloat(rps, 64)
@@ -108,12 +110,16 @@ func main() {
 	realBurst, _ := strconv.Atoi(burst)
 	disabled := os.Getenv("DISABLED")
 	realDisabled, _ := strconv.ParseBool(disabled)
+
 	smtpHost := os.Getenv("SMTP_HOST")
 	smtpPort := os.Getenv("SMTP_PORT")
 	realSmtpPort, _ := strconv.Atoi(smtpPort)
 	smtpUsername := os.Getenv("SMTP_USERNAME")
 	smtpPassword := os.Getenv("SMTP_PASSWORD")
 	smtpSender := os.Getenv("SMTP_SENDER")
+
+	stripeSecretKey := os.Getenv("STRIPE_SECRET_KEY")
+	stripe.Key = stripeSecretKey
 
 	cfg := config{
 		port: realPort,
