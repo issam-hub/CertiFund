@@ -14,7 +14,7 @@ import Link from 'next/link'
 import ProjectComp from './project'
 
 export default async function ProjectsWithFilters({page, search, categories, limit, sort}:ProjectsFilters) {
-    const result = await getProjects(page, search, categories, limit, sort)
+    const result = await getProjects(page ? Number(page) : 1, search, categories, limit, sort)
     if(!result.status){
         throw new Error(result.error)
     }

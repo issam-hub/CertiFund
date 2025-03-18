@@ -318,8 +318,8 @@ func (app *application) resendActivationTokenHandler(c echo.Context) error {
 		}
 	}
 
-	if user.Activated == true {
-		return echo.NewHTTPError(http.StatusUnprocessableEntity, errors.New("User already activated"))
+	if user.Activated {
+		return echo.NewHTTPError(http.StatusUnprocessableEntity, errors.New("user already activated"))
 	}
 
 	token, err := app.models.Tokens.New(user.ID, 2*24*time.Hour, data.ScopeActivation)

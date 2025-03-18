@@ -10,3 +10,15 @@ export const createProjectSchema = z.object({
 
 export type CreateProjectSchema = z.infer<typeof createProjectSchema>&{creator_id: string}
 export type UpdateProjectSchema = z.infer<typeof createProjectSchema>&{project_id?:string, project_img?:string, campaign?:string, status?:string, current_funding:number, creator_id:string}
+
+export const backProjectSchema = z.object({
+    amount: z.number({required_error: "* Amount must be provided", invalid_type_error:"* Amount must be a number"}),
+})
+
+export type BackProjectSchema = z.infer<typeof backProjectSchema>;
+
+export const refundSchema = z.object({
+    reason: z.string().max(500, "Reason cannot exceed 500 characters").optional()
+})
+
+export type RefundSchema = z.infer<typeof refundSchema>;

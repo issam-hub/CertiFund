@@ -122,6 +122,9 @@ func (app *application) VerifyProjectOwnership() echo.MiddlewareFunc {
 			}
 
 			isOwner, err := app.models.Projects.ProjectOwnership(projectID, user.ID)
+			if err != nil {
+				return err
+			}
 
 			if isOwner {
 				return next(c)
@@ -160,6 +163,37 @@ func (app *application) VerifyAccountOwnership() echo.MiddlewareFunc {
 				return next(c)
 			} else {
 				return c.JSON(http.StatusForbidden, envelope{"error": "You don't have ownership over this ressource"})
+			}
+		}
+	}
+}
+
+func (app *application) VerifyProjectNonOwnership() echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			user := c.Get("user").(*data.User)
+			projectIDParam := c.Param("id")
+			projectID, err := strconv.Atoi(projectIDParam)
+			if err != nil {
+				return echo.NewHTTPError(http.StatusNotFound, err.Error())
+			}
+
+			project, err := app.models.Projects.Get(projectID)
+			if err != nil {
+				switch {
+				case errors.Is(err, data.ErrNoRecordFound):
+					return echo.NewHTTPError(http.StatusNotFound, "Project not found")
+				default:
+					return err
+				}
+			}
+
+			isNotOwner := project.CreatorID != user.ID
+
+			if isNotOwner {
+				return next(c)
+			} else {
+				return c.JSON(http.StatusForbidden, envelope{"error": "You can't back yourself"})
 			}
 		}
 	}

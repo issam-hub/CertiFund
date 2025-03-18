@@ -56,6 +56,25 @@ export async function getProject(id: string) {
     return {status:true, ...result}
 }
 
+export async function getProjectPublic(id: string) {
+    const res = await authFetch(`${apiUrl}/projects/discover/${id}`, {cache:"no-store", next:{tags:["project"]}})
+
+    if(!res.ok){
+        const result = await res.json()
+        if(typeof result.error === "object"){
+            return {status:false, error:Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
+        }else if(result.error === "Project not found"){
+            notFound()
+        }else{
+            return {status:false, ...result}
+        }
+    }
+
+    
+    const result = await res.json()
+    return {status:true, ...result}
+}
+
 export async function updateProject(data: BasicsFormData|FundingFormData|StoryFormData|{status:string}, id: string){
     const res = await authFetch(`${apiUrl}/projects/${id}`,{
         method:"PATCH",
@@ -166,6 +185,139 @@ export async function getProjects(page?:number, search?:string, categories?: str
         return {status:false, ...result}
     }
 
+    
+    const result = await res.json()
+    return {status:true, ...result}
+}
+
+export async function createPaymentIntent(user_id: number, project_id: number, amount:number){
+    const res = await authFetch(`${apiUrl}/backing/backIntent/${project_id}`,{
+        method:"POST",
+        headers:{
+            "Content-Type":"application/json"
+        },
+        body: JSON.stringify({
+            amount,
+            user_id,
+            project_id,
+        })
+    })
+
+    try {
+        if(!res.ok) {
+            const result = await res.json()
+            if(typeof result.error === "object"){
+                return {status:false, error: Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
+            }
+            return {status: false, ...result}
+          }   
+      
+          const result = await res.json();
+          return {status:true, ...result}
+    }catch(error: any){
+        return {status: false, error: error.message}
+    }
+}
+
+export async function backProject(data:{project_id: number, payment_intent_id: string, payment_method: string}){
+    const res = await authFetch(`${apiUrl}/backing/backProject/${data.project_id}`,{
+        method:"POST",
+        headers:{
+            "Content-Type":"application/json"
+        },
+        body: JSON.stringify({
+            payment_intent_id: data.payment_intent_id,
+            payment_method: data.payment_method,
+        })
+    })
+
+    try {
+        if(!res.ok) {
+            const result = await res.json()
+            if(typeof result.error === "object"){
+                return {status:false, error: Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
+            }
+            return {status: false, ...result}
+          }    
+
+          revalidateTag("project")
+          revalidateTag("projects")
+          revalidateTag("did-i-back")
+          revalidateTag("projects-creator")
+          revalidateTag("project-backers")
+      
+          const result = await res.json();
+          return {status:true, ...result}
+    }catch(error: any){
+        return {status: false, error: error.message}
+    }
+}
+
+export async function getBackersCount(project_id: number){
+    const res = await authFetch(`${apiUrl}/backing/projectBackers/${project_id}`, {cache:"no-store", next:{tags:["project-backers"]}})
+
+    if(!res.ok){
+        const result = await res.json()
+        if(typeof result.error === "object"){
+            return {status:false, error:Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
+        }else if(result.error === "Project not found"){
+            notFound()
+        }else{
+            return {status:false, ...result}
+        }
+    }
+
+    
+    const result = await res.json()
+    return {status:true, ...result}
+}
+
+export async function didIbackThisProject(project_id: number){
+    const res = await authFetch(`${apiUrl}/backing/didIbackIt/${project_id}`, {cache:"no-store", next:{tags:["did-i-back"]}})
+
+    if(!res.ok){
+        const result = await res.json()
+        if(typeof result.error === "object"){
+            return {status:false, error:Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
+        }else if(result.error === "Project not found"){
+            notFound()
+        }else{
+            return {status:false, ...result}
+        }
+    }
+
+    
+    const result = await res.json()
+    return {status:true, ...result}
+}
+
+export async function refundBacking(project_id: number, reason?:string){
+    const res = await authFetch(`${apiUrl}/backing/refund/${project_id}`,{
+        method:"POST",
+        headers:{
+            "Content-Type":"application/json"
+        },
+        body:JSON.stringify({
+            reason
+        })
+    })
+
+    if(!res.ok){
+        const result = await res.json()
+        if(typeof result.error === "object"){
+            return {status:false, error:Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
+        }else if(result.error === "Project not found"){
+            notFound()
+        }else{
+            return {status:false, ...result}
+        }
+    }
+
+    revalidateTag("project")
+    revalidateTag("projects")
+    revalidateTag("did-i-back")
+    revalidateTag("projects-creator")
+    revalidateTag("project-backers")
     
     const result = await res.json()
     return {status:true, ...result}

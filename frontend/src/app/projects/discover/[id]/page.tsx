@@ -9,17 +9,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 // import { Separator } from "@/components/ui/separator"
 import { ArrowLeft, BadgeCheck, Bookmark, Calendar, Clock, Heart, Share2, Target, Users } from "lucide-react"
-import { BackProjectButton } from "./back-project-button"
-import { getProject } from "@/app/_actions/projects"
+import { didIbackThisProject, getBackersCount, getProject, getProjectPublic } from "@/app/_actions/projects"
 import { UpdateProjectSchema } from "@/app/_lib/schemas/project"
 import { Separator } from "@/components/ui/separator"
 import parse from 'html-react-parser';
 import { calculateDateDifferenceJSON } from "@/app/_lib/utils"
 import { getUser } from "@/app/_actions/user"
+import BackProjectButton from "@/app/_components/project/backProjectButton"
+import ProjectActions from "@/app/_components/project/projectActions"
+import { RefundButton } from "@/app/_components/project/refundButton"
 
 export default async function ProjectDetailsPage({params}:{params: Promise<{id:string}>}) {
     const {id} = await params
-  const result = await getProject(id)
+  const result = await getProjectPublic(id)
 
   if(!result.status){
     if(result.error === "You don't have ownership over this ressource"){
@@ -37,6 +39,19 @@ export default async function ProjectDetailsPage({params}:{params: Promise<{id:s
     throw new Error(result.error)
   }
   const creator = userResult["user"]
+
+  const backersResult = await getBackersCount(project.project_id)
+  if(!result.status){
+    throw new Error(result.error)
+  }
+
+  const didIresult = await didIbackThisProject(project.project_id)
+  if(!didIresult.status){
+    throw new Error(result.error)
+  }
+
+  const backersCount = backersResult["backers_count"]
+  console.log("backers count: ", backersCount)
 
   // Calculate funding percentage
   const fundingPercentage = Math.min(Math.round((project.current_funding / project.funding_goal) * 100), 100)
@@ -107,7 +122,7 @@ export default async function ProjectDetailsPage({params}:{params: Promise<{id:s
 
                 <div className="flex items-center gap-1 text-gray-600">
                   <Calendar className="h-4 w-4" />
-                  <span className="text-sm">Created 25 jan 2025</span>
+                  <span className="text-sm">Launched 25 jan 2025</span>
                 </div>
               </div>
             </div>
@@ -147,8 +162,8 @@ export default async function ProjectDetailsPage({params}:{params: Promise<{id:s
                 <CardContent className="p-6">
                   <div className="mb-4">
                     <div className="flex justify-between items-center mb-2">
-                      <span className="text-2xl font-bold">${project.current_funding}</span>
-                      <span className="text-gray-600">of ${project.funding_goal}</span>
+                      <span className="text-2xl font-bold">{project.current_funding}DA</span>
+                      <span className="text-gray-600">of {project.funding_goal}DA</span>
                     </div>
                     {/* <Progress value={fundingPercentage} className="h-2 mb-1" /> */}
                     <div className={`relative h-2 rounded-full bg-slate-200 mt-3`}>
@@ -161,35 +176,29 @@ export default async function ProjectDetailsPage({params}:{params: Promise<{id:s
                     <div className="text-center p-3 bg-gray-50 rounded-md">
                       <div className="flex items-center justify-center gap-1 mb-1">
                         <Users className="h-4 w-4 text-gray-600" />
-                        <span className="font-bold">0</span>
+                        <span className="font-bold">{backersCount}</span>
                       </div>
                       <div className="text-sm text-gray-600">Backers</div>
                     </div>
                     <div className="text-center p-3 bg-gray-50 rounded-md">
                       <div className="flex items-center justify-center gap-1 mb-1">
                         <Clock className="h-4 w-4 text-gray-600" />
-                        <span className="font-bold">{months}|{days}</span>
+                        <span className="font-bold">{months} | {days}</span>
                       </div>
-                      <div className="text-sm text-gray-600">Months|Days Left</div>
+                      <div className="text-sm text-gray-600">Months | Days Left</div>
                     </div>
                   </div>
 
-                  <BackProjectButton projectId={Number(project.project_id)} />
+                  {
+                    didIresult["did_i_back_it"] ? (
+                      <RefundButton projectId={Number(project.project_id)}/>
+                    )
+                    :(
+                      <BackProjectButton projectId={Number(project.project_id)} creatorId={Number(project.creator_id)} />
+                    )
+                  }
 
-                  <div className="flex justify-between mt-6">
-                    <Button variant="outline" size="sm" className="flex-1 mr-2">
-                      <Heart className="h-4 w-4 mr-2" />
-                      Like
-                    </Button>
-                    <Button variant="outline" size="sm" className="flex-1 mr-2">
-                      <Bookmark className="h-4 w-4 mr-2" />
-                      Save
-                    </Button>
-                    <Button variant="outline" size="sm" className="flex-1">
-                      <Share2 className="h-4 w-4 mr-2" />
-                      Share
-                    </Button>
-                  </div>
+                  <ProjectActions creatorId={Number(project.creator_id)}/>
                 </CardContent>
               </Card>
 
