@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
 	"os"
@@ -80,7 +81,7 @@ func (app *application) fileUploadHandler(c echo.Context) error {
 	}
 	envErr := godotenv.Load()
 	if envErr != nil {
-		return errors.New("Error happened while uploading the image")
+		return errors.New("error happened while uploading the image")
 	}
 	cloud_name := os.Getenv("CLOUD_NAME")
 	api_key := os.Getenv("API_KEY")
@@ -115,6 +116,6 @@ func (app *application) fileUploadHandler(c echo.Context) error {
 	// Return the Cloudinary URL
 	return c.JSON(http.StatusOK, envelope{
 		"message": "Image uploaded successfully",
-		"url":     uploadResult.SecureURL,
+		"url":     fmt.Sprintf(`https://res.cloudinary.com/%s/image/upload/f_auto,q_auto/%s`, cloud_name, uploadResult.PublicID),
 	})
 }

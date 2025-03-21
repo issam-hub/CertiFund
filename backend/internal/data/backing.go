@@ -9,14 +9,14 @@ import (
 )
 
 type Backing struct {
-	BackingID string    `json:"backing_id"`
+	BackingID int       `json:"backing_id"`
 	CreatedAt time.Time `json:"created_at"`
 	BackerID  int       `json:"backer_id"`
 	ProjectID int       `json:"project_id"`
 }
 
 type Payment struct {
-	PaymentID     string    `json:"payment_id"`
+	PaymentID     int       `json:"payment_id"`
 	Amount        float64   `json:"amount"`
 	Status        string    `json:"status"`
 	TransactionID string    `json:"transaction_id"`
@@ -28,7 +28,7 @@ type Payment struct {
 }
 
 type Cancellation struct {
-	CancellationID string    `json:"cancellation_id"`
+	CancellationID int       `json:"cancellation_id"`
 	Reason         string    `json:"reason"`
 	Date           time.Time `json:"date"`
 	BackingID      int       `json:"backing_id"`

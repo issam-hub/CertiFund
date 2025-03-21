@@ -1,0 +1,2 @@
+DROP TABLE IF EXISTS backing_reward;
+DROP TABLE IF EXISTS reward;
