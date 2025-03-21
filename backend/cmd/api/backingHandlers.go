@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"projectx/internal/data"
 	"projectx/internal/validator"
@@ -21,7 +22,7 @@ func (app *application) createPaymentIntentHandler(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	}
 
-	_, err = app.models.Projects.Get(projectId)
+	project, err := app.models.Projects.Get(projectId)
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrNoRecordFound):
@@ -30,6 +31,11 @@ func (app *application) createPaymentIntentHandler(c echo.Context) error {
 			return err
 		}
 	}
+
+	if time.Now().After(project.Deadline) {
+		return echo.NewHTTPError(http.StatusNotFound, "Project funding duration is closed")
+	}
+
 	var input struct {
 		Amount float64 `json:"amount"`
 	}
@@ -75,8 +81,8 @@ func (app *application) recordBackingHandler(c echo.Context) error {
 
 	var input struct {
 		PaymentIntentID string `json:"payment_intent_id"`
-		BackingID       int    `json:"backing_id"`
 		PaymentMethod   string `json:"paymentMethod"`
+		Rewards         []int  `json:"rewards"`
 	}
 
 	if err := c.Bind(&input); err != nil {
@@ -117,6 +123,10 @@ func (app *application) recordBackingHandler(c echo.Context) error {
 		}
 	}
 
+	if time.Now().After(project.Deadline) {
+		return echo.NewHTTPError(http.StatusNotFound, "Project funding duration is closed")
+	}
+
 	project.CurrentFunding = project.CurrentFunding + (payment.Amount / 100)
 
 	err = app.models.Projects.Update(project)
@@ -129,12 +139,30 @@ func (app *application) recordBackingHandler(c echo.Context) error {
 		}
 	}
 
+	if input.Rewards != nil {
+		for i, rewardID := range input.Rewards {
+			_, err := app.models.Rewards.Get(rewardID)
+			if err != nil {
+				switch {
+				case errors.Is(err, data.ErrNoRecordFound):
+					return echo.NewHTTPError(http.StatusNotFound, fmt.Sprintf("Reward %d not found", i))
+				default:
+					return err
+				}
+			}
+			err = app.models.Rewards.InsertBackingReward(backing.BackingID, rewardID)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
 	app.background(func() {
 		data := map[string]interface{}{
 			"TransactionID":   payment.TransactionID,
 			"TransactionDate": payment.CreatedAt,
 			"PaymentMethod":   "card",
-			"Amount":          payment.Amount,
+			"Amount":          payment.Amount / 100,
 		}
 		err = app.mailer.Send(backer.Email, "fund_receipt.tmpl", data)
 		if err != nil {
@@ -294,6 +322,18 @@ func (app *application) refundHandler(c echo.Context) error {
 		}
 	}
 
+	isBackingWithRewards, err := app.models.Rewards.CheckBackingWithRewards(*backingID)
+	if err != nil {
+		return err
+	}
+
+	if isBackingWithRewards {
+		err = app.models.Rewards.DeleteBackingReward(*backingID)
+		if err != nil {
+			return err
+		}
+	}
+
 	app.background(func() {
 		data := map[string]interface{}{
 			"RefundID":                result.ID,
@@ -302,7 +342,7 @@ func (app *application) refundHandler(c echo.Context) error {
 			"OriginalTransactionDate": originalBackingDate,
 			"PaymentMethod":           "card",
 			"ProjectName":             project.Title,
-			"RefundAmount":            result.Amount,
+			"RefundAmount":            result.Amount / 100,
 		}
 		err = app.mailer.Send(backer.Email, "refund.tmpl", data)
 		if err != nil {

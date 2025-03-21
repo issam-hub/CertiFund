@@ -45,4 +45,9 @@ func (app *application) routes(e *echo.Echo) {
 	publicGroup.GET("/backing/projectBackers/:id", app.backersCountByProjectHandler)
 	authGroup.GET("/backing/didIbackIt/:id", app.didIBackThisProjectHandler)
 	authGroup.POST("/backing/refund/:id", app.refundHandler, app.RequirePermission("backing:create"))
+
+	// rewards
+	authGroup.POST("/rewards/create/:id", app.createRewardsHandler)
+	authGroup.PUT("/rewards/update/:id", app.updateRewardsHandler)
+	publicGroup.GET("/rewards/:id", app.getAllRewardsHandler)
 }

@@ -18,6 +18,7 @@ type Models struct {
 	Permissions PermissionModel
 	Tokens      TokenModel
 	Backing     BackingModel
+	Rewards     RewardModel
 }
 
 func NewModels(db *sql.DB) Models {
@@ -27,5 +28,6 @@ func NewModels(db *sql.DB) Models {
 		Permissions: PermissionModel{DB: db},
 		Tokens:      TokenModel{DB: db},
 		Backing:     BackingModel{DB: db},
+		Rewards:     RewardModel{DB: db},
 	}
 }

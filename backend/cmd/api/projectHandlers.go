@@ -78,7 +78,7 @@ func (app *application) getProjectsHandler(c echo.Context) error {
 	input.Page = app.readInt(c.QueryParams(), "page", 1, v)
 	input.PageSize = app.readInt(c.QueryParams(), "page_size", 5, v)
 	input.Sort = app.readString(c.QueryParams(), "sort", "project_id")
-	input.SortSafeList = []string{"project_id", "title", "deadline", "funding_goal", "updated_at", "-project_id", "-title", "-deadline", "-funding_goal", "-updated_at", "-(current_funding*100)/funding_goal"}
+	input.SortSafeList = []string{"project_id", "title", "deadline", "funding_goal", "updated_at", "-project_id", "-title", "-deadline", "-funding_goal", "-launched_at", "-(current_funding*100)/funding_goal"}
 
 	if data.ValidateFilters(v, &input.Filter); !v.Valid() {
 		return echo.NewHTTPError(http.StatusUnprocessableEntity, v.Errors)
@@ -112,6 +112,13 @@ func (app *application) getProjectHandler(c echo.Context) error {
 		}
 	}
 
+	rewards, err := app.models.Rewards.GetAll(id)
+	if err != nil {
+		return err
+	}
+
+	project.Rewards = *rewards
+
 	return c.JSON(http.StatusOK, envelope{
 		"message": "Project returned successfully",
 		"project": project,
@@ -144,6 +151,7 @@ func (app *application) updateProjectHandler(c echo.Context) error {
 		ProjectImg     *string    `json:"project_img,omitempty"`
 		Status         *string    `json:"status,omitempty"`
 		Campaign       *string    `json:"campaign,omitempty"`
+		LaunchedAt     *time.Time `json:"launched_at,omitempty"`
 	}
 
 	if err := c.Bind(&input); err != nil {
@@ -191,6 +199,11 @@ func (app *application) updateProjectHandler(c echo.Context) error {
 	}
 	if input.ProjectImg != nil {
 		project.ProjectImg = *input.ProjectImg
+	}
+	if input.LaunchedAt != nil {
+		project.LaunchedAt = *input.LaunchedAt
+		v.Check(project.LaunchedAt.After(project.CreatedAt), "launchedAt", "Launch date should be after the date of project creation")
+		v.Check(project.LaunchedAt.Before(project.Deadline), "launchedAt", "Launch date should be before the date of deadline")
 	}
 
 	if data.ValidateProject(v, project); !v.Valid() {
