@@ -1,7 +1,7 @@
 "use client"
 import { activateUser, reactivateUser } from '@/app/_actions/auth'
 import { TOAST_ERROR_TITLE, TOAST_SUCCESS_TITLE } from '@/app/_lib/constants'
-import { isAuthenticatedAtom, userAtom } from '@/app/_store/auth'
+import { isAuthenticatedAtom, userAtom } from '@/app/_store/shared'
 import { useToast } from '@/hooks/use-toast'
 import { useAtom } from 'jotai'
 import { ArrowRight, Mail } from 'lucide-react'

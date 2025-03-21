@@ -1,7 +1,7 @@
 "use server"
 
 import { apiUrl } from "@/app/_lib/config";
-import { CreateProjectSchema } from "@/app/_lib/schemas/project";
+import { CreateProjectSchema, RewardsSchema } from "@/app/_lib/schemas/project";
 import { BasicsFormData, FundingFormData, StoryFormData } from "@/app/_lib/types";
 import { formatDateTime } from "@/app/_lib/utils";
 import { authFetch } from "@/app/_lib/utils/auth";
@@ -75,7 +75,7 @@ export async function getProjectPublic(id: string) {
     return {status:true, ...result}
 }
 
-export async function updateProject(data: BasicsFormData|FundingFormData|StoryFormData|{status:string}, id: string){
+export async function updateProject(data: BasicsFormData|FundingFormData|StoryFormData|{status:string,launched_at?:string}, id: string){
     const res = await authFetch(`${apiUrl}/projects/${id}`,{
         method:"PATCH",
         headers:{
@@ -219,7 +219,7 @@ export async function createPaymentIntent(user_id: number, project_id: number, a
     }
 }
 
-export async function backProject(data:{project_id: number, payment_intent_id: string, payment_method: string}){
+export async function backProject(data:{project_id: number, payment_intent_id: string, payment_method: string, rewards?: number[]}){
     const res = await authFetch(`${apiUrl}/backing/backProject/${data.project_id}`,{
         method:"POST",
         headers:{
@@ -228,6 +228,7 @@ export async function backProject(data:{project_id: number, payment_intent_id: s
         body: JSON.stringify({
             payment_intent_id: data.payment_intent_id,
             payment_method: data.payment_method,
+            rewards: data.rewards
         })
     })
 
@@ -321,4 +322,41 @@ export async function refundBacking(project_id: number, reason?:string){
     
     const result = await res.json()
     return {status:true, ...result}
+}
+
+export async function handleRewards(rewards: RewardsSchema, project_id: string, type: string){
+    rewards.rewards = rewards.rewards.map(reward =>{
+        return {
+            ...reward,
+            amount: reward.amount*100,
+            estimated_delivery: formatDateTime(new Date(reward.estimated_delivery).toISOString())
+        }
+    })
+    console.log("rewards", JSON.stringify(rewards))
+    const res = await authFetch(`${apiUrl}/rewards/${type}/${project_id}`,{
+        method:type === "create" ? "POST" : "PUT",
+        headers:{
+            "Content-Type":"application/json"
+        },
+        body: JSON.stringify(rewards)
+    })
+
+    try {
+        if(!res.ok) {
+            const result = await res.json()
+            if(typeof result.error === "object"){
+                return {status:false, error: Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
+            }
+            return {status: false, ...result}
+          }    
+
+          revalidateTag("project")
+          revalidateTag("projects")
+          revalidateTag("projects-creator")
+      
+          const result = await res.json();
+          return {status:true, ...result}
+    }catch(error: any){
+        return {status: false, error: error.message}
+    }
 }

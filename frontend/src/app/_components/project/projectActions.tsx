@@ -1,5 +1,5 @@
 "use client"
-import { userAtom } from '@/app/_store/auth'
+import { userAtom } from '@/app/_store/shared'
 import { Button } from '@/components/ui/button'
 import { useAtomValue } from 'jotai'
 import { Bookmark, Heart } from 'lucide-react'

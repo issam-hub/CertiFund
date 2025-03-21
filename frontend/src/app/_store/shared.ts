@@ -18,3 +18,5 @@ export const authStateAtom = atom(
     isAuthenticated: get(isAuthenticatedAtom),
   })
 );
+
+export const selectedRewardsAtom = atom<number[]>([])

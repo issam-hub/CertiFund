@@ -33,3 +33,13 @@ export interface ProjectsFilters {
   limit?:string
   sort?:string
 }
+
+export interface Reward {
+  id: number;
+  title: string;
+  description: string;
+  amount: number;
+  includes: string[];
+  estimated_delivery: string;
+  image_url: string;
+}

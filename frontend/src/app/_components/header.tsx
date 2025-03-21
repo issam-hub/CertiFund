@@ -10,9 +10,9 @@ export default function Header({
   }>) {
   return (
     <>
-        <header className="py-4 border-b border-slate-100 flex justify-between items-center px-4 sm:px-10">
-            <div></div>
-            <Link href={"/"}><Image src={"/logo.svg"} width={73} height={65} alt="logo" className="cursor-pointer"/></Link>
+        <header className="py-4 border-b border-slate-100 grid grid-cols-3 items-center px-4 sm:px-10">
+            <div className="place-self-start self-center"></div>
+            <Link href={"/"} className="mx-auto"><Image src={"/logo.svg"} width={73} height={65} alt="logo" className="cursor-pointer"/></Link>
             <ProfileHeader/>
         </header>
         {children}

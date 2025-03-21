@@ -3,7 +3,7 @@
 
 import { useEffect } from 'react';
 import { useAtom } from 'jotai';
-import { isAuthenticatedAtom, isLoadingAtom, userAtom } from '@/app/_store/auth';
+import { isAuthenticatedAtom, isLoadingAtom, userAtom } from '@/app/_store/shared';
 import { getCurrentUser } from '@/app/_actions/auth';
 
 // This component synchronizes the server-side auth state with client-side Jotai state

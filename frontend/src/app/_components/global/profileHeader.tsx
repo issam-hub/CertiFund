@@ -1,7 +1,7 @@
 "use client"
 import { logout } from "@/app/_actions/auth"
 import { TOAST_ERROR_TITLE, TOAST_SUCCESS_TITLE } from "@/app/_lib/constants"
-import { userAtom } from "@/app/_store/auth"
+import { userAtom } from "@/app/_store/shared"
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -24,7 +24,7 @@ export default function ProfileHeader() {
     const pathname = usePathname()
     if(user){
         return (
-          <div className="flex items-center">
+          <div className="flex items-center place-self-end self-center">
             <DropdownMenu>
                 <DropdownMenuTrigger className="rounded-full">
                     {
@@ -98,8 +98,8 @@ export default function ProfileHeader() {
           </div>
         )
     }else if(!pathname.match(/(\/login|\/signup|\/activate\/\w+)/)){
-        return <Link href={"/login"} className="transition-colors ease-in duration-100 hover:text-accentColor">Login</Link>
+        return <Link href={"/login"} className="place-self-end self-center transition-colors ease-in duration-100 text-accentColor py-1 px-4 border-2 border-accentColor rounded-md hover:text-secondaryColor hover:border-secondaryColor">Login</Link>
     }else{
-        return <div></div>
+        return <div className="place-self-end self-center"></div>
     }
 }

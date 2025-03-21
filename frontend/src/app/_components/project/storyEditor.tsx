@@ -33,7 +33,7 @@ export default function StoryEditor({defaultvalue,onGetContent,disableEdit }:{de
       <Editor
         disabled={disableEdit}
         apiKey={apiKey}
-        initialValue={defaultvalue || `<p>Loading...</p>`}
+        initialValue={defaultvalue || `Start writing the project story here...`}
         onInit={(_evt, editor) => {
           editorRef.current = editor;
           

@@ -8,7 +8,7 @@ import { Bell, Edit, Globe, Heart } from 'lucide-react'
 import Image from "next/image"
 import Link from "next/link"
 import { useAtomValue } from "jotai"
-import { userAtom } from "@/app/_store/auth"
+import { userAtom } from "@/app/_store/shared"
 import { UpdateProjectSchema } from "@/app/_lib/schemas/project"
 import { formatTwitterHandle, formatWebsiteUrl, getTwitterUrl } from "@/app/_lib/utils"
 import LoadingProfilePage from "./loadingProfile"
