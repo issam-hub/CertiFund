@@ -16,7 +16,7 @@ import Image from "next/image"
 import { useToast } from "@/hooks/use-toast"
 import { TOAST_ERROR_TITLE, TOAST_SUCCESS_TITLE } from "@/app/_lib/constants"
 import { useAtom } from "jotai"
-import { isAuthenticatedAtom, userAtom } from "@/app/_store/auth"
+import { isAuthenticatedAtom, userAtom } from "@/app/_store/shared"
 import { useRouter, useSearchParams } from "next/navigation"
 import { login } from "@/app/_actions/auth"
 

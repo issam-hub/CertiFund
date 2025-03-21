@@ -12,7 +12,7 @@ export default function StepTwo({ register, control,errors }: StepTwoProps) {
   return (
     <div className="space-y-4">
       <div>
-        <Label htmlFor="fundingGoal" className="font-semibold">Funding Goal:</Label>
+        <Label htmlFor="fundingGoal" className="font-semibold">Funding Goal (DA):</Label>
         <Input
           id="fundingGoal"
           type="number"

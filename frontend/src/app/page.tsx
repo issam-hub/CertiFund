@@ -219,7 +219,7 @@ export default function LandingPage() {
             <Button className="bg-accentColor hover:bg-[#1E3A8A]">View All Projects</Button>
           </div>
 
-          <ProjectsWithFilters page="" search="" limit="" categories={[]} sort="-updated_at"/>
+          <ProjectsWithFilters page="" search="" limit="" categories={[]} sort="-launched_at"/>
         </div>
       </section>
 

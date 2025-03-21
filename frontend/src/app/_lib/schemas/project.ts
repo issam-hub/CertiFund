@@ -22,3 +22,16 @@ export const refundSchema = z.object({
 })
 
 export type RefundSchema = z.infer<typeof refundSchema>;
+
+export const rewardsSchema = z.object({
+    rewards: z.array(z.object({
+        title: z.string().min(1, "Title is required"),
+        amount: z.coerce.number().min(1, "Price must be at least 1"),
+        description: z.string().min(1, "Description is required"),
+        image_url: z.string().optional(),
+        includes: z.array(z.string().min(1, "Includes is required")),
+        estimated_delivery: z.date().or(z.string()),
+    }))
+})
+
+export type RewardsSchema = z.infer<typeof rewardsSchema>;

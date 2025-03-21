@@ -22,6 +22,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { useRouter } from 'next/navigation';
+import { Reward } from '@/app/_lib/types';
 
 const projectRules = [
   "All projects must have a clear goal and timeline",
@@ -33,7 +34,7 @@ const projectRules = [
 ];
 
 interface ProjectOverviewProps {
-  data: UpdateProjectSchema
+  data: UpdateProjectSchema & {rewards?:Reward[]}
 }
 
 // New interface for circle customization
@@ -230,6 +231,10 @@ export default function ProjectOverview({ data }: ProjectOverviewProps) {
     }
     if(data.campaign){
       markStepAsCompleted("story");
+    }
+    if((data.rewards?.length ?? 0) > 0){
+      markStepAsCompleted("rewards");
+
     }
   },[completedSteps])
 
@@ -478,7 +483,7 @@ export default function ProjectOverview({ data }: ProjectOverviewProps) {
                   <span className='text-green-500 font-semibold'>Project approved</span>
                   <div className='text-xs text-slate-600'>Congratulations! Your campaign has been reviewed and approved. You're ready to start accepting backers.</div>
                   <Button onClick={async()=>{
-                    const result = await updateProject({status:"Live"}, data.project_id as string)
+                    const result = await updateProject({status:"Live", launched_at: new Date().toISOString()}, data.project_id as string)
                     if(result.status) {
                       toast({
                         title: TOAST_SUCCESS_TITLE,

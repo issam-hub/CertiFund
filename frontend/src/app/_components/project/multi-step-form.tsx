@@ -13,7 +13,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { createProject } from "@/app/_actions/projects"
 import { useRouter } from "next/navigation"
 import { useAtomValue } from "jotai"
-import { userAtom } from "@/app/_store/auth"
+import { userAtom } from "@/app/_store/shared"
 
 
 export default function MultiStepForm() {

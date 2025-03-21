@@ -36,7 +36,6 @@ export function RefundButton({ projectId }: { projectId: number }) {
     })
 
     async function onSubmit(values: RefundSchema){
-        setIsOpen(false)
         const result = await refundBacking(projectId, values.reason)
         if(result.status){
             toast({
@@ -46,7 +45,7 @@ export function RefundButton({ projectId }: { projectId: number }) {
             });
             setIsSuccess(true)
             setTimeout(()=>{
-                setIsOpen(true)
+                setIsOpen(false)
             },1000)
         }else{
             toast({

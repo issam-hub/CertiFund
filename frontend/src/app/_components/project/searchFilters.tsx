@@ -32,7 +32,7 @@ const categories = [
 
 // Sorting options
 const sortOptions = [
-  { value: "-updated_at", label: "Newest" },
+  { value: "-launched_at", label: "Newest" },
   { value: "most_funded", label: "Most Funded" },
   { value: "deadline", label: "Ending Soon" },
   { value: "-funding_goal", label: "Highest Goal" },
@@ -44,7 +44,7 @@ const sortOptions = [
 export function SearchFilters({
   selectedCategory = "",
   validatedOnly = false,
-  sort = "-updated_at",
+  sort = "-launched_at",
 }: {
   selectedCategory?: string
   validatedOnly?: boolean
@@ -75,7 +75,7 @@ export function SearchFilters({
     // }
 
     // Handle sort
-    if (selectedSort !== "-updated_at") {
+    if (selectedSort !== "-launched_at") {
       params.set("sort", selectedSort)
     } else {
       params.delete("sort")
@@ -107,7 +107,7 @@ export function SearchFilters({
   const clearFilters = () => {
     setSelectedCategories([])
     setIsValidatedOnly(false)
-    setSelectedSort("-updated_at")
+    setSelectedSort("-launched_at")
   }
 
   return (

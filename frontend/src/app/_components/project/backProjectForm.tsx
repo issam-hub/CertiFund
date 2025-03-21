@@ -20,15 +20,16 @@ import { backProjectSchema, BackProjectSchema } from "@/app/_lib/schemas/project
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { ArrowRight, Loader2 } from "lucide-react";
+import { ArrowRight, Loader2, Trash } from "lucide-react";
 import { TOAST_ERROR_TITLE, TOAST_SUCCESS_TITLE } from "@/app/_lib/constants";
 import { useToast } from "@/hooks/use-toast";
-import { useAtomValue } from "jotai";
-import { userAtom } from "@/app/_store/auth";
+import { useAtom, useAtomValue } from "jotai";
+import { selectedRewardsAtom, userAtom } from "@/app/_store/shared";
 import { backProject, createPaymentIntent } from "@/app/_actions/projects";
 import { Label } from "@/components/ui/label";
+import { Reward } from "@/app/_lib/types";
 
-export function BackProjectForm({ projectId }: { projectId: number }) {
+export function BackProjectForm({ projectId,rewards }: { projectId: number, rewards?:Reward[] }) {
   const [isOpen, setIsOpen] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -36,6 +37,17 @@ export function BackProjectForm({ projectId }: { projectId: number }) {
   const {toast} = useToast()
   const stripe = useStripe();
   const elements = useElements();
+  const [sharedSelectedRewards, setSharedSelectedRewards] = useAtom(selectedRewardsAtom)
+
+  const toggleReward = (rewardId: number) => {
+    setSharedSelectedRewards((prev) => (prev.includes(rewardId) ? prev.filter((id) => id !== rewardId) : [...prev, rewardId]))
+  }
+
+  const getSelectedRewardsData = () => {
+    return rewards?.filter((reward) => sharedSelectedRewards.includes(reward.id))
+  }
+
+  const amountInRewards = getSelectedRewardsData()?.reduce((total, reward) => total + reward.amount, 0) as number
 
     const form = useForm<BackProjectSchema>({
       resolver: zodResolver(backProjectSchema),
@@ -43,6 +55,8 @@ export function BackProjectForm({ projectId }: { projectId: number }) {
         amount: 0
       }
     })
+
+    form.setValue("amount", amountInRewards)
 
       async function onSubmit(values: BackProjectSchema) {
         setIsLoading(true)
@@ -84,7 +98,8 @@ export function BackProjectForm({ projectId }: { projectId: number }) {
           const result = await backProject({
             project_id: projectId,
             payment_intent_id: confirm.paymentIntent.id,
-            payment_method: "card"
+            payment_method: "card",
+            rewards: getSelectedRewardsData()?.map((reward) => reward.id) ?? [],
           })
           if(result.status) {
             toast({
@@ -93,7 +108,7 @@ export function BackProjectForm({ projectId }: { projectId: number }) {
               variant: "default",
             });
             setIsSuccess(true)
-            
+            setSharedSelectedRewards([])
           } else {
             toast({
               title: TOAST_ERROR_TITLE,
@@ -153,19 +168,52 @@ export function BackProjectForm({ projectId }: { projectId: number }) {
                 onSubmit={form.handleSubmit(onSubmit)}
                 className="space-y-6"
               >
-                <FormField
-                  control={form.control}
-                  name="amount"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="font-semibold">Amount:</FormLabel>
-                      <FormControl>
-                        <Input {...form.register("amount",{setValueAs:(value)=>value ===""?undefined:Number(value)})} placeholder="0.00DA" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {
+                  (getSelectedRewardsData()?.length ?? 0) > 0 ? (
+                    <>
+                    <div className="space-y-4 my-4 max-h-[60vh] overflow-y-auto">
+                      {
+                        getSelectedRewardsData()?.map((reward) => (
+                          <div key={reward.id} className="flex justify-between items-start border-b pb-4">
+                            <div>
+                              <h4 className="font-medium">{reward.title}</h4>
+                              <p className="text-sm text-muted-foreground">{reward.amount/100}DA</p>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-red-500 hover:text-red-700 hover:bg-red-100"
+                              onClick={() => toggleReward(reward.id)}
+                              >
+                              <Trash className="h-4 w-4"/>
+                            </Button>
+                          </div>
+                        ))
+                      }
+                    </div>
+                    <div>
+                      <p className="font-medium">Total</p>
+                      <p className="text-xl font-bold text-secondaryColor">
+                        {amountInRewards/100}DA
+                      </p>
+                    </div>
+                    </>
+                  ):(
+                    <FormField
+                      control={form.control}
+                      name="amount"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="font-semibold">Amount:</FormLabel>
+                          <FormControl>
+                            <Input {...form.register("amount",{setValueAs:(value)=>value ===""?undefined:Number(value)})} placeholder="0.00DA" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )
+                }
                 <div>
                     <Label className="font-semibold">Card Details:</Label>
                     <div className="mt-2 py-3 rounded-md border border-input px-3 text-base shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring md:text-sm">
