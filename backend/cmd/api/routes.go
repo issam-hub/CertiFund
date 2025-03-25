@@ -47,7 +47,16 @@ func (app *application) routes(e *echo.Echo) {
 	authGroup.POST("/backing/refund/:id", app.refundHandler, app.RequirePermission("backing:create"))
 
 	// rewards
-	authGroup.POST("/rewards/create/:id", app.createRewardsHandler)
-	authGroup.PUT("/rewards/update/:id", app.updateRewardsHandler)
+	authGroup.POST("/rewards/create/:id", app.createRewardsHandler, app.RequirePermission("rewards:create"))
+	authGroup.PUT("/rewards/update/:id", app.updateRewardsHandler, app.RequirePermission("rewards:update"))
 	publicGroup.GET("/rewards/:id", app.getAllRewardsHandler)
+
+	// updates
+	authGroup.POST("/updates/create/:id", app.createUpdateHandler, app.RequirePermission("updates:create"), app.VerifyProjectOwnership())
+	publicGroup.GET("/updates/:id", app.getAllUpdatesHandler)
+	authGroup.DELETE("/updates/:id", app.deleteUpdateHandler, app.RequirePermission("updates:delete"))
+
+	// comments
+	authGroup.POST("/comments/create/:id", app.createCommentHandler)
+	publicGroup.GET("/comments/:id", app.getAllCommentsHandler)
 }

@@ -19,6 +19,8 @@ type Models struct {
 	Tokens      TokenModel
 	Backing     BackingModel
 	Rewards     RewardModel
+	Updates     UpdateModel
+	Comments    CommentsModel
 }
 
 func NewModels(db *sql.DB) Models {
@@ -29,5 +31,7 @@ func NewModels(db *sql.DB) Models {
 		Tokens:      TokenModel{DB: db},
 		Backing:     BackingModel{DB: db},
 		Rewards:     RewardModel{DB: db},
+		Updates:     UpdateModel{DB: db},
+		Comments:    CommentsModel{DB: db},
 	}
 }
