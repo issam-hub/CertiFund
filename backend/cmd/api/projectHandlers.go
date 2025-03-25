@@ -269,5 +269,114 @@ func (app *application) getProjectsByCreatorHandler(c echo.Context) error {
 		"message":  "projects returned successfully",
 		"projects": projects,
 	})
+}
 
+func (app *application) createUpdateHandler(c echo.Context) error {
+	id, err := app.readIDParam(c)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusNotFound, err.Error())
+	}
+
+	_, err = app.models.Projects.Get(id)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrNoRecordFound):
+			return echo.NewHTTPError(http.StatusNotFound, "Project not found")
+		default:
+			return err
+		}
+	}
+
+	var input struct {
+		Title   string `json:"title"`
+		Content string `json:"content"`
+	}
+
+	if err := c.Bind(&input); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Error while processing data")
+	}
+
+	update := &data.Update{
+		Title:     input.Title,
+		Content:   input.Content,
+		ProjectID: id,
+	}
+
+	v := validator.New()
+	if data.ValidateUpdate(v, update); !v.Valid() {
+		return echo.NewHTTPError(http.StatusUnprocessableEntity, v.Errors)
+	}
+
+	err = app.models.Updates.Insert(update)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(http.StatusCreated, envelope{
+		"message": "Update published successfully",
+		"update":  update,
+	})
+}
+
+func (app *application) deleteUpdateHandler(c echo.Context) error {
+	id, err := app.readIDParam(c)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusNotFound, err.Error())
+	}
+
+	err = app.models.Updates.Delete(id)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrNoRecordFound):
+			return echo.NewHTTPError(http.StatusNotFound, data.ErrNoRecordFound.Error())
+		default:
+			return err
+		}
+	}
+
+	return c.JSON(http.StatusOK, envelope{"message": "Update deleted successfully"})
+}
+
+func (app *application) getAllUpdatesHandler(c echo.Context) error {
+	id, err := app.readIDParam(c)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusNotFound, err.Error())
+	}
+
+	_, err = app.models.Projects.Get(id)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrNoRecordFound):
+			return echo.NewHTTPError(http.StatusNotFound, "Project not found")
+		default:
+			return err
+		}
+	}
+
+	var input struct {
+		data.Filter
+	}
+
+	v := validator.New()
+
+	input.Page = app.readInt(c.QueryParams(), "page", 1, v)
+	input.PageSize = app.readInt(c.QueryParams(), "page_size", 5, v)
+
+	v.Check(input.Page >= 1 && input.PageSize <= 10_000_000, "page", "page must be between 1 and 10000000")
+	v.Check(input.PageSize >= 1 && input.PageSize <= 100, "page_size", "page size must be between 1 and 100")
+
+	if !v.Valid() {
+		return echo.NewHTTPError(http.StatusUnprocessableEntity, v.Errors)
+	}
+
+	updates, metadata, err := app.models.Updates.GetAllByProjectID(id, input.Filter)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(http.StatusOK, envelope{
+		"message":  "Updates returned successfully",
+		"metadata": metadata,
+		"updates":  updates,
+	})
 }
