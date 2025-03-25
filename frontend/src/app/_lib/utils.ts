@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
+import { Comment } from "./types";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -153,4 +154,91 @@ export function calculateDateDifferenceJSON(targetDateStr:string) {
     months: months,
     days: remainingDays
   };
+}
+
+export function formatRelativeTime(dateString: string): string {
+  const date = new Date(dateString);
+  const now = new Date();
+  
+  // Get time difference in milliseconds
+  const diffMs = now.getTime() - date.getTime();
+  
+  // Convert to seconds
+  const diffSec = Math.floor(diffMs / 1000);
+  
+  // Less than 60 seconds
+  if (diffSec < 60) {
+    return "just now";
+  }
+  
+  // Minutes (less than 60 minutes)
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) {
+    return `${diffMin} ${diffMin === 1 ? 'minute' : 'minutes'} ago`;
+  }
+  
+  // Hours (less than 24 hours)
+  const diffHours = Math.floor(diffMin / 60);
+  if (diffHours < 24) {
+    return `${diffHours} ${diffHours === 1 ? 'hour' : 'hours'} ago`;
+  }
+  
+  // Days (less than 30 days)
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffDays < 30) {
+    return `${diffDays} ${diffDays === 1 ? 'day' : 'days'} ago`;
+  }
+  
+  // Months (less than 12 months)
+  const diffMonths = Math.floor(diffDays / 30);
+  if (diffMonths < 12) {
+    return `${diffMonths} ${diffMonths === 1 ? 'month' : 'months'} ago`;
+  }
+  
+  // Years
+  const diffYears = Math.floor(diffMonths / 12);
+  return `${diffYears} ${diffYears === 1 ? 'year' : 'years'} ago`;
+}
+
+export function transformComments(comments: any[]): Comment[] {
+  // Create a map to store comments by their ID
+  const commentMap = new Map<number, Comment>();
+
+  // First pass: Create base comment objects
+  comments.forEach(comment => {
+    const formattedComment: Comment = {
+      id: comment.id,
+      content: comment.content,
+      username: comment.username,
+      image_url: comment.image_url || "/placeholder.svg",
+      created_at: formatRelativeTime(comment.created_at),
+      replies: []
+    };
+    commentMap.set(comment.id, formattedComment);
+  });
+
+  // Second pass: Build nested structure
+  const rootComments: Comment[] = [];
+  comments.forEach(comment => {
+    const pathParts = comment.path.split(',').map(Number);
+    
+    if (pathParts.length === 1) {
+      // Root comment
+      rootComments.push(commentMap.get(comment.id)!);
+    } else {
+      // This is a reply
+      const parentId = pathParts[pathParts.length - 2];
+      const parentComment = commentMap.get(parentId);
+      const currentComment = commentMap.get(comment.id);
+
+      if (parentComment && currentComment) {
+        if (!parentComment.replies) {
+          parentComment.replies = [];
+        }
+        parentComment.replies.push(currentComment);
+      }
+    }
+  });
+
+  return rootComments;
 }

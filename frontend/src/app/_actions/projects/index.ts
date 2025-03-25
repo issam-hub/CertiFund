@@ -1,7 +1,7 @@
 "use server"
 
 import { apiUrl } from "@/app/_lib/config";
-import { CreateProjectSchema, RewardsSchema } from "@/app/_lib/schemas/project";
+import { CreateProjectSchema, RewardsSchema, UpdateSchema } from "@/app/_lib/schemas/project";
 import { BasicsFormData, FundingFormData, StoryFormData } from "@/app/_lib/types";
 import { formatDateTime } from "@/app/_lib/utils";
 import { authFetch } from "@/app/_lib/utils/auth";
@@ -332,7 +332,6 @@ export async function handleRewards(rewards: RewardsSchema, project_id: string, 
             estimated_delivery: formatDateTime(new Date(reward.estimated_delivery).toISOString())
         }
     })
-    console.log("rewards", JSON.stringify(rewards))
     const res = await authFetch(`${apiUrl}/rewards/${type}/${project_id}`,{
         method:type === "create" ? "POST" : "PUT",
         headers:{
@@ -353,6 +352,120 @@ export async function handleRewards(rewards: RewardsSchema, project_id: string, 
           revalidateTag("project")
           revalidateTag("projects")
           revalidateTag("projects-creator")
+      
+          const result = await res.json();
+          return {status:true, ...result}
+    }catch(error: any){
+        return {status: false, error: error.message}
+    }
+}
+
+export async function publishUpdate(data: UpdateSchema, project_id: string){
+    const res = await authFetch(`${apiUrl}/updates/create/${project_id}`,{
+        method:'POST',
+        headers:{
+            "Content-Type":"application/json"
+        },
+        body: JSON.stringify(data)
+    })
+    try {
+        if(!res.ok) {
+            const result = await res.json()
+            if(typeof result.error === "object"){
+                return {status:false, error: Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
+            }
+            return {status: false, ...result}
+          }  
+          
+          revalidateTag("updates")
+      
+          const result = await res.json();
+          return {status:true, ...result}
+    }catch(error: any){
+        return {status: false, error: error.message}
+    }
+}
+
+export async function getUpdates(project_id: string, page: number=1, limit: number=5){
+    const res = await fetch(`${apiUrl}/updates/${project_id}?page=${page}&page_size=${limit}`, {next:{tags:["updates"]}})
+    try {
+        if(!res.ok) {
+            const result = await res.json()
+            if(typeof result.error === "object"){
+                return {status:false, error: Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
+            }
+            return {status: false, ...result}
+          }    
+      
+          const result = await res.json();
+          return {status:true, ...result}
+    }catch(error: any){
+        return {status: false, error: error.message}
+    }
+}
+
+export async function deleteUpdate(id: number){
+    const res = await authFetch(`${apiUrl}/updates/${id}`,{
+        method:'DELETE'
+    })
+    try {
+        if(!res.ok) {
+            const result = await res.json()
+            if(typeof result.error === "object"){
+                return {status:false, error: Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
+            }
+            return {status: false, ...result}
+          }   
+          
+          revalidateTag("updates")
+      
+          const result = await res.json();
+          return {status:true, ...result}
+    }catch(error: any){
+        return {status: false, error: error.message}
+    }
+}
+
+export async function getComments(projectId: string){
+    const res = await fetch(`${apiUrl}/comments/${projectId}`, {next:{tags:["comments"]}})
+    try {
+        if(!res.ok) {
+            const result = await res.json()
+            if(typeof result.error === "object"){
+                return {status:false, error: Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
+            }
+            return {status: false, ...result}
+          }    
+      
+          const result = await res.json();
+          return {status:true, ...result}
+    }catch(error: any){
+        return {status: false, error: error.message}
+    }
+}
+
+export async function createComment(projectId: string, content: string, parentId: number|null){
+    console.log(`${apiUrl}/comments/create/${projectId}`)
+    const res = await authFetch(`${apiUrl}/comments/create/${projectId}`,{
+        method:"POST",
+        headers:{
+            "Content-Type":"application/json"
+        },
+        body: JSON.stringify({
+            content,
+            parent_comment_id: parentId
+        })
+    })
+    try {
+        if(!res.ok) {
+            const result = await res.json()
+            if(typeof result.error === "object"){
+                return {status:false, error: Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
+            }
+            return {status: false, ...result}
+          }   
+          
+          revalidateTag("comments")
       
           const result = await res.json();
           return {status:true, ...result}

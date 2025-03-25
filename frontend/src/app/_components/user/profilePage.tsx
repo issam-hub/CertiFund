@@ -139,7 +139,8 @@ export default function ProfilePage({projects}:{projects: UpdateProjectSchema[]}
 }
 
 function ProjectCard({ project } :{project:UpdateProjectSchema}) {
-  const currentFund = ((project.current_funding * 100) / project.funding_goal).toFixed(2)
+  let currentFund = ((project.current_funding * 100) / project.funding_goal).toFixed(2)
+  let displayedCurrentFund = parseFloat(currentFund) > 100 ? "100" : currentFund
   let statusColor;
   switch(project.status){
     case "Pending Review":
@@ -186,7 +187,7 @@ function ProjectCard({ project } :{project:UpdateProjectSchema}) {
           {/* <Progress value={(project.raised / project.goal) * 100} className="h-2 bg-gray-200" /> */}
         </div>
         <div className={`relative h-2 rounded-full bg-slate-200 mt-3`}>
-          <div style={{width:`${currentFund}%`}} className='h-2 rounded-full bg-accentColor absolute top-0 left-0'></div>
+          <div style={{width:`${displayedCurrentFund}%`}} className='h-2 rounded-full bg-accentColor absolute top-0 left-0'></div>
         </div>
       </CardContent>
       <CardFooter className="pt-2 flex-row-reverse">

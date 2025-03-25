@@ -1,14 +1,14 @@
 "use client"
 import React, { useEffect, useState } from 'react';
-import { cn } from "@/app/_lib/utils";
-import { Check, ChevronDown, Frown, Goal, Hourglass, LucideIcon, PartyPopper, Rocket, Target, Timer, Trash2, Trophy, X } from 'lucide-react';
+import { cn, formatRelativeTime } from "@/app/_lib/utils";
+import { ChartLine, Check, ChevronDown, Frown, Goal, Hourglass, LucideIcon, PartyPopper, Plus, Rocket, Target, Timer, Trash2, Trophy, X } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import Link from 'next/link';
 import { UpdateProjectSchema } from '@/app/_lib/schemas/project';
 import ProjectForm from '@/components/projectForm';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { deleteProject, updateProject } from '@/app/_actions/projects';
+import { deleteProject, deleteUpdate, updateProject } from '@/app/_actions/projects';
 import { TOAST_ERROR_TITLE, TOAST_SUCCESS_TITLE } from '@/app/_lib/constants';
 import {
   AlertDialog,
@@ -22,7 +22,9 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { useRouter } from 'next/navigation';
-import { Reward } from '@/app/_lib/types';
+import { Reward, Update } from '@/app/_lib/types';
+import { ProjectUpdateForm } from './projectUpdateForm';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 const projectRules = [
   "All projects must have a clear goal and timeline",
@@ -35,6 +37,7 @@ const projectRules = [
 
 interface ProjectOverviewProps {
   data: UpdateProjectSchema & {rewards?:Reward[]}
+  updates: Update[]
 }
 
 // New interface for circle customization
@@ -203,14 +206,16 @@ function getTimeDifference(dateString: string): string {
   return `${formattedDays}d ${formattedHours}h ${formattedMinutes}m`;
 }
 
-export default function ProjectOverview({ data }: ProjectOverviewProps) {
+export default function ProjectOverview({ data, updates }: ProjectOverviewProps) {
   const [completedSteps, setCompletedSteps] = useState<string[]>([]);
   const [expandedStep, setExpandedStep] = useState<string>("");
   const [timeRemaining, setTimeRemaining] = useState<string>(getTimeDifference(data.deadline));
+  const [showUpdateForm, setShowUpdateForm] = useState<boolean>(false);
   const {toast} = useToast()
   const router = useRouter()
 
-  const currentFund = ((data.current_funding * 100) / data.funding_goal).toFixed(2)
+  let currentFund = ((data.current_funding * 100) / data.funding_goal).toFixed(2)
+  let displayedCurrentFund = parseFloat(currentFund) > 100 ? "100" : currentFund
 
   const isStepCompleted = (stepId: string) => completedSteps.includes(stepId);
 
@@ -251,27 +256,33 @@ export default function ProjectOverview({ data }: ProjectOverviewProps) {
     setExpandedStep("");
   };
 
+  const handleShowProjectUpdate = (newValue:boolean)=>{
+    setShowUpdateForm(newValue)
+  }
+
   return (
     <div className="container mx-auto py-8 max-w-[80%] max-lg:max-w-full max-lg:px-2 mb-[70px]">
       <h1 className="text-3xl font-bold text-center">{data.title}</h1>
-      <div className='text-center mt-3 mb-12 space-x-2'>
-        {
-          data.categories && data.categories.map((category, index) => (
-            <Badge key={index} variant="outline" className='rounded-full'>{category}</Badge>
-          ))
-        }
+      <div className="text-center mt-3 mb-12 space-x-2">
+        {data.categories &&
+          data.categories.map((category, index) => (
+            <Badge key={index} variant="outline" className="rounded-full">
+              {category}
+            </Badge>
+          ))}
       </div>
 
-      {
-        data.status === "Draft" && (
-          <div>
+      {data.status === "Draft" && (
+        <div>
           <h2 className="text-2xl mb-4 text-slate-600">Rules</h2>
-          <TimelineStep 
-            stepId="rules" 
-            title="Project Rules" 
+          <TimelineStep
+            stepId="rules"
+            title="Project Rules"
             stepNumber="1"
             isCompleted={isStepCompleted("rules")}
-            onStepClick={() => setExpandedStep(expandedStep === "rules" ? "" : "rules")}
+            onStepClick={() =>
+              setExpandedStep(expandedStep === "rules" ? "" : "rules")
+            }
           >
             {expandedStep === "rules" && (
               <div className="space-y-4">
@@ -301,100 +312,131 @@ export default function ProjectOverview({ data }: ProjectOverviewProps) {
             )}
           </TimelineStep>
         </div>
-        )
-      }
+      )}
 
       <div>
         <h2 className="text-2xl mb-4 text-slate-600">Project Details</h2>
-        <TimelineStep 
-          stepId="basics" 
-          title="Project Basics" 
+        <TimelineStep
+          stepId="basics"
+          title="Project Basics"
           stepNumber="2"
           isCompleted={isStepCompleted("basics")}
-          onStepClick={() => setExpandedStep(expandedStep === "basics" ? "" : "basics")}
+          onStepClick={() =>
+            setExpandedStep(expandedStep === "basics" ? "" : "basics")
+          }
         >
           {expandedStep === "basics" && (
-            <ProjectForm data={data} activeTab="basics" onStepComplete={(stepId) => {
-              markStepAsCompleted(stepId);
-              setExpandedStep("");
-            }} />
+            <ProjectForm
+              data={data}
+              activeTab="basics"
+              onStepComplete={(stepId) => {
+                markStepAsCompleted(stepId);
+                setExpandedStep("");
+              }}
+            />
           )}
         </TimelineStep>
 
-        <TimelineStep 
-          stepId="funding" 
-          title="Funding Details" 
+        <TimelineStep
+          stepId="funding"
+          title="Funding Details"
           stepNumber="3"
           isCompleted={isStepCompleted("funding")}
-          onStepClick={() => setExpandedStep(expandedStep === "funding" ? "" : "funding")}
+          onStepClick={() =>
+            setExpandedStep(expandedStep === "funding" ? "" : "funding")
+          }
         >
           {expandedStep === "funding" && (
-            <ProjectForm data={data} activeTab="funding" onStepComplete={(stepId) => {
-              markStepAsCompleted(stepId);
-              setExpandedStep("");
-            }} />
+            <ProjectForm
+              data={data}
+              activeTab="funding"
+              onStepComplete={(stepId) => {
+                markStepAsCompleted(stepId);
+                setExpandedStep("");
+              }}
+            />
           )}
         </TimelineStep>
 
-        <TimelineStep 
-          stepId="story" 
-          title="Story" 
+        <TimelineStep
+          stepId="story"
+          title="Story"
           stepNumber="4"
           isCompleted={isStepCompleted("story")}
-          onStepClick={() => setExpandedStep(expandedStep === "story" ? "" : "story")}
+          onStepClick={() =>
+            setExpandedStep(expandedStep === "story" ? "" : "story")
+          }
         >
           {expandedStep === "story" && (
-            <ProjectForm data={data} activeTab="story" onStepComplete={(stepId) => {
-              markStepAsCompleted(stepId);
-              setExpandedStep("");
-            }} />
+            <ProjectForm
+              data={data}
+              activeTab="story"
+              onStepComplete={(stepId) => {
+                markStepAsCompleted(stepId);
+                setExpandedStep("");
+              }}
+            />
           )}
         </TimelineStep>
 
-        <TimelineStep 
-          stepId="rewards" 
-          title="Rewards (optional)" 
+        <TimelineStep
+          stepId="rewards"
+          title="Rewards (optional)"
           stepNumber="5"
           isCompleted={isStepCompleted("rewards")}
-          onStepClick={() => setExpandedStep(expandedStep === "rewards" ? "" : "rewards")}
+          onStepClick={() =>
+            setExpandedStep(expandedStep === "rewards" ? "" : "rewards")
+          }
         >
           {expandedStep === "rewards" && (
-            <ProjectForm data={data} activeTab="rewards" onStepComplete={(stepId) => {
-              markStepAsCompleted(stepId);
-              setExpandedStep("");
-            }} />
+            <ProjectForm
+              data={data}
+              activeTab="rewards"
+              onStepComplete={(stepId) => {
+                markStepAsCompleted(stepId);
+                setExpandedStep("");
+              }}
+            />
           )}
         </TimelineStep>
       </div>
-      {
-        (data.status !== "Live" && data.status !== "Completed") ? (
+      {data.status !== "Live" && data.status !== "Completed" ? (
         <div>
           <h2 className="text-2xl mb-4 text-slate-600">Project Review</h2>
-          {
-            data.status === "Draft" && (
-              <DynamicTimelineStep
-                stepId="submit"
-                stepNumber="6"
-                content={
-                  <Button onClick={async()=>{
-                    const isEverythingCompleted = ['story', 'funding', 'basics', 'rules'].filter(item => completedSteps.indexOf(item) < 0)
-                    if(isEverythingCompleted.length !== 0){
+          {data.status === "Draft" && (
+            <DynamicTimelineStep
+              stepId="submit"
+              stepNumber="6"
+              content={
+                <Button
+                  onClick={async () => {
+                    const isEverythingCompleted = [
+                      "story",
+                      "funding",
+                      "basics",
+                      "rules",
+                    ].filter((item) => completedSteps.indexOf(item) < 0);
+                    if (isEverythingCompleted.length !== 0) {
                       toast({
                         title: "Warning",
-                        description: "Please complete all the steps before submitting",
+                        description:
+                          "Please complete all the steps before submitting",
                         variant: "warning",
                       });
                       return;
                     }
-                    const result = await updateProject({status:"Pending Review"}, data.project_id as string)
-                    if(result.status) {
+                    const result = await updateProject(
+                      { status: "Pending Review" },
+                      data.project_id as string
+                    );
+                    if (result.status) {
                       toast({
                         title: TOAST_SUCCESS_TITLE,
                         description: "Project submitted successfully",
                         variant: "default",
                       });
-                    
-                      markStepAsCompleted('submit');
+
+                      markStepAsCompleted("submit");
                     } else {
                       toast({
                         title: TOAST_ERROR_TITLE,
@@ -402,66 +444,390 @@ export default function ProjectOverview({ data }: ProjectOverviewProps) {
                         variant: "destructive",
                       });
                     }
-                  }} className='bg-secondaryColor hover:bg-secondaryColor'>Submit for Review</Button>
-                }
-              />
-            )
-          }
+                  }}
+                  className="bg-secondaryColor hover:bg-secondaryColor"
+                >
+                  Submit for Review
+                </Button>
+              }
+            />
+          )}
           {data.status === "Pending Review" && (
             <DynamicTimelineStep
               stepId="review"
               circleIcon={Hourglass}
               content={
-                <div className={`mt-[3px] border-2 border-orange-400 border-dashed px-5 py-3 rounded-md`}>
-                  <div className='flex items-center gap-2 text-orange-400'>
+                <div
+                  className={`mt-[3px] border-2 border-orange-400 border-dashed px-5 py-3 rounded-md`}
+                >
+                  <div className="flex items-center gap-2 text-orange-400">
                     <span className="relative flex h-2.5 w-2.5">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
                       <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-orange-500"></span>
                     </span>
-                    <span className='font-semibold'>Pending Review...</span>
+                    <span className="font-semibold">Pending Review...</span>
                   </div>
-                  <span className='text-xs'>Estimated completion time: <span className='font-bold'>24-48 hours</span></span>
+                  <span className="text-xs">
+                    Estimated completion time:{" "}
+                    <span className="font-bold">24-48 hours</span>
+                  </span>
                 </div>
               }
             />
           )}
           {data.status === "Rejected" && (
             <>
+              <DynamicTimelineStep
+                stepId="reject"
+                circleIcon={X}
+                circleBgColor="secondaryColor"
+                circleTextColor="white"
+                content={
+                  <div
+                    className={`mt-[3px] border-2 border-red-500 border-dashed px-5 py-3 rounded-md`}
+                  >
+                    <span className="text-red-500 font-semibold">
+                      Project rejected
+                    </span>
+                    <div className="text-xs text-slate-600">
+                      Your campaign cannot be published at this time
+                    </div>
+                  </div>
+                }
+              />
+              <DynamicTimelineStep
+                stepId="submit"
+                stepNumber="7"
+                content={
+                  <Button
+                    onClick={async () => {
+                      const isEverythingCompleted = [
+                        "story",
+                        "funding",
+                        "basics",
+                        "rules",
+                      ].filter((item) => completedSteps.indexOf(item) < 0);
+                      if (isEverythingCompleted.length !== 0) {
+                        toast({
+                          title: "Warning",
+                          description:
+                            "Please complete all the steps before submitting",
+                          variant: "warning",
+                        });
+                        return;
+                      }
+                      const result = await updateProject(
+                        { status: "Pending Review" },
+                        data.project_id as string
+                      );
+                      if (result.status) {
+                        toast({
+                          title: TOAST_SUCCESS_TITLE,
+                          description: "Project submitted successfully",
+                          variant: "default",
+                        });
+
+                        markStepAsCompleted("submit");
+                      } else {
+                        toast({
+                          title: TOAST_ERROR_TITLE,
+                          description: result.error,
+                          variant: "destructive",
+                        });
+                      }
+                    }}
+                    className="bg-secondaryColor hover:bg-secondaryColor"
+                  >
+                    Submit for Review
+                  </Button>
+                }
+              />
+            </>
+          )}
+          {data.status === "Approved" && (
             <DynamicTimelineStep
-              stepId="reject"
-              circleIcon={X}
-              circleBgColor='secondaryColor'
-              circleTextColor='white'
+              stepId="approve"
+              isCompleted={true}
               content={
-                <div className={`mt-[3px] border-2 border-red-500 border-dashed px-5 py-3 rounded-md`}>
-                  <span className='text-red-500 font-semibold'>Project rejected</span>
-                  <div className='text-xs text-slate-600'>Your campaign cannot be published at this time</div>
+                <div
+                  className={`mt-[3px] border-2 border-green-500 border-dashed px-5 py-3 rounded-md`}
+                >
+                  <span className="text-green-500 font-semibold">
+                    Project approved
+                  </span>
+                  <div className="text-xs text-slate-600">
+                    Congratulations! Your campaign has been reviewed and
+                    approved. You're ready to start accepting backers.
+                  </div>
+                  <Button
+                    onClick={async () => {
+                      const result = await updateProject(
+                        {
+                          status: "Live",
+                          launched_at: new Date().toISOString(),
+                        },
+                        data.project_id as string
+                      );
+                      if (result.status) {
+                        toast({
+                          title: TOAST_SUCCESS_TITLE,
+                          description: "Project launched successfully",
+                          variant: "default",
+                        });
+                      } else {
+                        toast({
+                          title: TOAST_ERROR_TITLE,
+                          description: result.error,
+                          variant: "destructive",
+                        });
+                      }
+                    }}
+                    className="mt-5 bg-green-700 hover:bg-green-700"
+                  >
+                    Launch project
+                  </Button>
                 </div>
               }
             />
+          )}
+        </div>
+      ) : (
+        <div>
+          <h2 className="text-2xl mb-4 text-slate-600">Campaign Status</h2>
+          {data.status === "Live" && (
             <DynamicTimelineStep
-            stepId="submit"
-            stepNumber="7"
-            content={
-              <Button onClick={async()=>{
-                const isEverythingCompleted = ['story', 'funding', 'basics', 'rules'].filter(item => completedSteps.indexOf(item) < 0)
-                if(isEverythingCompleted.length !== 0){
-                  toast({
-                    title: "Warning",
-                    description: "Please complete all the steps before submitting",
-                    variant: "warning",
-                  });
-                  return;
+              stepId="live"
+              circleIcon={Rocket}
+              circleBgColor="secondaryColor"
+              circleTextColor="white"
+              content={
+                <div
+                  className={`mt-[3px] border-2 border-secondaryColor border-dashed px-5 py-3 rounded-md`}
+                >
+                  <h2 className="flex items-center">
+                    Project is now live
+                    <PartyPopper className="ml-3 h-6 w-6 text-secondaryColor" />
+                  </h2>
+                  <div className="flex justify-between items-center gap-5 mt-4">
+                    <div className="rounded-md w-1/2 p-3 bg-slate-100">
+                      <div>
+                        <div className="flex justify-between items-center">
+                          <div className="flex gap-2 items-center">
+                            <Target className="w-6 h-6 text-secondaryColor" />
+                            <p className="text-sm">Current funding</p>
+                          </div>
+                          <p className="text-secondaryColor font-semibold text-sm">
+                            {currentFund}%
+                          </p>
+                        </div>
+                        <div
+                          className={`relative h-2 rounded-full bg-slate-200 mt-3`}
+                        >
+                          <div
+                            style={{ width: `${displayedCurrentFund}%` }}
+                            className="h-2 rounded-full bg-secondaryColor absolute top-0 left-0"
+                          ></div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex rounded-md bg-slate-100 p-3 w-1/2 justify-between items-center self-stretch">
+                      <div className="flex gap-2 items-center">
+                        <Timer className="h-6 w-6 text-secondaryColor" />
+                        <p className="text-sm">Time remaining</p>
+                      </div>
+                      <p className="text-secondaryColor font-semibold text-sm">
+                        {timeRemaining}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              }
+            />
+          )}
+          {data.status === "Completed" && (
+            <DynamicTimelineStep
+              stepId="completed"
+              circleIcon={isGoalReached ? Trophy : X}
+              circleBgColor="secondaryColor"
+              circleTextColor="white"
+              content={
+                <div
+                  className={`mt-[3px] border-2 border-dashed px-5 py-3 rounded-md ${
+                    isGoalReached ? "border-green-500" : "border-orange-200"
+                  }`}
+                >
+                  <h2 className="flex items-center">
+                    {isGoalReached ? (
+                      <div className="flex text-green-500">
+                        Campaign Successfully Completed!
+                        <PartyPopper className="ml-3 h-6 w-6 text-green-500" />
+                      </div>
+                    ) : (
+                      <div className="text-orange-900 flex">
+                        Campaign Ended - Goal Not Reached{" "}
+                        <Frown className="ml-3 h-6 w-6 text-orange-900" />
+                      </div>
+                    )}
+                  </h2>
+                  <div
+                    className={`mt-4 flex flex-wrap justify-around text-center border ${
+                      !isGoalReached
+                        ? "bg-orange-50 border-orange-200"
+                        : "bg-green-50 border-green-200"
+                    } rounded-md p-3`}
+                  >
+                    <div>
+                      <span
+                        className={`text-sm ${
+                          !isGoalReached ? "text-orange-600" : "text-green-500"
+                        }`}
+                      >
+                        Total Raised
+                      </span>
+                      <h4
+                        className={`${
+                          !isGoalReached ? "text-orange-900" : "text-green-800"
+                        }`}
+                      >
+                        ${data.current_funding}
+                      </h4>
+                    </div>
+                    <div>
+                      <span
+                        className={`text-sm ${
+                          !isGoalReached ? "text-orange-600" : "text-green-500"
+                        }`}
+                      >
+                        Total Backers
+                      </span>
+                      <h4
+                        className={`${
+                          !isGoalReached ? "text-orange-900" : "text-green-800"
+                        }`}
+                      >
+                        254
+                      </h4>
+                    </div>
+                    <div>
+                      <span
+                        className={`text-sm ${
+                          !isGoalReached ? "text-orange-600" : "text-green-500"
+                        }`}
+                      >
+                        Goal Achievement
+                      </span>
+                      <h4
+                        className={`${
+                          !isGoalReached ? "text-orange-900" : "text-green-800"
+                        }`}
+                      >
+                        {displayedCurrentFund}%
+                      </h4>
+                    </div>
+                  </div>
+                  {!isGoalReached && (
+                    <div className="text-sm mt-4 text-orange-800 bg-orange-50 border border-orange-200 rounded-md p-3">
+                      Since the funding goal wasn't reached, all pledges will be
+                      automatically refunded to backers within 5-7 business
+                      days.
+                    </div>
+                  )}
+                </div>
+              }
+            />
+          )}
+        </div>
+      )}
+      {(data.status === "Live" || data.status === "Completed") && (
+        <div>
+          <h2 className="text-2xl mb-4 text-slate-600">Project updates</h2>
+          {
+            updates.map((update:Update)=>(
+              <DynamicTimelineStep
+                key={update.id}
+                stepId="submit"
+                circleIcon={ChartLine}
+                isCompleted={true}
+                content={
+                  <Card key={update.id} className="mb-4 relative">
+                    <CardHeader className="pb-2">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <CardTitle><h2 className="text-2xl">{update.title}</h2></CardTitle>
+                          <CardDescription>{formatRelativeTime(update.created_at)}</CardDescription>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="whitespace-pre-line">{update.content}</p>
+                      <Trash2 onClick={async()=>{
+                        const result = await deleteUpdate(update.id)
+                        if(result.status){
+                          toast({
+                            title: TOAST_SUCCESS_TITLE,
+                            description: "Update deleted successfully"
+                          })
+                        }else{
+                          toast({
+                            title: TOAST_ERROR_TITLE,
+                            description: result.error
+                          })
+                        }
+                      }} className='cursor-pointer text-red-500 h-9 w-9 absolute -top-4 -right-4 bg-white p-2 rounded-full border transition-colors hover:bg-slate-50'/>
+                    </CardContent>
+                  </Card>
                 }
-                const result = await updateProject({status:"Pending Review"}, data.project_id as string)
-                if(result.status) {
+              />
+            ))
+          }
+          {!showUpdateForm ? (
+            <DynamicTimelineStep
+              stepId="submit"
+              circleIcon={ChartLine}
+              content={
+                <Button onClick={()=>setShowUpdateForm(true)} className="bg-[#3B82F6] hover:bg-[#1E3A8A]">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Update
+                </Button>
+              }
+            />
+          ) : (
+            <DynamicTimelineStep
+              stepId="submit"
+              circleIcon={ChartLine}
+              content={
+                <ProjectUpdateForm handleShowProjectUpdate={handleShowProjectUpdate} projectId={data.project_id as string} projectTitle={data.title} />
+              }
+            />
+          )}
+        </div>
+      )}
+      <AlertDialog>
+        <AlertDialogTrigger className="rounded-md h-9 px-4 py-2 flex gap-2 items-center text-sm text-red-500 border border-red-500 float-right mt-5">
+          <Trash2 className="h-4 w-4" />
+          Delete project
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete your
+              project and remove it's data from our servers.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                const result = await deleteProject(data.project_id as string);
+                if (result.status) {
                   toast({
                     title: TOAST_SUCCESS_TITLE,
-                    description: "Project submitted successfully",
+                    description: "Project deleted successfully",
                     variant: "default",
                   });
-                
-                  markStepAsCompleted('submit');
+
+                  router.push("/", { scroll: true });
                 } else {
                   toast({
                     title: TOAST_ERROR_TITLE,
@@ -469,160 +835,11 @@ export default function ProjectOverview({ data }: ProjectOverviewProps) {
                     variant: "destructive",
                   });
                 }
-              }} className='bg-secondaryColor hover:bg-secondaryColor'>Submit for Review</Button>
-            }
-          />
-          </>
-          )}
-          {data.status === "Approved" && (
-            <DynamicTimelineStep
-              stepId="approve"
-              isCompleted={true}
-              content={
-                <div className={`mt-[3px] border-2 border-green-500 border-dashed px-5 py-3 rounded-md`}>
-                  <span className='text-green-500 font-semibold'>Project approved</span>
-                  <div className='text-xs text-slate-600'>Congratulations! Your campaign has been reviewed and approved. You're ready to start accepting backers.</div>
-                  <Button onClick={async()=>{
-                    const result = await updateProject({status:"Live", launched_at: new Date().toISOString()}, data.project_id as string)
-                    if(result.status) {
-                      toast({
-                        title: TOAST_SUCCESS_TITLE,
-                        description: "Project launched successfully",
-                        variant: "default",
-                      });
-                    
-                    } else {
-                      toast({
-                        title: TOAST_ERROR_TITLE,
-                        description: result.error,
-                        variant: "destructive",
-                      });
-                    }
-                  }} className='mt-5 bg-green-700 hover:bg-green-700'>Launch project</Button>
-                </div>
-              }
-          />
-          )}
-        </div>
-        ):(
-          <div>
-            <h2 className="text-2xl mb-4 text-slate-600">Campaign Status</h2>
-            {
-              data.status === "Live" && (
-                <DynamicTimelineStep
-                  stepId="live"
-                  circleIcon={Rocket}
-                  circleBgColor='secondaryColor'
-                  circleTextColor='white'
-                  content={
-                    <div className={`mt-[3px] border-2 border-secondaryColor border-dashed px-5 py-3 rounded-md`}>
-                      <h2 className='flex items-center'>Project is now live<PartyPopper className='ml-3 h-6 w-6 text-secondaryColor'/></h2>
-                      <div className='flex justify-between items-center gap-5 mt-4'>
-                        <div className='rounded-md w-1/2 p-3 bg-slate-100'>
-                          <div>
-                            <div className='flex justify-between items-center'>
-                              <div className='flex gap-2 items-center'>
-                                <Target className='w-6 h-6 text-secondaryColor' />
-                                <p className='text-sm'>Current funding</p>
-                              </div>
-                              <p className='text-secondaryColor font-semibold text-sm'>{currentFund}%</p>
-                            </div>
-                            <div className={`relative h-2 rounded-full bg-slate-200 mt-3`}>
-                              <div style={{width:`${currentFund}%`}} className='h-2 rounded-full bg-secondaryColor absolute top-0 left-0'></div>
-                            </div>
-                          </div>
-                        </div>
-                        <div className='flex rounded-md bg-slate-100 p-3 w-1/2 justify-between items-center self-stretch'>
-                          <div className='flex gap-2 items-center'>
-                            <Timer className='h-6 w-6 text-secondaryColor' />
-                            <p className='text-sm'>Time remaining</p>
-                          </div>
-                          <p className='text-secondaryColor font-semibold text-sm'>{timeRemaining}</p>
-                        </div>
-                      </div>
-                    </div>
-                  }
-                />
-              )
-            }
-            {
-              data.status === "Completed" && (
-                <DynamicTimelineStep
-                stepId="completed"
-                circleIcon={isGoalReached ? Trophy : X}
-                circleBgColor='secondaryColor'
-                circleTextColor='white'
-                content={
-                  <div className={`mt-[3px] border-2 border-dashed px-5 py-3 rounded-md ${isGoalReached ? "border-green-500" : "border-orange-200"}`}>
-                    <h2 className='flex items-center'>
-                      {
-                        isGoalReached ? (
-                          <div className='flex text-green-500'>Campaign Successfully Completed!<PartyPopper className='ml-3 h-6 w-6 text-green-500'/></div>
-                        ):(
-                          <div className='text-orange-900 flex'>Campaign Ended - Goal Not Reached <Frown className='ml-3 h-6 w-6 text-orange-900' /></div>
-                        )
-                      }
-                    </h2>
-                    <div className={`mt-4 flex flex-wrap justify-around text-center border ${!isGoalReached ? "bg-orange-50 border-orange-200" : "bg-green-50 border-green-200"} rounded-md p-3`}>
-                      <div>
-                        <span className={`text-sm ${!isGoalReached ? "text-orange-600" : "text-green-500"}`}>Total Raised</span>
-                        <h4 className={`${!isGoalReached ? "text-orange-900" : "text-green-800"}`}>${data.current_funding}</h4>
-                      </div>
-                      <div>
-                        <span className={`text-sm ${!isGoalReached ? "text-orange-600" : "text-green-500"}`}>Total Backers</span>
-                        <h4 className={`${!isGoalReached ? "text-orange-900" : "text-green-800"}`}>254</h4>
-                      </div>
-                      <div>
-                        <span className={`text-sm ${!isGoalReached ? "text-orange-600" : "text-green-500"}`}>Goal Achievement</span>
-                        <h4 className={`${!isGoalReached ? "text-orange-900" : "text-green-800"}`}>{currentFund}%</h4>
-                      </div>
-                    </div>
-                    {
-                      !isGoalReached && (
-                      <div className='text-sm mt-4 text-orange-800 bg-orange-50 border border-orange-200 rounded-md p-3'>
-                        Since the funding goal wasn't reached, all pledges will be automatically refunded to backers within 5-7 business days.
-                      </div>
-                      )
-                    }
-                  </div>
-                }
-              />
-              )
-            }
-          </div>
-        )
-      }
-      <AlertDialog>
-        <AlertDialogTrigger className='rounded-md h-9 px-4 py-2 flex gap-2 items-center text-sm text-red-500 border border-red-500 float-right mt-5'><Trash2 className='h-4 w-4'/>Delete project</AlertDialogTrigger>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete your project
-              and remove it's data from our servers.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={async()=>{
-              const result = await deleteProject(data.project_id as string)
-              if(result.status) {
-                toast({
-                  title: TOAST_SUCCESS_TITLE,
-                  description: "Project deleted successfully",
-                  variant: "default",
-                });
-
-                router.push('/',{scroll:true})
-              
-              } else {
-                toast({
-                  title: TOAST_ERROR_TITLE,
-                  description: result.error,
-                  variant: "destructive",
-                });
-              }
-            }} className='bg-red-500 hover:bg-red-600'>Confirm</AlertDialogAction>
+              }}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              Confirm
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
