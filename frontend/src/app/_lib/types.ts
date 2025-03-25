@@ -43,3 +43,21 @@ export interface Reward {
   estimated_delivery: string;
   image_url: string;
 }
+
+export interface Update {
+  id: number,
+  title: string,
+  content: string,
+  created_at: string
+}
+
+export interface Comment {
+  id: number
+  content: string
+  username: string
+  image_url: string
+  created_at: string
+  path: string
+  level?: number
+  replies?: Comment[]
+}

@@ -446,6 +446,7 @@ export default function ProjectForm({ data, activeTab, onStepComplete }: Project
                             <Button
                               type="button"
                               variant="ghost"
+                              disabled={disableEdit}
                               size="sm"
                               onClick={() => {
                                 removeReward(rewardIndex);
@@ -471,6 +472,7 @@ export default function ProjectForm({ data, activeTab, onStepComplete }: Project
                                 <FormControl>
                                   <Input
                                     placeholder="Early Supporter"
+                                    disabled={disableEdit}
                                     {...field}
                                   />
                                 </FormControl>
@@ -488,6 +490,7 @@ export default function ProjectForm({ data, activeTab, onStepComplete }: Project
                                   <FormLabel className='font-semibold'>Amount (DA)</FormLabel>
                                   <FormControl>
                                     <Input
+                                      disabled={disableEdit}
                                       type="number"
                                       placeholder="50"
                                       {...field}
@@ -508,6 +511,7 @@ export default function ProjectForm({ data, activeTab, onStepComplete }: Project
                                     <PopoverTrigger asChild>
                                       <FormControl>
                                         <Button
+                                          disabled={disableEdit}
                                           variant={"outline"}
                                           className={cn(
                                             "w-full pl-3 text-left font-normal",
@@ -532,7 +536,7 @@ export default function ProjectForm({ data, activeTab, onStepComplete }: Project
                                         mode="single"
                                         selected={field.value as Date}
                                         onSelect={field.onChange}
-                                        disabled={(date) => date < new Date()}
+                                        disabled={(date) => date < new Date() || disableEdit}
                                         initialFocus
                                       />
                                     </PopoverContent>
@@ -553,6 +557,7 @@ export default function ProjectForm({ data, activeTab, onStepComplete }: Project
                                   <Textarea
                                     placeholder="Be among the first to support this project..."
                                     className="resize-none"
+                                    disabled={disableEdit}
                                     rows={3}
                                     {...field}
                                   />
@@ -583,6 +588,7 @@ export default function ProjectForm({ data, activeTab, onStepComplete }: Project
                                         <Button
                                           type="button"
                                           variant="ghost"
+                                          disabled={disableEdit}
                                           size="sm"
                                           className="absolute top-0 right-0 text-red-500"
                                           onClick={(e) => {
@@ -610,6 +616,7 @@ export default function ProjectForm({ data, activeTab, onStepComplete }: Project
                                         >
                                           Upload image
                                           <input
+                                            disabled={disableEdit}
                                             id={`image-${rewardIndex}`}
                                             name={`image-${rewardIndex}`}
                                             type="file"
@@ -642,6 +649,7 @@ export default function ProjectForm({ data, activeTab, onStepComplete }: Project
                                     type="button"
                                     variant="ghost"
                                     size="sm"
+                                    disabled={disableEdit}
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       const currentFeatures =
@@ -674,6 +682,7 @@ export default function ProjectForm({ data, activeTab, onStepComplete }: Project
                                             <FormItem className="flex-1 space-y-0">
                                               <FormControl>
                                                 <Input
+                                                  disabled={disableEdit}
                                                   placeholder="Digital thank you certificate"
                                                   {...field}
                                                 />
@@ -705,7 +714,7 @@ export default function ProjectForm({ data, activeTab, onStepComplete }: Project
                                             }
                                           }}
                                           className="text-red-500 hover:text-red-700 h-8 w-8 p-0"
-                                          disabled={field.value.length <= 1}
+                                          disabled={field.value.length <= 1 || disableEdit}
                                         >
                                           <Trash className="h-4 w-4" />
                                           <span className="sr-only">
@@ -727,10 +736,12 @@ export default function ProjectForm({ data, activeTab, onStepComplete }: Project
 
                   {/* Add new reward card */}
                   <Card
-                    className="reward-card flex-shrink-0 w-full max-w-md border border-dashed border-accentColor/50 flex items-center justify-center cursor-pointer hover:border-primary transition-colors snap-start"
-                    onClick={addNewReward}
+                    className={`reward-card flex-shrink-0 w-full max-w-md border border-dashed border-accentColor/50 flex items-center justify-center cursor-pointer transition-colors snap-start ${!disableEdit && "hover:bg-secondaryColor"}`}
+                    onClick={()=>{
+                      !disableEdit && addNewReward()
+                    }}
                   >
-                    <CardContent className="flex flex-col items-center justify-center p-8 h-full">
+                    <CardContent className={`flex flex-col items-center justify-center p-8 h-full ${disableEdit && "opacity-60"}`}>
                       <div className="rounded-full bg-accentColor/20 p-4 mb-4">
                         <PlusCircle className="h-8 w-8 text-primary" />
                       </div>
@@ -746,13 +757,17 @@ export default function ProjectForm({ data, activeTab, onStepComplete }: Project
               </div>
             </div>
 
-          <Button
-            type='submit'
-            disabled={rewardsForm.formState.isSubmitting}
-            className={`w-full bg-secondaryColor hover:bg-secondaryColor`}
-          >
-            Save Rewards
-          </Button>
+          {
+            !disableEdit && (
+              <Button
+                type='submit'
+                disabled={rewardsForm.formState.isSubmitting}
+                className={`w-full bg-secondaryColor hover:bg-secondaryColor`}
+              >
+                Save Rewards
+              </Button>
+            ) 
+          }
           </form>
         </Form>
       </div>

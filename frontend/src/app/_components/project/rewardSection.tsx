@@ -1,16 +1,17 @@
 "use client"
 import { BLUR_IMAGE_URL } from '@/app/_lib/constants'
 import { Reward } from '@/app/_lib/types'
-import { selectedRewardsAtom } from '@/app/_store/shared'
+import { selectedRewardsAtom, userAtom } from '@/app/_store/shared'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { useAtom } from 'jotai'
+import { useAtom, useAtomValue } from 'jotai'
 import { Check } from 'lucide-react'
 import Image from 'next/image'
 import React, { useEffect, useState } from 'react'
 
-export default function RewardsSection({rewards, didIBackit}:{rewards:Reward[], didIBackit:boolean}) {
+export default function RewardsSection({rewards, didIBackit, creatorId}:{rewards:Reward[], didIBackit:boolean, creatorId: number}) {
     const [sharedSelectedRewards, setSharedSelectedRewards] = useAtom(selectedRewardsAtom)
+    const user = useAtomValue(userAtom)
 
     const toggleReward = (rewardId: number) => {
       setSharedSelectedRewards((prev) => (prev.includes(rewardId) ? prev.filter((id) => id !== rewardId) : [...prev, rewardId]))
@@ -48,7 +49,7 @@ export default function RewardsSection({rewards, didIBackit}:{rewards:Reward[], 
             <div className="text-sm text-gray-600 mb-3">Estimated delivery: {new Date(reward.estimated_delivery).getMonth()}/{new Date(reward.estimated_delivery).getFullYear()}</div>
 
             {
-              !didIBackit && (
+              (!didIBackit && (creatorId !== Number(user?.id))) && (
                 <Button onClick={()=>toggleReward(reward.id)} className="w-full bg-[#3B82F6] hover:bg-[#1E3A8A]">{sharedSelectedRewards.includes(reward.id) ? (<div className='flex items-center gap-2'><Check className="h-3 w-3 text-white"/>Selected</div>) : "Select Reward"}</Button>
               )
             }

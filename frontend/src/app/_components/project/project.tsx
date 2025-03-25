@@ -10,8 +10,8 @@ import { calculateDateDifference, calculateDateDifferenceJSON } from '@/app/_lib
 
 
 export default function ProjectComp({project}:{project:UpdateProjectSchema}) {
-    let currentFund = ((project.current_funding * 100) / project.funding_goal).toFixed(2)
-    currentFund = (parseFloat(currentFund) > 100) ? "100" : currentFund
+  let currentFund = ((project.current_funding * 100) / project.funding_goal).toFixed(2)
+  let displayedCurrentFund = parseFloat(currentFund) > 100 ? "100" : currentFund
     const {months, days} = calculateDateDifferenceJSON(project.deadline)
   return (
     <div className="p-1">
@@ -39,7 +39,7 @@ export default function ProjectComp({project}:{project:UpdateProjectSchema}) {
             <span className="text-gray-500">of ${project.funding_goal.toLocaleString()}</span>
           </div>
           <div className={`relative h-2 rounded-full bg-slate-200 mt-3`}>
-            <div style={{width:`${currentFund}%`}} className='h-2 rounded-full bg-accentColor absolute top-0 left-0'></div>
+            <div style={{width:`${displayedCurrentFund}%`}} className='h-2 rounded-full bg-accentColor absolute top-0 left-0'></div>
           </div>
         </div>
 

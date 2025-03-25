@@ -1,4 +1,4 @@
-import { getProject } from "@/app/_actions/projects"
+import { getProject, getUpdates } from "@/app/_actions/projects"
 import ProjectOverview from "@/app/_components/project/projectOverview"
 import { redirect } from "next/navigation"
 
@@ -14,7 +14,14 @@ export default async function page({params}:{params: Promise<{id: string}>}) {
       }
     }
 
+    const updateResult = await getUpdates(id)
+    if(!updateResult.status){
+        throw new Error(updateResult.error)
+    }
+
+    const updates = updateResult["updates"].reverse()
+
   return (
-    <ProjectOverview data={result["project"]}/>
+    <ProjectOverview data={result["project"]} updates={updates}/>
   )
 }

@@ -35,3 +35,19 @@ export const rewardsSchema = z.object({
 })
 
 export type RewardsSchema = z.infer<typeof rewardsSchema>;
+
+export const updateSchema = z.object({
+    title: z.string().min(5, "Title must be at least 5 characters").max(100, "Title must be less than 100 characters"),
+    content: z
+      .string()
+      .min(20, "Content must be at least 20 characters")
+      .max(5000, "Content must be less than 5000 characters"),
+  })
+  
+export type UpdateSchema = z.infer<typeof updateSchema>
+
+export const commentSchema = z.object({
+  content: z.string().min(1, "Comment cannot be empty").max(1000, "Comment is too long (max 1000 characters)"),
+})
+
+export type Commentschema = z.infer<typeof commentSchema>

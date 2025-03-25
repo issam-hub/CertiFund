@@ -9,16 +9,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 // import { Separator } from "@/components/ui/separator"
 import { ArrowLeft, BadgeCheck, Bookmark, Calendar, CalendarDays, Clock, Heart, Share2, Target, Users } from "lucide-react"
-import { didIbackThisProject, getBackersCount, getProject, getProjectPublic } from "@/app/_actions/projects"
+import { didIbackThisProject, getBackersCount, getComments, getProject, getProjectPublic } from "@/app/_actions/projects"
 import { UpdateProjectSchema } from "@/app/_lib/schemas/project"
 import { Separator } from "@/components/ui/separator"
 import parse from 'html-react-parser';
-import { calculateDateDifferenceJSON } from "@/app/_lib/utils"
+import { calculateDateDifferenceJSON, transformComments } from "@/app/_lib/utils"
 import { getUser } from "@/app/_actions/user"
 import BackProjectButton from "@/app/_components/project/backProjectButton"
 import ProjectActions from "@/app/_components/project/projectActions"
 import { RefundButton } from "@/app/_components/project/refundButton"
 import RewardsSection from "@/app/_components/project/rewardSection"
+import { ProjectUpdates } from "@/app/_components/project/projectUpdatePage"
+import { ProjectComments } from "@/app/_components/project/projectCommentsForm"
+
 
 export default async function ProjectDetailsPage({params}:{params: Promise<{id:string}>}) {
     const {id} = await params
@@ -63,6 +66,14 @@ export default async function ProjectDetailsPage({params}:{params: Promise<{id:s
   const didProjectMakeIt = project.current_funding >= project.funding_goal
 
   const rewards = project["rewards"]
+
+  const commentsResult = await getComments(id)
+  if(!commentsResult.status){
+    throw new Error(commentsResult.error)
+  }
+
+  let comments = commentsResult["comments"]
+  comments = transformComments(comments)
   
 
   return (
@@ -148,15 +159,13 @@ export default async function ProjectDetailsPage({params}:{params: Promise<{id:s
               </TabsContent>
 
               <TabsContent value="updates">
-                {/* <Suspense fallback={<div className="py-10 text-center">Loading updates...</div>}>
-                  <ProjectUpdates projectId={project.id} />
-                </Suspense> */}
+                <ProjectUpdates projectId={id}/>
               </TabsContent>
 
               <TabsContent value="comments">
-                {/* <Suspense fallback={<div className="py-10 text-center">Loading comments...</div>}>
-                  <ProjectComments projectId={project.id} />
-                </Suspense> */}
+                <Suspense fallback={<div className="py-10 text-center">Loading comments...</div>}>
+                  <ProjectComments projectId={id} fetchedComments={comments} />
+                </Suspense>
               </TabsContent>
             </Tabs>
           </div>
@@ -231,7 +240,7 @@ export default async function ProjectDetailsPage({params}:{params: Promise<{id:s
                     <CardDescription>Select a reward to back this project</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <RewardsSection rewards={rewards} didIBackit={didIresult["did_i_back_it"]} />
+                    <RewardsSection rewards={rewards} didIBackit={didIresult["did_i_back_it"]} creatorId={Number(project.creator_id)} />
                   </CardContent>
                 </Card>
                 )
@@ -243,46 +252,4 @@ export default async function ProjectDetailsPage({params}:{params: Promise<{id:s
     </div>
   )
 }
-
-// // Sample data
-// const rewards = [
-//   {
-//     id: 1,
-//     image_url: "",
-//     amount: 50,
-//     title: "Early Supporter",
-//     description: "Be among the first to support EcoSmart and receive exclusive updates throughout our journey.",
-//     includes: ["Digital thank you certificate", "Exclusive backer updates", "Name listed on our website"],
-//     estimatedDelivery: "Immediate",
-//     popular: false,
-//   },
-//   {
-//     id: 2,
-//     image_url: "",
-//     amount: 199,
-//     title: "EcoSmart Starter Kit",
-//     description: "Get started with the essential components of the EcoSmart system at a special backer price.",
-//     includes: ["EcoSmart Hub", "2 Smart Plugs", "Mobile App Access", "1-year subscription to EcoSmart Analytics"],
-//     estimatedDelivery: "March 2025",
-//     popular: true,
-//   },
-//   {
-//     id: 3,
-//     image_url: "jkdjsdfsjdlf",
-//     amount: 349,
-//     title: "EcoSmart Complete Home",
-//     description: "The comprehensive package for full home energy management and optimization.",
-//     includes: [
-//       "EcoSmart Hub",
-//       "5 Smart Plugs",
-//       "3 Smart Switches",
-//       "Energy Monitoring Sensors",
-//       "Mobile App Access",
-//       "Lifetime subscription to EcoSmart Analytics",
-//       "Priority Customer Support",
-//     ],
-//     estimatedDelivery: "April 2025",
-//     popular: false,
-//   },
-// ]
 
