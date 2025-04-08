@@ -234,3 +234,53 @@ func (m BackingModel) Refund(backingID int, reason string, paymentID int, refund
 
 	return &createdAt, nil
 }
+
+func (m BackingModel) Delete(id int) error {
+	if id < 1 {
+		return ErrNoRecordFound
+	}
+
+	query := `DELETE FROM backing WHERE backing_id = $1`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	result, err := m.DB.ExecContext(ctx, query, id)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return ErrNoRecordFound
+	}
+
+	return nil
+}
+
+func (m BackingModel) Update(payment Payment) error {
+	query := `UPDATE payment SET status = $1 WHERE payment_id = $2 RETURNING updated_at`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	args := []interface{}{
+		payment.Status,
+		payment.PaymentID,
+	}
+
+	err := m.DB.QueryRowContext(ctx, query, args...).Scan(&payment.UpdatedAt)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return ErrEditConflict
+		default:
+			return err
+		}
+	}
+
+	return nil
+}

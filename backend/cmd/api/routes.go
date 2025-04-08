@@ -36,7 +36,8 @@ func (app *application) routes(e *echo.Echo) {
 	publicGroup.POST("/users/login", app.loginUserHandler)
 	authGroup.POST("/users/logout/:id", app.logoutUserHandler)
 	authGroup.GET("/users/me", app.whoAmIHandler)
-	authGroup.PATCH("/users/update", app.updateProfileHandler, app.RequirePermission("users:update"))
+	authGroup.PATCH("/users/update", app.updateProfileHandler)
+	authGroup.PATCH("/users/update/:id", app.updateUserHandler, app.RequirePermission("users:update"))
 	authGroup.PATCH("/users/passwordChange", app.changePasswordHandler)
 
 	// backing
@@ -45,6 +46,8 @@ func (app *application) routes(e *echo.Echo) {
 	publicGroup.GET("/backing/projectBackers/:id", app.backersCountByProjectHandler)
 	authGroup.GET("/backing/didIbackIt/:id", app.didIBackThisProjectHandler)
 	authGroup.POST("/backing/refund/:id", app.refundHandler, app.RequirePermission("backing:create"))
+	authGroup.DELETE("/backing/:id", app.deleteBackingHandler)
+	authGroup.PATCH("/backing/:id", app.updateBackingHandler)
 
 	// rewards
 	authGroup.POST("/rewards/create/:id", app.createRewardsHandler, app.RequirePermission("rewards:create"))
@@ -59,4 +62,19 @@ func (app *application) routes(e *echo.Echo) {
 	// comments
 	authGroup.POST("/comments/create/:id", app.createCommentHandler)
 	publicGroup.GET("/comments/:id", app.getAllCommentsHandler)
+
+	// stats
+	authGroup.GET("/stats/general", app.getStatsHandler)
+	authGroup.GET("/stats/overview", app.getProjectsOverviewHandler)
+	authGroup.GET("/stats/topProjects", app.getTopFiveProjectsHandler)
+	authGroup.GET("/stats/topCreators", app.getTopFiveCreatorsHandlers)
+	authGroup.GET("/stats/topBackers", app.getTopFiveBackersHandlers)
+	authGroup.GET("/stats/categoriesDist", app.getCategoriesDistributionHandler)
+	authGroup.GET("/stats/creatorsNbackers", app.getCreatorsBackersGrowthHandler)
+	authGroup.GET("/stats/backingsNrefunds", app.getBackingsRefundsHandler)
+
+	// tables
+	authGroup.GET("/tables/projects", app.getProjectsTableHandler)
+	authGroup.GET("/tables/users", app.getUsersTableHandler)
+	authGroup.GET("/tables/backings", app.getBackingsTableHandler)
 }

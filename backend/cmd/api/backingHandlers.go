@@ -352,3 +352,61 @@ func (app *application) refundHandler(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, envelope{"message": "Backing refunded successfully"})
 }
+
+func (app *application) deleteBackingHandler(c echo.Context) error {
+	id, err := app.readIDParam(c)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusNotFound, err.Error())
+	}
+
+	err = app.models.Backing.Delete(id)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrNoRecordFound):
+			return echo.NewHTTPError(http.StatusNotFound, data.ErrNoRecordFound.Error())
+		default:
+			return err
+		}
+	}
+
+	return c.JSON(http.StatusOK, envelope{"message": "Backing deleted successfully"})
+}
+
+func (app *application) updateBackingHandler(c echo.Context) error {
+	id, err := app.readIDParam(c)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusNotFound, err.Error())
+	}
+
+	var input struct {
+		Status string `json:"status"`
+	}
+
+	if err := c.Bind(&input); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Error while processing data")
+	}
+
+	if input.Status != "refunded" && input.Status != "succeeded" {
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid status")
+	}
+
+	payment := &data.Payment{
+		PaymentID: id,
+		Status:    input.Status,
+	}
+
+	err = app.models.Backing.Update(*payment)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrEditConflict):
+			return echo.NewHTTPError(http.StatusConflict, data.ErrEditConflict.Error())
+		default:
+			return err
+		}
+	}
+
+	return c.JSON(http.StatusOK, envelope{
+		"message": "Backing updated successfully",
+		"status":  payment.Status,
+	})
+}

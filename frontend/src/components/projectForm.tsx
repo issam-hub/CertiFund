@@ -736,7 +736,7 @@ export default function ProjectForm({ data, activeTab, onStepComplete }: Project
 
                   {/* Add new reward card */}
                   <Card
-                    className={`reward-card flex-shrink-0 w-full max-w-md border border-dashed border-accentColor/50 flex items-center justify-center cursor-pointer transition-colors snap-start ${!disableEdit && "hover:bg-secondaryColor"}`}
+                    className={`reward-card flex-shrink-0 w-full max-w-md border border-dashed border-accentColor/50 flex items-center justify-center cursor-pointer transition-colors snap-start ${!disableEdit && "hover:border-secondaryColor"}`}
                     onClick={()=>{
                       !disableEdit && addNewReward()
                     }}

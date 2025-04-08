@@ -53,7 +53,17 @@ export default {
   			mainColor: '#1F2937',
   			secondaryColor: '#1E3A8A',
   			accentColor: '#3B82F6',
-  			lightAccentColor: '#93C5FD'
+  			lightAccentColor: '#93C5FD',
+  			sidebar: {
+  				DEFAULT: '#1F2937',
+  				foreground: 'white',
+  				primary: 'hsl(var(--sidebar-primary))',
+  				'primary-foreground': 'hsl(var(--sidebar-primary-foreground))',
+  				accent: 'hsl(var(--sidebar-accent))',
+  				'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
+  				border: 'hsl(var(--sidebar-border))',
+  				ring: 'hsl(var(--sidebar-ring))'
+  			}
   		},
   		borderRadius: {
   			lg: 'var(--radius)',

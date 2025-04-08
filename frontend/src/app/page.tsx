@@ -83,7 +83,7 @@ export default function LandingPage() {
               <p className="text-gray-300">Projects Funded</p>
             </div>
             <div className="text-center">
-              <p className="text-3xl md:text-4xl font-bold text-[#93C5FD]">DA250M+</p>
+              <p className="text-3xl md:text-4xl font-bold text-[#93C5FD]">250M+DA</p>
               <p className="text-gray-300">Money Raised</p>
             </div>
             <div className="text-center">

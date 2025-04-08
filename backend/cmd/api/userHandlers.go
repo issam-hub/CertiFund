@@ -474,3 +474,61 @@ func (app *application) deleteAccountHandler(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, envelope{"message": "User deleted successfully"})
 }
+
+func (app *application) updateUserHandler(c echo.Context) error {
+	id, err := app.readIDParam(c)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusNotFound, err.Error())
+	}
+
+	user, err := app.models.Users.GetByID(id)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrNoRecordFound):
+			return echo.NewHTTPError(http.StatusNotFound, "User not found")
+		default:
+			return err
+		}
+	}
+
+	var input struct {
+		Role      *string `json:"role,omitempty"`
+		Activated *bool   `json:"activated,omitempty"`
+	}
+
+	if err := c.Bind(&input); err != nil {
+		app.logger.Error(err.Error())
+		return echo.NewHTTPError(http.StatusBadRequest, "Error while processing data")
+	}
+
+	v := validator.New()
+
+	if input.Role != nil {
+		user.Role = *input.Role
+	}
+	if input.Activated != nil {
+		user.Activated = *input.Activated
+	}
+
+	if data.ValidateProfileUpdate(v, user); !v.Valid() {
+		return echo.NewHTTPError(http.StatusUnprocessableEntity, v.Errors)
+	}
+
+	err = app.models.Users.Update(user)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrDuplicateEmail):
+			v.AddError("email", "Email address already exists")
+			return echo.NewHTTPError(http.StatusUnprocessableEntity, v.Errors)
+		case errors.Is(err, data.ErrEditConflict):
+			return echo.NewHTTPError(http.StatusConflict, data.ErrEditConflict.Error())
+		default:
+			return err
+		}
+	}
+
+	return c.JSON(http.StatusCreated, envelope{
+		"message": "User updated successfully",
+		"user":    user,
+	})
+}
