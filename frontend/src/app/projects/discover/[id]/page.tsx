@@ -154,7 +154,7 @@ export default async function ProjectDetailsPage({params}:{params: Promise<{id:s
               <TabsContent value="about" className="mt-6 focus-visible:ring-0 focus-visible:ring-offset-0">
                 <div className="prose max-w-none">
                     <h2 className="text-2xl font-bold mb-4">The Campaign</h2>
-                    {project.campaign && <div className="[&_h1]:mb-3 [&_h2]:mb-3 [&_h3]:mb-3 [&_h4]:mb-3 [&_h5]:mb-3 [&_hr]:my-5 [&_p]:text-[14px] [&_img]:my-5">{parse(project.campaign)}</div>}
+                    {project.campaign && <div className="[&_h1]:mb-3 [&_h1]:text-2xl [&_h2]:mb-3 [&_h2]:text-lg [&_h3]:mb-3 [&_h3]:text-base [&_h4]:mb-3 [&_h4]:text-sm [&_h5]:mb-3 [&_h5]:text-xs [&_hr]:my-5 [&_p]:text-[13px] [&_img]:my-5">{parse(project.campaign)}</div>}
                 </div>
               </TabsContent>
 

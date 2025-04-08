@@ -212,7 +212,8 @@ export function transformComments(comments: any[]): Comment[] {
       username: comment.username,
       image_url: comment.image_url || "/placeholder.svg",
       created_at: formatRelativeTime(comment.created_at),
-      replies: []
+      replies: [],
+      path: comment.path
     };
     commentMap.set(comment.id, formattedComment);
   });
@@ -241,4 +242,28 @@ export function transformComments(comments: any[]): Comment[] {
   });
 
   return rootComments;
+}
+
+export function formatDateTimeSecond(isoDateString: string): string {
+  // Create a Date object from the ISO string
+  const date = new Date(isoDateString);
+  
+  // Extract month, day, year (add leading zeros where needed)
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const year = date.getFullYear();
+  
+  // Get hours for AM/PM format
+  let hours = date.getHours();
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  hours = hours % 12;
+  hours = hours || 12; // Convert 0 to 12 for 12 AM
+  
+  // Format hours, minutes, seconds with leading zeros
+  const formattedHours = String(hours).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  const seconds = String(date.getSeconds()).padStart(2, '0');
+  
+  // Put it all together
+  return `${month}-${day}-${year} ${formattedHours}:${minutes}:${seconds} ${ampm}`;
 }

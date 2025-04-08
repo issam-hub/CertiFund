@@ -2,7 +2,7 @@
 
 import { apiUrl } from "@/app/_lib/config";
 import { CreateProjectSchema, RewardsSchema, UpdateSchema } from "@/app/_lib/schemas/project";
-import { BasicsFormData, FundingFormData, StoryFormData } from "@/app/_lib/types";
+import { BasicsFormData, FundingFormData, Reward, StoryFormData } from "@/app/_lib/types";
 import { formatDateTime } from "@/app/_lib/utils";
 import { authFetch } from "@/app/_lib/utils/auth";
 import { revalidateTag } from "next/cache";
@@ -171,7 +171,7 @@ export async function getProjectByCurrUser() {
 }
 
 
-export async function getProjects(page?:number, search?:string, categories?: string[], limit?:string, sort?:string){
+export async function getProjects(page:number = 1, search:string = "", categories: string[] = [], limit:string = "10", sort:string = ""){
     sort = sort === "most_funded" ? "-(current_funding*100)/funding_goal" : sort
     let formatCategories = categories?.length === 0 ? "" : categories?.length === 1 ? (categories[0]) : categories?.reduce((acc,curr)=> acc+`,`+curr)
     formatCategories = formatCategories?.replaceAll(" ", "+").replaceAll("&", "%26")
@@ -324,7 +324,7 @@ export async function refundBacking(project_id: number, reason?:string){
     return {status:true, ...result}
 }
 
-export async function handleRewards(rewards: RewardsSchema, project_id: string, type: string){
+export async function handleRewards(rewards: RewardsSchema | {rewards: Reward[]}, project_id: string, type: string){
     rewards.rewards = rewards.rewards.map(reward =>{
         return {
             ...reward,
@@ -352,6 +352,26 @@ export async function handleRewards(rewards: RewardsSchema, project_id: string, 
           revalidateTag("project")
           revalidateTag("projects")
           revalidateTag("projects-creator")
+          revalidateTag("rewards")
+      
+          const result = await res.json();
+          return {status:true, ...result}
+    }catch(error: any){
+        return {status: false, error: error.message}
+    }
+}
+
+export async function getRewards(projectId: number){
+    const res = await fetch(`${apiUrl}/rewards/${projectId}`,{next:{tags:["rewards"]}})
+
+    try {
+        if(!res.ok) {
+            const result = await res.json()
+            if(typeof result.error === "object"){
+                return {status:false, error: Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
+            }
+            return {status: false, ...result}
+          }  
       
           const result = await res.json();
           return {status:true, ...result}
@@ -471,5 +491,54 @@ export async function createComment(projectId: string, content: string, parentId
           return {status:true, ...result}
     }catch(error: any){
         return {status: false, error: error.message}
+    }
+}
+
+export async function deleteBacking(id: number){
+    const res = await authFetch(`${apiUrl}/backing/${id}`,{
+        method:'DELETE'
+    })
+    try {
+        if(!res.ok) {
+            const result = await res.json()
+            if(typeof result.error === "object"){
+                return {status:false, error: Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
+            }
+            return {status: false, ...result}
+          }   
+          
+          revalidateTag("updates")
+      
+          const result = await res.json();
+          return {status:true, ...result}
+    }catch(error: any){
+        return {status: false, error: error.message}
+    }
+}
+
+export async function updateBacking(status: string, paymentId: number){
+    const res = await authFetch(`${apiUrl}/backing/${paymentId}`,{
+        method:"PATCH",
+        headers:{
+            "Content-Type":"application/json"
+        },
+        body: JSON.stringify({
+            status
+        })
+    })
+
+    try {
+        if(!res.ok) {
+            const result = await res.json()
+            if(typeof result.error === "object"){
+                return {status:false, error: Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
+            }
+            return {status:false, ...result}
+        } 
+        
+        const result = await res.json()
+        return {status:true, ...result}
+    }catch(error: any){
+        return {status:false, error: error.message}
     }
 }

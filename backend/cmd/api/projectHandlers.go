@@ -248,6 +248,9 @@ func (app *application) deleteProjectHandler(c echo.Context) error {
 }
 
 func (app *application) getProjectsByCreatorHandler(c echo.Context) error {
+	var input struct {
+		data.Filter
+	}
 	user := c.Get("user").(*data.User)
 
 	_, err := app.models.Users.GetByID(user.ID)
@@ -260,7 +263,12 @@ func (app *application) getProjectsByCreatorHandler(c echo.Context) error {
 		}
 	}
 
-	projects, err := app.models.Projects.GetAllByCreator(user.ID)
+	v := validator.New()
+
+	input.Page = app.readInt(c.QueryParams(), "page", 1, v)
+	input.PageSize = app.readInt(c.QueryParams(), "page_size", 5, v)
+
+	projects, metadata, err := app.models.Projects.GetAllByCreator(user.ID, input.Filter)
 	if err != nil {
 		return err
 	}
@@ -268,6 +276,7 @@ func (app *application) getProjectsByCreatorHandler(c echo.Context) error {
 	return c.JSON(http.StatusOK, envelope{
 		"message":  "projects returned successfully",
 		"projects": projects,
+		"metadata": metadata,
 	})
 }
 

@@ -79,7 +79,7 @@ func (m ProjectModel) GetAll(title string, categories []string, filters Filter) 
 	FROM project
 	WHERE (to_tsvector('simple', title) @@ plainto_tsquery('simple', $1) OR $1='') 
 	AND (categories && $2 OR $2 = '{}')
-	AND status = 'Live'
+	AND (status = 'Completed' OR status = 'Live')
 	ORDER BY %s %s, project_id ASC
 	LIMIT $3 OFFSET $4
 	`, filters.sortColumn(), filters.sortDirection())
@@ -290,9 +290,9 @@ func (m ProjectModel) ProjectOwnership(projectID, creatorID int) (bool, error) {
 	return isProjectOwner, nil
 }
 
-func (m ProjectModel) GetAllByCreator(creatorID int) ([]*Project, error) {
+func (m ProjectModel) GetAllByCreator(creatorID int, filters Filter) ([]*Project, MetaData, error) {
 	query := `
-		SELECT project_id, title, description, categories, funding_goal, current_funding, deadline, status, project_img, campaign, created_at, updated_at, launched_at, version, creator_id
+		SELECT COUNT(*) OVER(), project_id, title, description, categories, funding_goal, current_funding, deadline, status, project_img, campaign, created_at, updated_at, launched_at, version, creator_id
 		FROM project WHERE creator_id = $1
 	`
 
@@ -303,8 +303,10 @@ func (m ProjectModel) GetAllByCreator(creatorID int) ([]*Project, error) {
 
 	rows, err := m.DB.QueryContext(ctx, query, creatorID)
 	if err != nil {
-		return nil, err
+		return nil, MetaData{}, err
 	}
+
+	totalRecords := 0
 
 	for rows.Next() {
 		project := &Project{}
@@ -312,6 +314,7 @@ func (m ProjectModel) GetAllByCreator(creatorID int) ([]*Project, error) {
 		var campaignVar sql.NullString
 
 		err := rows.Scan(
+			&totalRecords,
 			&project.ID,
 			&project.Title,
 			&project.Description,
@@ -329,7 +332,7 @@ func (m ProjectModel) GetAllByCreator(creatorID int) ([]*Project, error) {
 			&project.CreatorID,
 		)
 		if err != nil {
-			return nil, err
+			return nil, MetaData{}, err
 		}
 
 		project.ProjectImg = projectImgVar.String
@@ -338,8 +341,10 @@ func (m ProjectModel) GetAllByCreator(creatorID int) ([]*Project, error) {
 		projects = append(projects, project)
 	}
 	if err := rows.Err(); err != nil {
-		return nil, err
+		return nil, MetaData{}, err
 	}
 
-	return projects, nil
+	metaData := calculateMetadata(totalRecords, filters.Page, filters.PageSize)
+
+	return projects, metaData, nil
 }

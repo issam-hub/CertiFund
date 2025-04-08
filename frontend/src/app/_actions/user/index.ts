@@ -2,6 +2,7 @@
 
 import { apiUrl, TOKEN_COOKIE_NAME } from "@/app/_lib/config";
 import { PasswordChangeSchema, ProfileSchema } from "@/app/_lib/schemas/auth";
+import { User } from "@/app/_lib/types";
 import { authFetch } from "@/app/_lib/utils/auth";
 import { revalidateTag } from "next/cache";
 import { cookies } from "next/headers";
@@ -103,4 +104,53 @@ export async function getUser(id: string) {
     
     const result = await res.json()
     return {status:true, ...result}
+}
+
+export async function deleteUser(id: string){
+    const res = await authFetch(`${apiUrl}/users/${id}`,{
+        method:"DELETE"
+    })
+
+    try {
+        if(!res.ok) {
+            const result = await res.json()
+            if(typeof result.error === "object"){
+                return {status:false, error: Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
+            }
+            return {status:false, ...result}
+        }
+        
+        const result = await res.json()
+        return {status:true, ...result}
+    }catch(error: any){
+        return {status:false, error: error.message}
+    }
+}
+
+export async function updateUser(data: Partial<{role: string, activated: boolean}>, id: string){
+    const res = await authFetch(`${apiUrl}/users/update/${id}`,{
+        method:"PATCH",
+        headers:{
+            "Content-Type":"application/json"
+        },
+        body: JSON.stringify(data)
+    })
+
+    try {
+        if(!res.ok) {
+            const result = await res.json()
+            if(typeof result.error === "object"){
+                return {status:false, error: Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
+            }
+            return {status:false, ...result}
+        }  
+
+        revalidateTag("current-user")
+        
+        
+        const result = await res.json()
+        return {status:true, ...result}
+    }catch(error: any){
+        return {status:false, error: error.message}
+    }
 }

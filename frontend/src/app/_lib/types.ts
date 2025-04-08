@@ -15,7 +15,7 @@ export interface StoryFormData {
 }
 
 export type User = {
-  id: string;
+  user_id: string;
   email: string;
   username: string;
   role: string;
@@ -24,6 +24,11 @@ export type User = {
   bio:string;
   website:string;
   twitter:string;
+  updated_at: string
+  projects_created: number
+  projects_backed: number
+  total_contributed: number
+  activated: boolean
 };
 
 export interface ProjectsFilters {
@@ -60,4 +65,55 @@ export interface Comment {
   path: string
   level?: number
   replies?: Comment[]
+}
+
+export interface Overview {
+  project_month: string,
+  successful_projects: number,
+  failed_projects: number,
+  total_projects: number,
+}
+
+export interface Project {
+  project_id: number
+  title: string
+  description: string
+  funding_goal: number
+  current_funding: number
+  categories: string[]
+  deadline: string
+  status: 'Draft' | 'Pending Review' | 'Approved' | 'Rejected' | 'Live' | 'Completed'
+  project_img: string
+  campaign: string
+  launched_at: string
+  created_at: string
+  updated_at: string
+  backers: number
+  version: number
+  creator: string
+  creator_img: string
+}
+
+export interface Metadata {
+  current_page: number
+  page_size: number
+  first_page: number
+  last_page: number
+  total_records: number
+}
+
+export type ProjectStatus = 'draft' | 'pending review' | 'approved' | 'rejected' | 'live' | 'completed'
+
+export type Backing = {
+  backing_id: string
+  payment_id: number
+  backer: string
+  project: string
+  project_id: number
+  amount: number
+  status: "pending" | "completed" | "refunded"
+  created_at: string
+  updated_at: string
+  payment_method: string
+  transaction_id: string
 }

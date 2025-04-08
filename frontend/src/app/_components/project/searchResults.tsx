@@ -77,7 +77,7 @@ export async function SearchResults({
                     ...(validatedOnly ? { validated: "true" } : {}),
                     page: String(Math.max(1, metadata.current_page - 1)),
                   })}`}
-                  // className={metadata.current_page <= 1 && "pointer-events-none opacity-50"}
+                  className={metadata.current_page <= 1 ? "pointer-events-none opacity-50" : ""}
                 />
               </PaginationItem>
 
@@ -188,7 +188,7 @@ export async function SearchResults({
                     ...(validatedOnly ? { validated: "true" } : {}),
                     page: String(Math.min(metadata.last_page, metadata.current_page + 1)),
                   })}`}
-                  // className={currentPage >= totalPages ? "pointer-events-none opacity-50" : ""}
+                  className={metadata.current_page === metadata.last_page ? "pointer-events-none opacity-50" : ""}
                 />
               </PaginationItem>
             </PaginationContent>

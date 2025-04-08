@@ -21,6 +21,8 @@ type Models struct {
 	Rewards     RewardModel
 	Updates     UpdateModel
 	Comments    CommentsModel
+	Stats       StatsModel
+	Tables      TablesModel
 }
 
 func NewModels(db *sql.DB) Models {
@@ -33,5 +35,7 @@ func NewModels(db *sql.DB) Models {
 		Rewards:     RewardModel{DB: db},
 		Updates:     UpdateModel{DB: db},
 		Comments:    CommentsModel{DB: db},
+		Stats:       StatsModel{DB: db},
+		Tables:      TablesModel{DB: db},
 	}
 }
