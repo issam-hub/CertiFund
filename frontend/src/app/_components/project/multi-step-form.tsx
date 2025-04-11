@@ -46,7 +46,7 @@ export default function MultiStepForm() {
 
   const onSubmit = async (data: CreateProjectSchema) => {   
     let toBeSent = data 
-    toBeSent["creator_id"] = user?.id as string
+    toBeSent["creator_id"] = user?.user_id as string
 
     const result = await createProject(data);
     if(result.status) {

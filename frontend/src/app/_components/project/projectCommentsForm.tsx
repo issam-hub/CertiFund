@@ -17,6 +17,7 @@ import { createComment } from "@/app/_actions/projects"
 import { toast } from "@/hooks/use-toast"
 import { TOAST_ERROR_TITLE } from "@/app/_lib/constants"
 import { formatRelativeTime } from "@/app/_lib/utils"
+import { ReportButton } from "./reportButton"
 
 
 export function ProjectComments({ projectId, fetchedComments }: { projectId: string, fetchedComments: Comment[] }) {
@@ -36,6 +37,15 @@ export function ProjectComments({ projectId, fetchedComments }: { projectId: str
       comments: Comment[]
     }[]
   } | null>(null)
+
+  const commentReportTypes = [
+    { value: "hate_speech", label: "Hate Speech or Violence" },
+    { value: "harassment", label: "Harassment or Bullying" },
+    { value: "spam", label: "Spam or Scam" },
+    { value: "offensive", label: "Offensive or Inappropriate Language" },
+    { value: "misinformation", label: "False or Misleading Information" },
+    { value: "other", label: "Other Issue" },
+  ]
 
   // New state for expanded threads
   const [expandedThreads, setExpandedThreads] = useState<{[key: number]: boolean}>({})
@@ -338,9 +348,11 @@ export function ProjectComments({ projectId, fetchedComments }: { projectId: str
                 Reply
               </Button>
             </div>
-            <Button variant="ghost" size="sm" className="text-gray-500">
-              <Flag className="h-4 w-4" />
-            </Button>
+            <ReportButton resourceId={comment.id} title={comment.content} context="comment" reportTypes={commentReportTypes} buttonTrigger={
+              <Button variant="ghost" size="sm" className="text-gray-500">
+                <Flag className="h-4 w-4" />
+              </Button>
+            }/>
           </CardFooter>
           </Card>
 

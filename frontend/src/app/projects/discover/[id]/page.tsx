@@ -129,7 +129,7 @@ export default async function ProjectDetailsPage({params}:{params: Promise<{id:s
                   </Avatar>
                   <div>
                     <span className="text-sm text-gray-600">By </span>
-                    <Link href={`/settings/profile/discover/${creator.id}`} className="font-medium hover:text-[#3B82F6]">
+                    <Link href={`/settings/profile/discover/${creator.user_id}`} className="font-medium hover:text-[#3B82F6]">
                       {creator.username}
                     </Link>
                   </div>
@@ -191,14 +191,14 @@ export default async function ProjectDetailsPage({params}:{params: Promise<{id:s
                   {
                       !isFundingOver && (
                         <>
-                          <div className="text-center p-3 bg-gray-50 rounded-md">
+                          <div className="text-center p-3 bg-gray-50 rounded-md border border-slate-200">
                             <div className="flex items-center justify-center gap-1 mb-1">
                               <CalendarDays className="h-4 w-4 text-gray-600" />
                               <span className="font-bold">{months}</span>
                             </div>
                             <div className="text-sm text-gray-600">Months Left</div>
                           </div>
-                          <div className="text-center p-3 bg-gray-50 rounded-md">
+                          <div className="text-center p-3 bg-gray-50 rounded-md border border-slate-200">
                             <div className="flex items-center justify-center gap-1 mb-1">
                               <Clock className="h-4 w-4 text-gray-600" />
                               <span className="font-bold">{days}</span>
@@ -208,7 +208,7 @@ export default async function ProjectDetailsPage({params}:{params: Promise<{id:s
                       </>
                       )
                     }
-                    <div className="text-center p-3 bg-gray-50 rounded-md col-span-2">
+                    <div className="text-center p-3 bg-gray-50 rounded-md col-span-2 border border-slate-200">
                       <div className="flex items-center justify-center gap-1 mb-1">
                         <Users className="h-4 w-4 text-gray-600" />
                         <span className="font-bold">{backersCount}</span>
@@ -228,7 +228,7 @@ export default async function ProjectDetailsPage({params}:{params: Promise<{id:s
                     ) 
                   }
 
-                  <ProjectActions creatorId={Number(project.creator_id)}/>
+                  <ProjectActions creatorId={Number(project.creator_id)} projectId={Number(project.project_id)} projectTitle={project.title}/>
                 </CardContent>
               </Card>
 

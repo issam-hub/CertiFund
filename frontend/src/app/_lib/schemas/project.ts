@@ -51,3 +51,34 @@ export const commentSchema = z.object({
 })
 
 export type Commentschema = z.infer<typeof commentSchema>
+
+export const reportFormSchema = z.object({
+  type: z.string({
+    required_error: "Please select a report type",
+  }).refine(value => value !== "", {
+    message: "Please select a report type",
+  }),
+  description: z
+    .string()
+    .min(10, "Description must be at least 10 characters")
+    .max(500, "Description must be less than 500 characters"),
+  evidences: z.array(z.string()).optional(),
+  context: z.enum(["project", "user", "comment"], {
+    required_error: "Please select a context",
+    invalid_type_error: "Context must be either project, user or comment"
+  }),
+})
+
+export type ReportFormSchema = z.infer<typeof reportFormSchema>
+
+export const resolveFormSchema = z.object({
+  status: z.enum(["resolved", "rejected"], {
+    required_error: "Please select a status",
+    invalid_type_error: "Status must be either resolved or rejected"
+  }),
+  note: z.string()
+  .min(10, "Note must be at least 10 characters")
+  .max(500, "Note must be less than 500 characters")
+})
+
+export type ResolveFormSchema = z.infer<typeof resolveFormSchema>

@@ -11,7 +11,7 @@ const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY as st
 
 export default function BackProjectButton({ projectId,creatorId, rewards }: { projectId: number, creatorId:number, rewards?: Reward[] }) {
   const user = useAtomValue(userAtom)
-  if(Number(user?.id) !== creatorId){
+  if(Number(user?.user_id) !== creatorId){
     return (
       <Elements stripe={stripePromise}>
           <BackProjectForm projectId={projectId} rewards={rewards}/>

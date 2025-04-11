@@ -267,3 +267,33 @@ export function formatDateTimeSecond(isoDateString: string): string {
   // Put it all together
   return `${month}-${day}-${year} ${formattedHours}:${minutes}:${seconds} ${ampm}`;
 }
+
+export function extractFilenameFromSupabaseUrl(url: string): string | null {
+  try {
+    // Use URL object to parse the URL
+    const parsedUrl = new URL(url);
+    
+    // Get the pathname (everything after the domain)
+    const pathname = parsedUrl.pathname;
+    
+    // Split the pathname by '/'
+    const pathParts = pathname.split('/');
+    
+    // Filter out empty strings and get the last part which should contain the filename
+    const lastPart = pathParts.filter(part => part.length > 0).pop();
+    
+    if (!lastPart) {
+      return null;
+    }
+    
+    // If the URL has query parameters or additional path segments after the filename,
+    // we need to extract just the filename part
+    const filenameMatch = lastPart.match(/^([^?#]+)/);
+    const filename = filenameMatch ? filenameMatch[1] : lastPart;
+    
+    return decodeURIComponent(filename);
+  } catch (error) {
+    console.error("Error extracting filename from URL:", error);
+    return null;
+  }
+}

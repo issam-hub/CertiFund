@@ -61,7 +61,7 @@ export function BackProjectForm({ projectId,rewards }: { projectId: number, rewa
       async function onSubmit(values: BackProjectSchema) {
         setIsLoading(true)
 
-        const intent = await createPaymentIntent(Number(user?.id), projectId, values.amount*100)
+        const intent = await createPaymentIntent(Number(user?.user_id), projectId, values.amount*100)
         if (!intent.status){
           toast({
             title: TOAST_ERROR_TITLE,

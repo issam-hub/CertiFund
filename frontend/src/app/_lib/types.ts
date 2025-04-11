@@ -1,3 +1,5 @@
+import { UpdateProjectSchema } from "./schemas/project";
+
 export interface BasicsFormData {
     project_img: string | null;
     title: string;
@@ -116,4 +118,34 @@ export type Backing = {
   updated_at: string
   payment_method: string
   transaction_id: string
+}
+
+export type FileWithUrl = {
+  file: File;
+  url: string | null;
+  isUploading: boolean;
+}
+
+export type DisputeStatus = "pending" | "under review" | "resolved" | "rejected" | "cancelled"
+
+export type Dispute = {
+  dispute_id: string
+  status: DisputeStatus
+  type: string
+  description: string
+  evidences?: string[]
+  created_at: string
+  updated_at: string
+  resolved_at: string | null
+  reporter: string
+  context: string
+  reported_resource: string
+}
+
+export type ProfileType = {
+  createdProjects: UpdateProjectSchema[]
+  user?: User
+  backedProjects: UpdateProjectSchema[]
+  stats:{created_projects:number
+  backed_projects:number}
 }

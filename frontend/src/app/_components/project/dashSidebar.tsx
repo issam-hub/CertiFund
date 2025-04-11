@@ -15,7 +15,7 @@ import {
     SidebarTrigger,
     useSidebar,
   } from "@/components/ui/sidebar"
-import { ChevronsUpDown, ChevronUp, Folder, HandCoins, HelpCircle, LayoutDashboard, Settings, User2, Users } from "lucide-react"
+import { ChevronsUpDown, ChevronUp, Flag, Folder, HandCoins, HelpCircle, LayoutDashboard, Settings, User2, Users } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import DashUser from "./dashUser"
@@ -66,6 +66,14 @@ import DashUser from "./dashUser"
                     <Link href={"/admin/dashboard/users"}>
                       <Users className="h-5 w-5" />
                       <span>Users</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <Link href={"/admin/dashboard/disputes"}>
+                      <Flag className="h-5 w-5" />
+                      <span>Disputes</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

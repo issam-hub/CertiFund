@@ -7,3 +7,6 @@ export const COOKIE_OPTIONS = {
   maxAge: 60 * 60 * 24 * 7, // 1 week
   path: '/'
 };
+
+export const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string;
+export const supabaseServiceRoleKey = process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY as string;

@@ -23,6 +23,7 @@ type Models struct {
 	Comments    CommentsModel
 	Stats       StatsModel
 	Tables      TablesModel
+	Disputes    DisputeModel
 }
 
 func NewModels(db *sql.DB) Models {
@@ -37,5 +38,6 @@ func NewModels(db *sql.DB) Models {
 		Comments:    CommentsModel{DB: db},
 		Stats:       StatsModel{DB: db},
 		Tables:      TablesModel{DB: db},
+		Disputes:    DisputeModel{DB: db},
 	}
 }

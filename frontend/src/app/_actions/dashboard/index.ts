@@ -169,3 +169,19 @@ export async function getBackingsTable(page:number = 1, limit:string = "10"){
     const result = await res.json()
     return {status:true, ...result}
 }
+
+export async function getDisputesTable(page:number = 1, limit:string = "10"){
+    const res = await authFetch(`${apiUrl}/tables/disputes?page=${page}&page_size=${limit}`, {cache:"no-store", next:{tags:["disputes-table"]}})
+
+    if(!res.ok){
+        const result = await res.json()
+        if(typeof result.error === "object"){
+            return {status:false, error:Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
+        }
+        return {status:false, ...result}
+    }
+
+    
+    const result = await res.json()
+    return {status:true, ...result}
+}

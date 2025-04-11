@@ -154,3 +154,22 @@ export async function updateUser(data: Partial<{role: string, activated: boolean
         return {status:false, error: error.message}
     }
 }
+
+export async function getCreatedBackedCount(id: string) {
+    const res = await fetch(`${apiUrl}/users/createdBackedCount/${id}`, {cache:"no-store", next:{tags:["profile-stats"]}})
+
+    if(!res.ok){
+        const result = await res.json()
+        if(typeof result.error === "object"){
+            return {status:false, error:Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
+        }else if(result.error === "User not found"){
+            notFound()
+        }else{
+            return {status:false, ...result}
+        }
+    }
+
+    
+    const result = await res.json()
+    return {status:true, ...result}
+}

@@ -12,6 +12,7 @@ import { userAtom } from "@/app/_store/shared"
 import { UpdateProjectSchema } from "@/app/_lib/schemas/project"
 import { formatTwitterHandle, formatWebsiteUrl, getTwitterUrl } from "@/app/_lib/utils"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel"
 
 export default function LoadingProfilePage() {
   return (
@@ -63,11 +64,20 @@ export default function LoadingProfilePage() {
           </TabsList>
           
           <TabsContent value="created" className="space-y-6 focus-visible:ring-0 focus-visible:ring-offset-0">
-            <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6`}>
-              {[1,2,3].map((_, index) => (
-                  <ProjectCard key={index}/>
-                ))
-                }
+            <div className="mx-auto max-w-6xl px-8">
+              <Carousel opts={{ align: "start", loop: true }}>
+                <CarouselContent>
+                  {[1,2,3].map((project, index) => (
+                    <CarouselItem key={index} className="basis-1/3 self-stretch">
+                      <ProjectCard key={index}/>
+                    </CarouselItem>
+                  ))}
+                </CarouselContent>
+                <div className="hidden md:flex">
+                  <CarouselPrevious className="relative -left-4" />
+                  <CarouselNext className="relative -right-4" />
+                </div>
+              </Carousel>
             </div>
           </TabsContent>
           
