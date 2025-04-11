@@ -20,6 +20,8 @@ func (app *application) routes(e *echo.Echo) {
 	authGroup.PATCH("/projects/:id", app.updateProjectHandler, app.RequirePermission("projects:update"), app.VerifyProjectOwnership())
 	authGroup.DELETE("/projects/:id", app.deleteProjectHandler)
 	authGroup.GET("/projects/me", app.getProjectsByCreatorHandler)
+	publicGroup.GET("/projects/creator/:id", app.getProjectsByCreatorPublicHandler)
+	publicGroup.GET("/projects/backer/:id", app.getProjectsByBackerHandler)
 
 	// image upload
 	authGroup.POST("/projects/image/upload", app.fileUploadHandler)
@@ -39,6 +41,7 @@ func (app *application) routes(e *echo.Echo) {
 	authGroup.PATCH("/users/update", app.updateProfileHandler)
 	authGroup.PATCH("/users/update/:id", app.updateUserHandler, app.RequirePermission("users:update"))
 	authGroup.PATCH("/users/passwordChange", app.changePasswordHandler)
+	publicGroup.GET("/users/createdBackedCount/:id", app.getBackedCreatedCountHandler)
 
 	// backing
 	authGroup.POST("/backing/backIntent/:id", app.createPaymentIntentHandler, app.RequirePermission("backing:create"), app.VerifyProjectNonOwnership())
@@ -77,4 +80,10 @@ func (app *application) routes(e *echo.Echo) {
 	authGroup.GET("/tables/projects", app.getProjectsTableHandler)
 	authGroup.GET("/tables/users", app.getUsersTableHandler)
 	authGroup.GET("/tables/backings", app.getBackingsTableHandler)
+	authGroup.GET("/tables/disputes", app.getDisputesTableHandler)
+
+	// disputes
+	authGroup.POST("/disputes/create/:id", app.createDisputeHandler)
+	authGroup.DELETE("/disputes/:id", app.deleteDisputeHandler)
+	authGroup.PATCH("/disputes/:id", app.updateDisputeHandler)
 }

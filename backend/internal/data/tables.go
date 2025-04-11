@@ -57,6 +57,21 @@ type BackingsTable struct {
 	TransactionID string    `json:"transaction_id"`
 }
 
+type DisputesTable struct {
+	ID               string         `json:"dispute_id"`
+	Status           string         `json:"status"`
+	Type             string         `json:"type"`
+	Description      string         `json:"description"`
+	Context          string         `json:"context"`
+	CreatedAt        time.Time      `json:"created_at"`
+	UpdatedAt        time.Time      `json:"updated_at"`
+	Version          int            `json:"version"`
+	ResolvedAt       time.Time      `json:"resolved_at"`
+	Reporter         string         `json:"reporter"`
+	ReportedResource string         `json:"reported_resource"`
+	Evidences        pq.StringArray `json:"evidences,omitempty"`
+}
+
 type TablesModel struct {
 	DB *sql.DB
 }
@@ -250,6 +265,91 @@ func (m TablesModel) GetBackings(page, pageSize int) ([]*BackingsTable, MetaData
 		}
 
 		row.Amount = amount.Float64
+
+		table = append(table, row)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, MetaData{}, err
+	}
+
+	metaData := calculateMetadata(totalRecords, page, pageSize)
+
+	return table, metaData, nil
+}
+
+func (m TablesModel) GetDisputes(page, pageSize int) ([]*DisputesTable, MetaData, error) {
+	offset := (page - 1) * pageSize
+
+	query := `
+	SELECT
+	COUNT(d.dispute_id) OVER(),
+    d.dispute_id, 
+    d.status, 
+    d.type, 
+    d.description, 
+    d.context, 
+    d.created_at, 
+    d.updated_at, 
+    d.resolved_at, 
+	d.version,
+    reporter.username AS reporter,
+    CASE 
+        WHEN d.project_id IS NOT NULL THEN p.title
+        WHEN d.user_id IS NOT NULL THEN u.username
+        WHEN d.comment_id IS NOT NULL THEN pc.content
+    END AS reported_resource,
+    d.evidences
+	FROM 
+		dispute d
+	INNER JOIN 
+		user_t reporter ON d.reporter_id = reporter.user_id
+	LEFT JOIN 
+		project p ON d.project_id = p.project_id
+	LEFT JOIN 
+		user_t u ON d.user_id = u.user_id
+	LEFT JOIN 
+		project_comment pc ON d.comment_id = pc.comment_id
+	LIMIT $1 OFFSET $2
+	`
+
+	table := []*DisputesTable{}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	args := []interface{}{pageSize, offset}
+
+	rows, err := m.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, MetaData{}, err
+	}
+
+	var totalRecords int
+
+	for rows.Next() {
+		row := &DisputesTable{}
+		var resolvedAtVar sql.NullTime
+
+		err := rows.Scan(
+			&totalRecords,
+			&row.ID,
+			&row.Status,
+			&row.Type,
+			&row.Description,
+			&row.Context,
+			&row.CreatedAt,
+			&row.UpdatedAt,
+			&resolvedAtVar,
+			&row.Version,
+			&row.Reporter,
+			&row.ReportedResource,
+			&row.Evidences,
+		)
+		if err != nil {
+			return nil, MetaData{}, err
+		}
+
+		row.ResolvedAt = resolvedAtVar.Time
 
 		table = append(table, row)
 	}

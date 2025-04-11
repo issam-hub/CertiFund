@@ -248,9 +248,6 @@ func (app *application) deleteProjectHandler(c echo.Context) error {
 }
 
 func (app *application) getProjectsByCreatorHandler(c echo.Context) error {
-	var input struct {
-		data.Filter
-	}
 	user := c.Get("user").(*data.User)
 
 	_, err := app.models.Users.GetByID(user.ID)
@@ -263,12 +260,7 @@ func (app *application) getProjectsByCreatorHandler(c echo.Context) error {
 		}
 	}
 
-	v := validator.New()
-
-	input.Page = app.readInt(c.QueryParams(), "page", 1, v)
-	input.PageSize = app.readInt(c.QueryParams(), "page_size", 5, v)
-
-	projects, metadata, err := app.models.Projects.GetAllByCreator(user.ID, input.Filter)
+	projects, err := app.models.Projects.GetAllByCreator(user.ID)
 	if err != nil {
 		return err
 	}
@@ -276,7 +268,60 @@ func (app *application) getProjectsByCreatorHandler(c echo.Context) error {
 	return c.JSON(http.StatusOK, envelope{
 		"message":  "projects returned successfully",
 		"projects": projects,
-		"metadata": metadata,
+	})
+}
+
+func (app *application) getProjectsByCreatorPublicHandler(c echo.Context) error {
+	id, err := app.readIDParam(c)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusNotFound, err.Error())
+	}
+
+	_, err = app.models.Users.GetByID(id)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrNoRecordFound):
+			return echo.NewHTTPError(http.StatusNotFound, "User not found")
+		default:
+			return err
+		}
+	}
+
+	projects, err := app.models.Projects.GetAllByCreatorPublic(id)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(http.StatusOK, envelope{
+		"message":  "projects returned successfully",
+		"projects": projects,
+	})
+}
+
+func (app *application) getProjectsByBackerHandler(c echo.Context) error {
+	id, err := app.readIDParam(c)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusNotFound, err.Error())
+	}
+
+	_, err = app.models.Users.GetByID(id)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrNoRecordFound):
+			return echo.NewHTTPError(http.StatusNotFound, "User not found")
+		default:
+			return err
+		}
+	}
+
+	projects, err := app.models.Projects.GetAllByBacker(id)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(http.StatusOK, envelope{
+		"message":  "projects returned successfully",
+		"projects": projects,
 	})
 }
 

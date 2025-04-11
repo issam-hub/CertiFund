@@ -1,0 +1,2 @@
+DROP TABLE IF EXISTS resolution;
+DROP TABLE IF EXISTS dispute;

@@ -75,7 +75,7 @@ func (app *application) fileUploadHandler(c echo.Context) error {
 	// Get the file from the request
 	file, err := c.FormFile("file")
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{
+		return c.JSON(http.StatusBadRequest, envelope{
 			"error": "Failed to get file from request: " + err.Error(),
 		})
 	}

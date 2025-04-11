@@ -54,6 +54,11 @@ type BackingVSRefund struct {
 	Refunds  int    `json:"refunds"`
 }
 
+type ProfileStats struct {
+	CreatedProjects int `json:"created_projects"`
+	BackedProjects  int `json:"backed_projects"`
+}
+
 type StatsModel struct {
 	DB *sql.DB
 }
@@ -553,4 +558,37 @@ func (m StatsModel) BackingsVSRefunds() ([]*BackingVSRefund, error) {
 	}
 
 	return datas, nil
+}
+
+func (m StatsModel) CreatedBackedProjectsCount(userId int) (*ProfileStats, error) {
+	backedQuery := `SELECT COUNT(b.project_id) AS backed_projects
+	FROM project pr 
+	INNER JOIN backing b ON pr.project_id = b.project_id 
+	INNER JOIN payment pa ON pa.backing_id = b.backing_id 
+	WHERE pa.status = 'succeeded' AND b.backer_id = $1`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	tx, err := m.DB.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	var profileStats ProfileStats
+
+	err = tx.QueryRowContext(ctx, backedQuery, userId).Scan(&profileStats.BackedProjects)
+	if err != nil {
+		return nil, err
+	}
+
+	createdQuery := `SELECT COUNT(creator_id) FROM project WHERE creator_id=$1`
+
+	err = tx.QueryRowContext(ctx, createdQuery, userId).Scan(&profileStats.CreatedProjects)
+	if err != nil {
+		return nil, err
+	}
+
+	return &profileStats, nil
 }

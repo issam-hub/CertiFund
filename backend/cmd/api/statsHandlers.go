@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"net/http"
 	"projectx/internal/data"
 
@@ -126,5 +127,32 @@ func (app *application) getBackingsRefundsHandler(c echo.Context) error {
 	return c.JSON(http.StatusOK, envelope{
 		"message": "Backings/Refunds returned successfully",
 		"data":    data,
+	})
+}
+
+func (app *application) getBackedCreatedCountHandler(c echo.Context) error {
+	id, err := app.readIDParam(c)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusNotFound, err.Error())
+	}
+
+	_, err = app.models.Users.GetByID(id)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrNoRecordFound):
+			return echo.NewHTTPError(http.StatusNotFound, "User not found")
+		default:
+			return err
+		}
+	}
+
+	profileStats, err := app.models.Stats.CreatedBackedProjectsCount(id)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(http.StatusOK, envelope{
+		"message":       "Profile stats returned successfully",
+		"profile_stats": profileStats,
 	})
 }

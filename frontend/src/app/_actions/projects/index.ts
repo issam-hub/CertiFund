@@ -542,3 +542,113 @@ export async function updateBacking(status: string, paymentId: number){
         return {status:false, error: error.message}
     }
 }
+
+export async function createDispute(reportedResourceId: number, data: {type: string, context:string,description: string, evidences?: string[]}){
+    const res = await authFetch(`${apiUrl}/disputes/create/${reportedResourceId}`,{
+        method:"POST",
+        headers:{
+            "Content-Type":"application/json"
+        },
+        body: JSON.stringify(data)
+    })
+    try {
+        if(!res.ok) {
+            const result = await res.json()
+            if(typeof result.error === "object"){
+                return {status:false, error: Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\r\n"+`*${curr}`) as string}
+            }
+            return {status: false, ...result}
+          }   
+          
+          const result = await res.json();
+          return {status:true, ...result}
+    }catch(error: any){
+        return {status: false, error: error.message}
+    }
+}
+
+export async function updateDispute(disputeId: number, status: string, note: string){
+    const res = await authFetch(`${apiUrl}/disputes/${disputeId}`,{
+        method:"PATCH",
+        headers:{
+            "Content-Type":"application/json"
+        },
+        body: JSON.stringify({
+            status,
+            note
+        })
+    })
+    try {
+        if(!res.ok) {
+            const result = await res.json()
+            if(typeof result.error === "object"){
+                return {status:false, error: Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\r\n"+`*${curr}`) as string}
+            }
+            return {status: false, ...result}
+          }   
+          
+          const result = await res.json();
+          return {status:true, ...result}
+    }catch(error: any){
+        return {status: false, error: error.message}
+    }
+}
+
+export async function deleteDispute(id: number){
+    const res = await authFetch(`${apiUrl}/disputes/${id}`,{
+        method:'DELETE'
+    })
+    try {
+        if(!res.ok) {
+            const result = await res.json()
+            if(typeof result.error === "object"){
+                return {status:false, error: Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
+            }
+            return {status: false, ...result}
+          }   
+          
+          const result = await res.json();
+          return {status:true, ...result}
+    }catch(error: any){
+        return {status: false, error: error.message}
+    }
+}
+
+
+export async function getProjectByUser(userId: number) {
+    const res = await authFetch(`${apiUrl}/projects/creator/${userId}`, {cache:"no-store", next:{tags:["projects-user"]}})
+
+    if(!res.ok){
+        const result = await res.json()
+        if(typeof result.error === "object"){
+            return {status:false, error:Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
+        }else if(result.error === "Project not found"){
+            notFound()
+        }else{
+            return {status:false, ...result}
+        }
+    }
+
+    
+    const result = await res.json()
+    return {status:true, ...result}
+}
+
+export async function getProjectByBacker(userId: number) {
+    const res = await authFetch(`${apiUrl}/projects/backer/${userId}`, {cache:"no-store", next:{tags:["projects-backer"]}})
+
+    if(!res.ok){
+        const result = await res.json()
+        if(typeof result.error === "object"){
+            return {status:false, error:Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
+        }else if(result.error === "Project not found"){
+            notFound()
+        }else{
+            return {status:false, ...result}
+        }
+    }
+
+    
+    const result = await res.json()
+    return {status:true, ...result}
+}

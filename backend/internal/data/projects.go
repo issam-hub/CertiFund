@@ -290,9 +290,9 @@ func (m ProjectModel) ProjectOwnership(projectID, creatorID int) (bool, error) {
 	return isProjectOwner, nil
 }
 
-func (m ProjectModel) GetAllByCreator(creatorID int, filters Filter) ([]*Project, MetaData, error) {
+func (m ProjectModel) GetAllByCreator(creatorID int) ([]*Project, error) {
 	query := `
-		SELECT COUNT(*) OVER(), project_id, title, description, categories, funding_goal, current_funding, deadline, status, project_img, campaign, created_at, updated_at, launched_at, version, creator_id
+		SELECT project_id, title, description, categories, funding_goal, current_funding, deadline, status, project_img, campaign, created_at, updated_at, launched_at, version, creator_id
 		FROM project WHERE creator_id = $1
 	`
 
@@ -303,10 +303,8 @@ func (m ProjectModel) GetAllByCreator(creatorID int, filters Filter) ([]*Project
 
 	rows, err := m.DB.QueryContext(ctx, query, creatorID)
 	if err != nil {
-		return nil, MetaData{}, err
+		return nil, err
 	}
-
-	totalRecords := 0
 
 	for rows.Next() {
 		project := &Project{}
@@ -314,7 +312,6 @@ func (m ProjectModel) GetAllByCreator(creatorID int, filters Filter) ([]*Project
 		var campaignVar sql.NullString
 
 		err := rows.Scan(
-			&totalRecords,
 			&project.ID,
 			&project.Title,
 			&project.Description,
@@ -332,7 +329,7 @@ func (m ProjectModel) GetAllByCreator(creatorID int, filters Filter) ([]*Project
 			&project.CreatorID,
 		)
 		if err != nil {
-			return nil, MetaData{}, err
+			return nil, err
 		}
 
 		project.ProjectImg = projectImgVar.String
@@ -341,10 +338,116 @@ func (m ProjectModel) GetAllByCreator(creatorID int, filters Filter) ([]*Project
 		projects = append(projects, project)
 	}
 	if err := rows.Err(); err != nil {
-		return nil, MetaData{}, err
+		return nil, err
 	}
 
-	metaData := calculateMetadata(totalRecords, filters.Page, filters.PageSize)
+	return projects, nil
+}
 
-	return projects, metaData, nil
+func (m ProjectModel) GetAllByCreatorPublic(creatorID int) ([]*Project, error) {
+	query := `
+		SELECT project_id, title, description, categories, funding_goal, current_funding, deadline, status, project_img, campaign, created_at, updated_at, launched_at, version, creator_id
+		FROM project WHERE creator_id = $1 AND (status = 'Live' OR status = 'Completed')
+	`
+
+	projects := []*Project{}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	rows, err := m.DB.QueryContext(ctx, query, creatorID)
+	if err != nil {
+		return nil, err
+	}
+
+	for rows.Next() {
+		project := &Project{}
+		var projectImgVar sql.NullString
+		var campaignVar sql.NullString
+
+		err := rows.Scan(
+			&project.ID,
+			&project.Title,
+			&project.Description,
+			&project.Categories,
+			&project.FundingGoal,
+			&project.CurrentFunding,
+			&project.Deadline,
+			&project.Status,
+			&projectImgVar,
+			&campaignVar,
+			&project.CreatedAt,
+			&project.UpdatedAt,
+			&project.LaunchedAt,
+			&project.Version,
+			&project.CreatorID,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		project.ProjectImg = projectImgVar.String
+		project.Campaign = campaignVar.String
+
+		projects = append(projects, project)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return projects, nil
+}
+
+func (m ProjectModel) GetAllByBacker(backerID int) ([]*Project, error) {
+	query := `
+		SELECT pr.project_id, pr.title, pr.description, pr.categories, pr.funding_goal, pr.current_funding, pr.deadline, pr.status, pr.project_img, pr.campaign, pr.created_at, pr.updated_at, pr.launched_at, pr.version, pr.creator_id 
+		FROM project pr INNER JOIN backing b ON pr.project_id = b.project_id WHERE b.backer_id = $1
+	`
+
+	projects := []*Project{}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	rows, err := m.DB.QueryContext(ctx, query, backerID)
+	if err != nil {
+		return nil, err
+	}
+
+	for rows.Next() {
+		project := &Project{}
+		var projectImgVar sql.NullString
+		var campaignVar sql.NullString
+
+		err := rows.Scan(
+			&project.ID,
+			&project.Title,
+			&project.Description,
+			&project.Categories,
+			&project.FundingGoal,
+			&project.CurrentFunding,
+			&project.Deadline,
+			&project.Status,
+			&projectImgVar,
+			&campaignVar,
+			&project.CreatedAt,
+			&project.UpdatedAt,
+			&project.LaunchedAt,
+			&project.Version,
+			&project.CreatorID,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		project.ProjectImg = projectImgVar.String
+		project.Campaign = campaignVar.String
+
+		projects = append(projects, project)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return projects, nil
 }

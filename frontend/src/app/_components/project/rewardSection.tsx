@@ -49,7 +49,7 @@ export default function RewardsSection({rewards, didIBackit, creatorId}:{rewards
             <div className="text-sm text-gray-600 mb-3">Estimated delivery: {new Date(reward.estimated_delivery).getMonth()}/{new Date(reward.estimated_delivery).getFullYear()}</div>
 
             {
-              (!didIBackit && (creatorId !== Number(user?.id))) && (
+              (!didIBackit && (creatorId !== Number(user?.user_id))) && (
                 <Button onClick={()=>toggleReward(reward.id)} className="w-full bg-[#3B82F6] hover:bg-[#1E3A8A]">{sharedSelectedRewards.includes(reward.id) ? (<div className='flex items-center gap-2'><Check className="h-3 w-3 text-white"/>Selected</div>) : "Select Reward"}</Button>
               )
             }

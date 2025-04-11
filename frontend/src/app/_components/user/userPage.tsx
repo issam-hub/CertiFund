@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
-import { Bell, Edit, Globe, HandCoins, Heart, Sparkle } from 'lucide-react'
+import { Bell, Edit, Flag, Globe, HandCoins, Heart, Sparkle } from 'lucide-react'
 import Image from "next/image"
 import Link from "next/link"
 import { useAtomValue } from "jotai"
@@ -14,26 +14,48 @@ import { formatTwitterHandle, formatWebsiteUrl, getTwitterUrl } from "@/app/_lib
 import LoadingProfilePage from "./loadingProfile"
 import { BLUR_IMAGE_URL } from "@/app/_lib/constants"
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel"
-import { ProfileType } from "@/app/_lib/types"
+import { ReportButton } from "../project/reportButton"
+import { ProfileType, User } from "@/app/_lib/types"
+import { useRouter } from "next/navigation"
+import { useEffect } from "react"
 
-export default function ProfilePage({createdProjects, backedProjects, stats}: ProfileType) {
-    const user = useAtomValue(userAtom)
+export default function UserPage({createdProjects, user, backedProjects, stats}:ProfileType) {
+  const router = useRouter()
+  const currentUser = useAtomValue(userAtom)
+
+  useEffect(()=>{
+    if(user?.user_id === currentUser?.user_id){
+      router.replace('/settings/profile')
+    }
+  },[])
+  
     if(!user){
       return (
         <LoadingProfilePage/>
       )
     }
+
+    const userReportTypes = [
+      { value: "impersonation", label: "Impersonation" },
+      { value: "harassment", label: "Harassment or Bullying" },
+      { value: "hate_speech", label: "Hate Speech or Discrimination" },
+      { value: "scam", label: "Scam or Fraud" },
+      { value: "inappropriate_behavior", label: "Inappropriate Behavior" },
+      { value: "spam", label: "Spam Account" },
+      { value: "other", label: "Other Issue" },
+    ]
+
   return (
     <div>
       <div className="bg-mainColor text-white">
         <div className="container mx-auto px-4 py-8">
           <div className="flex justify-end mb-4">
-            <Link href="profile/edit"> 
-              <Button size="sm" className="bg-white text-mainColor hover:bg-white hover:text-mainColor">
-                <Edit className="h-4 w-4" />
-                Edit Profile
+            <ReportButton resourceId={Number(user.user_id)} title={user.username} context="user" reportTypes={userReportTypes} buttonTrigger={
+              <Button variant="ghost" size="sm" className="bg-white text-sidebar">
+                <Flag className="h-4 w-4" />
+                Report 
               </Button>
-            </Link>
+            }/>
           </div>
           
           <div className="flex flex-col md:flex-row gap-8 items-start">
@@ -209,7 +231,7 @@ function ProjectCard({ project } :{project:UpdateProjectSchema}) {
         </div>
       </CardContent>
       <CardFooter className="pt-2 flex-row-reverse">
-        <Link href={`/projects/${project.project_id}`} className="inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 text-primary-foreground shadow h-8 rounded-md px-3 text-xs bg-secondaryColor self-end">
+        <Link href={`/projects/discover/${project.project_id}`} className="inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 text-primary-foreground shadow h-8 rounded-md px-3 text-xs bg-secondaryColor self-end">
           View Project
         </Link>
       </CardFooter>
