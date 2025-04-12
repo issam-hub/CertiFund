@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 // import { Separator } from "@/components/ui/separator"
 import { ArrowLeft, BadgeCheck, Bookmark, Calendar, CalendarDays, Clock, Heart, Share2, Target, Users } from "lucide-react"
-import { didIbackThisProject, getBackersCount, getComments, getProject, getProjectPublic } from "@/app/_actions/projects"
+import { didIbackThisProject, didILikeThis, didISaveThis, getBackersCount, getComments, getLikes, getProject, getProjectPublic } from "@/app/_actions/projects"
 import { UpdateProjectSchema } from "@/app/_lib/schemas/project"
 import { Separator } from "@/components/ui/separator"
 import parse from 'html-react-parser';
@@ -74,7 +74,21 @@ export default async function ProjectDetailsPage({params}:{params: Promise<{id:s
 
   let comments = commentsResult["comments"]
   comments = transformComments(comments)
+
+  const likes = await getLikes(id as unknown as number)
+  if(!likes.status){
+    throw new Error(likes.error)
+  }
   
+  const didILikeResult = await didILikeThis(id as unknown as number)
+  if (!didILikeResult.status){
+    throw new Error(didILikeResult.error)
+  }
+
+  const didISaveResult = await didISaveThis(id as unknown as number)
+  if (!didISaveResult.status){
+    throw new Error(didISaveResult.error)
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -228,7 +242,7 @@ export default async function ProjectDetailsPage({params}:{params: Promise<{id:s
                     ) 
                   }
 
-                  <ProjectActions creatorId={Number(project.creator_id)} projectId={Number(project.project_id)} projectTitle={project.title}/>
+                  <ProjectActions didISaveIt={didISaveResult["did_i"]} didIlikeIt={didILikeResult["did_i"]} likes={likes["likes"]} creatorId={Number(project.creator_id)} projectId={Number(project.project_id)} projectTitle={project.title}/>
                 </CardContent>
               </Card>
 
