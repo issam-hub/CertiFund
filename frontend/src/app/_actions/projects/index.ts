@@ -652,3 +652,163 @@ export async function getProjectByBacker(userId: number) {
     const result = await res.json()
     return {status:true, ...result}
 }
+
+export async function getSavedProjects() {
+    const res = await authFetch(`${apiUrl}/projects/saved`, {cache:"no-store", next:{tags:["projects-saved"]}})
+
+    if(!res.ok){
+        const result = await res.json()
+        if(typeof result.error === "object"){
+            return {status:false, error:Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
+        }else if(result.error === "Project not found"){
+            notFound()
+        }else{
+            return {status:false, ...result}
+        }
+    }
+
+    
+    const result = await res.json()
+    return {status:true, ...result}
+}
+
+export async function likeProject(projectId: number){
+    const res = await authFetch(`${apiUrl}/projects/like/${projectId}`, {
+        method:"POST"
+    })
+
+    if(!res.ok){
+        const result = await res.json()
+        if(typeof result.error === "object"){
+            return {status:false, error:Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
+        }else if(result.error === "Project not found"){
+            notFound()
+        }else{
+            return {status:false, ...result}
+        }
+    }
+
+    
+    const result = await res.json()
+    return {status:true, ...result}
+}
+
+export async function saveProject(projectId: number){
+    const res = await authFetch(`${apiUrl}/projects/save/${projectId}`, {
+        method:"POST"
+    })
+
+    if(!res.ok){
+        const result = await res.json()
+        if(typeof result.error === "object"){
+            return {status:false, error:Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
+        }else if(result.error === "Project not found"){
+            notFound()
+        }else{
+            return {status:false, ...result}
+        }
+    }
+
+    
+    const result = await res.json()
+    return {status:true, ...result}
+}
+
+export async function unlikeProject(projectId: number){
+    const res = await authFetch(`${apiUrl}/projects/unlike/${projectId}`, {
+        method:"POST"
+    })
+
+    if(!res.ok){
+        const result = await res.json()
+        if(typeof result.error === "object"){
+            return {status:false, error:Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
+        }else if(result.error === "Project not found"){
+            notFound()
+        }else{
+            return {status:false, ...result}
+        }
+    }
+
+    
+    const result = await res.json()
+    return {status:true, ...result}
+}
+
+export async function unsaveProject(projectId: number){
+    const res = await authFetch(`${apiUrl}/projects/unsave/${projectId}`, {
+        method:"POST"
+    })
+
+    if(!res.ok){
+        const result = await res.json()
+        if(typeof result.error === "object"){
+            return {status:false, error:Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
+        }else if(result.error === "Project not found"){
+            notFound()
+        }else{
+            return {status:false, ...result}
+        }
+    }
+
+    
+    const result = await res.json()
+    return {status:true, ...result}
+}
+
+export async function getLikes(projectId: number) {
+    const res = await fetch(`${apiUrl}/projects/like/${projectId}`, {cache:"no-store", next:{tags:["projects-likes"]}})
+
+    if(!res.ok){
+        const result = await res.json()
+        if(typeof result.error === "object"){
+            return {status:false, error:Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
+        }else if(result.error === "Project not found"){
+            notFound()
+        }else{
+            return {status:false, ...result}
+        }
+    }
+
+    
+    const result = await res.json()
+    return {status:true, ...result}
+}
+
+export async function didILikeThis(projectId: number) {
+    const res = await authFetch(`${apiUrl}/projects/didILikeThis/${projectId}`, {cache:"no-store", next:{tags:["projects-did-i-like-this"]}})
+
+    if(!res.ok){
+        const result = await res.json()
+        if(typeof result.error === "object"){
+            return {status:false, error:Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
+        }else if(result.error === "Project not found"){
+            notFound()
+        }else{
+            return {status:false, ...result}
+        }
+    }
+
+    
+    const result = await res.json()
+    return {status:true, ...result}
+}
+
+export async function didISaveThis(projectId: number) {
+    const res = await authFetch(`${apiUrl}/projects/didISaveThis/${projectId}`, {cache:"no-store", next:{tags:["projects-did-i-save-this"]}})
+
+    if(!res.ok){
+        const result = await res.json()
+        if(typeof result.error === "object"){
+            return {status:false, error:Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
+        }else if(result.error === "Project not found"){
+            notFound()
+        }else{
+            return {status:false, ...result}
+        }
+    }
+
+    
+    const result = await res.json()
+    return {status:true, ...result}
+}

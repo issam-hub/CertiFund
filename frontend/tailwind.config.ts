@@ -89,11 +89,25 @@ export default {
   				to: {
   					height: '0'
   				}
-  			}
+  			},
+			heartbeat: {
+			"0%": { transform: "scale(1)" },
+			"15%": { transform: "scale(1.3)" },
+			"30%": { transform: "scale(0.95)" },
+			"45%": { transform: "scale(1.2)" },
+			"60%": { transform: "scale(1)" },
+			},
+			save: {
+				"0%": { transform: "scale(1)" },
+				"50%": {transform: "scale(1.3)"},
+				"100%": {transform: "scale(1)"},
+			}
   		},
   		animation: {
   			'accordion-down': 'accordion-down 0.2s ease-out',
-  			'accordion-up': 'accordion-up 0.2s ease-out'
+  			'accordion-up': 'accordion-up 0.2s ease-out',
+			heartbeat: "heartbeat 0.6s ease-in-out",
+			save: "save 0.6s ease-in-out",
   		}
   	}
   },

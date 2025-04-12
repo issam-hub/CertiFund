@@ -22,6 +22,7 @@ func (app *application) routes(e *echo.Echo) {
 	authGroup.GET("/projects/me", app.getProjectsByCreatorHandler)
 	publicGroup.GET("/projects/creator/:id", app.getProjectsByCreatorPublicHandler)
 	publicGroup.GET("/projects/backer/:id", app.getProjectsByBackerHandler)
+	authGroup.GET("/projects/saved", app.getSavedProjectsByCurrentUserHandler)
 
 	// image upload
 	authGroup.POST("/projects/image/upload", app.fileUploadHandler)
@@ -86,4 +87,13 @@ func (app *application) routes(e *echo.Echo) {
 	authGroup.POST("/disputes/create/:id", app.createDisputeHandler)
 	authGroup.DELETE("/disputes/:id", app.deleteDisputeHandler)
 	authGroup.PATCH("/disputes/:id", app.updateDisputeHandler)
+
+	// feedback
+	authGroup.POST("/projects/like/:id", app.LikeProjectHandler)
+	authGroup.POST("/projects/unlike/:id", app.unlikeProjectHandler)
+	authGroup.POST("/projects/save/:id", app.SaveProjectHandler)
+	authGroup.POST("/projects/unsave/:id", app.unsaveProjectHandler)
+	publicGroup.GET("/projects/like/:id", app.getLikesHandler)
+	authGroup.GET("/projects/didILikeThis/:id", app.didILikeThisHandler)
+	authGroup.GET("/projects/didISaveThis/:id", app.didISaveThisHandler)
 }

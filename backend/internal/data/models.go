@@ -24,6 +24,7 @@ type Models struct {
 	Stats       StatsModel
 	Tables      TablesModel
 	Disputes    DisputeModel
+	Feedback    FeedbackModel
 }
 
 func NewModels(db *sql.DB) Models {
@@ -39,5 +40,6 @@ func NewModels(db *sql.DB) Models {
 		Stats:       StatsModel{DB: db},
 		Tables:      TablesModel{DB: db},
 		Disputes:    DisputeModel{DB: db},
+		Feedback:    FeedbackModel{DB: db},
 	}
 }

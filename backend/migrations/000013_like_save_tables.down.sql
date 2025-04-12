@@ -1,0 +1,2 @@
+DROP TABLE IF EXISTS favourite;
+DROP TABLE IF EXISTS save;

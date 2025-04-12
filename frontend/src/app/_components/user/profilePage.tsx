@@ -16,7 +16,7 @@ import { BLUR_IMAGE_URL } from "@/app/_lib/constants"
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel"
 import { ProfileType } from "@/app/_lib/types"
 
-export default function ProfilePage({createdProjects, backedProjects, stats}: ProfileType) {
+export default function ProfilePage({createdProjects, backedProjects, stats, savedProjects}: ProfileType) {
     const user = useAtomValue(userAtom)
     if(!user){
       return (
@@ -108,9 +108,10 @@ export default function ProfilePage({createdProjects, backedProjects, stats}: Pr
       {/* Main Content */}
       <div className="container mx-auto px-4 py-8">
         <Tabs defaultValue="created" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-8 h-12">
+          <TabsList className="grid w-full grid-cols-3 mb-8 h-12">
             <TabsTrigger value="created" className="text-base h-10">Created Projects</TabsTrigger>
             <TabsTrigger value="backed" className="text-base h-10">Backed Projects</TabsTrigger>
+            <TabsTrigger value="saved" className="text-base h-10">Saved Projects</TabsTrigger>
           </TabsList>
           
           <TabsContent value="created" className="space-y-6 focus-visible:ring-0 focus-visible:ring-offset-0">
@@ -137,6 +138,24 @@ export default function ProfilePage({createdProjects, backedProjects, stats}: Pr
               <Carousel opts={{ align: "start", loop: true }}>
                 <CarouselContent>
                   {backedProjects.map((project) => (
+                    <CarouselItem key={project.project_id} className="basis-1/3 self-stretch">
+                      <ProjectCard project={project} />
+                    </CarouselItem>
+                  ))}
+                </CarouselContent>
+                <div className="hidden md:flex">
+                  <CarouselPrevious className="relative -left-4" />
+                  <CarouselNext className="relative -right-4" />
+                </div>
+              </Carousel>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="saved" className="space-y-6">
+            <div className="mx-auto max-w-6xl px-8">
+              <Carousel opts={{ align: "start", loop: true }}>
+                <CarouselContent>
+                  {savedProjects?.map((project) => (
                     <CarouselItem key={project.project_id} className="basis-1/3 self-stretch">
                       <ProjectCard project={project} />
                     </CarouselItem>

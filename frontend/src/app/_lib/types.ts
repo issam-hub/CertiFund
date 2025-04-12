@@ -145,7 +145,10 @@ export type Dispute = {
 export type ProfileType = {
   createdProjects: UpdateProjectSchema[]
   user?: User
+  savedProjects?: UpdateProjectSchema[]
   backedProjects: UpdateProjectSchema[]
-  stats:{created_projects:number
-  backed_projects:number}
+  stats:{
+    created_projects:number
+    backed_projects:number
+}
 }

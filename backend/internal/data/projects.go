@@ -451,3 +451,57 @@ func (m ProjectModel) GetAllByBacker(backerID int) ([]*Project, error) {
 
 	return projects, nil
 }
+
+func (m ProjectModel) GetAllSavedByCurrentUser(userID int) ([]*Project, error) {
+	query := `
+	SELECT pr.project_id, pr.title, pr.description, pr.categories, pr.funding_goal, pr.current_funding, pr.deadline, pr.status, pr.project_img, pr.campaign, pr.created_at, pr.updated_at, pr.launched_at, pr.version, pr.creator_id 
+	FROM project pr INNER JOIN save s ON pr.project_id = s.project_id WHERE s.user_id = $1
+`
+
+	projects := []*Project{}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	rows, err := m.DB.QueryContext(ctx, query, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	for rows.Next() {
+		project := &Project{}
+		var projectImgVar sql.NullString
+		var campaignVar sql.NullString
+
+		err := rows.Scan(
+			&project.ID,
+			&project.Title,
+			&project.Description,
+			&project.Categories,
+			&project.FundingGoal,
+			&project.CurrentFunding,
+			&project.Deadline,
+			&project.Status,
+			&projectImgVar,
+			&campaignVar,
+			&project.CreatedAt,
+			&project.UpdatedAt,
+			&project.LaunchedAt,
+			&project.Version,
+			&project.CreatorID,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		project.ProjectImg = projectImgVar.String
+		project.Campaign = campaignVar.String
+
+		projects = append(projects, project)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return projects, nil
+}
