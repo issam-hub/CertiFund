@@ -31,6 +31,10 @@ func (app *application) getStatsHandler(c echo.Context) error {
 	if err != nil {
 		return err
 	}
+	err = app.models.Stats.GetTotalCreators(stats)
+	if err != nil {
+		return err
+	}
 	err = app.models.Stats.GetTotalBackings(stats)
 	if err != nil {
 		return err

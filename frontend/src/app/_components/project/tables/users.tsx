@@ -355,7 +355,7 @@ export function UserManagement({users, meta}: { users: User[], meta: Metadata })
                     </Avatar>
                     <div>
                       <CardTitle>{selectedUser.username}</CardTitle>
-                      <CardDescription>Joined on {new Date(selectedUser.created_at).toUTCString()}</CardDescription>
+                      <CardDescription>Joined on {format(selectedUser.created_at, "MMMM d, yyyy 'at' h:mm a")}</CardDescription>
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-4">

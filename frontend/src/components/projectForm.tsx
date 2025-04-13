@@ -19,7 +19,7 @@ import { userAtom } from '@/app/_store/shared';
 import { useAtomValue } from 'jotai';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from './ui/form';
 import { Badge } from './ui/badge';
-import { CalendarIcon, ChevronLeft, ChevronRight, PlusCircle, Trash, Upload, X } from 'lucide-react';
+import { CalendarIcon, ChevronLeft, ChevronRight, Loader2, PlusCircle, Trash, Upload, X } from 'lucide-react';
 import { Card, CardContent } from './ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Calendar } from './ui/calendar';
@@ -150,14 +150,15 @@ export default function ProjectForm({ data, activeTab, onStepComplete }: Project
     }
   };
 
-  const defaultImages: {[key: number]: string} = {};
+  const defaultImages: {[key: number]: {value:string, isUploading: boolean}} = {};
 
   data["rewards"]?.forEach((reward, index) => {
-    defaultImages[index] = reward.image_url;
+    defaultImages[index] = {value:reward.image_url, isUploading:false};
   });
 
-  const [previewImages, setPreviewImages] = useState<{ [key: number]: string }>(defaultImages)
+  const [previewImages, setPreviewImages] = useState<{ [key: number]: {value: string, isUploading: boolean} }>(defaultImages)
   const [activeIndex, setActiveIndex] = useState(0)
+  const [loadingWithIndex, setLoadingWithIndex] = useState([{isIt: false}])
   const carouselRef = useRef<HTMLDivElement>(null)
 
   const rewards = data["rewards"] ? data["rewards"].map((reward)=> {
@@ -194,7 +195,7 @@ export default function ProjectForm({ data, activeTab, onStepComplete }: Project
         // Update the preview image
         setPreviewImages((prev) => ({
           ...prev,
-          [index]: reader.result as string,
+          [index]: {value: reader.result as string, isUploading:true},
         }))
 
         // Update the form value
@@ -211,6 +212,10 @@ export default function ProjectForm({ data, activeTab, onStepComplete }: Project
             rewardsForm.setValue(`rewards.${index}.image_url`, result.url)
           }
         }
+        setPreviewImages((prev) => ({
+          ...prev,
+          [index]: {value: reader.result as string, isUploading:false},
+        }))
       }
       reader.readAsDataURL(file)
     }
@@ -442,7 +447,7 @@ export default function ProjectForm({ data, activeTab, onStepComplete }: Project
                           <h3 className="text-lg font-semibold">
                             Reward Tier {rewardIndex + 1}
                           </h3>
-                          {rewardFields.length > 1 && (
+                          {rewardFields.length >= 1 && (
                             <Button
                               type="button"
                               variant="ghost"
@@ -579,12 +584,17 @@ export default function ProjectForm({ data, activeTab, onStepComplete }: Project
                                       <div className="relative w-full">
                                         <img
                                           src={
-                                            previewImages[rewardIndex] ||
+                                            previewImages[rewardIndex].value ||
                                             "/placeholder.svg"
                                           }
                                           alt="Preview"
                                           className="mx-auto h-32 object-contain"
                                         />
+                                        {
+                                          previewImages[rewardIndex].isUploading && (
+                                            <Loader2 className="absolute top-[80%] left-[60%] h-5 w-5 animate-spin text-gray-400" />
+                                          )
+                                        }
                                         <Button
                                           type="button"
                                           variant="ghost"

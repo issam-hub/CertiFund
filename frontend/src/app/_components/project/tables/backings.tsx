@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import {
   flexRender,
   getCoreRowModel,
@@ -12,7 +12,7 @@ import {
   type ColumnFiltersState,
   type SortingState,
 } from "@tanstack/react-table"
-import { ArrowUpDown, ChevronDown, MoreHorizontal, Search } from "lucide-react"
+import { ArrowUpDown, ChevronDown, MoreHorizontal, Search, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
@@ -36,14 +36,23 @@ import {
 } from "@/components/ui/dialog"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Backing, Metadata } from "@/app/_lib/types"
+import { Backing, Metadata, Reward } from "@/app/_lib/types"
 import { formatDateTime, formatDateTimeSecond } from "@/app/_lib/utils"
 import Link from "next/link"
-import { deleteBacking, updateBacking } from "@/app/_actions/projects"
+import { deleteBacking, getRewardsByBacking, handleRewards, updateBacking } from "@/app/_actions/projects"
 import { useToast } from "@/hooks/use-toast"
-import { TOAST_ERROR_TITLE, TOAST_SUCCESS_TITLE } from "@/app/_lib/constants"
+import { BLUR_IMAGE_URL, TOAST_ERROR_TITLE, TOAST_SUCCESS_TITLE } from "@/app/_lib/constants"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs"
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel"
+import Image from "next/image"
+import { format } from "date-fns"
 
 export function BackingManagement({backings, meta}:{backings:Backing[], meta: Metadata}) {
   const [sorting, setSorting] = useState<SortingState>([])
@@ -52,9 +61,28 @@ export function BackingManagement({backings, meta}:{backings:Backing[], meta: Me
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
+  const [rewards, setRewards] = useState<Reward[] |undefined>([])
   const [globalFilter, setGlobalFilter] = useState("")
 
   const {toast} = useToast()
+
+    useEffect(()=>{
+      if(selectedBacking){
+        (async()=>{
+          const result = await getRewardsByBacking(selectedBacking.backing_id as unknown as number)
+          if(result.status){
+            setRewards(result["rewards"])
+          }else{
+            toast({
+              title: TOAST_ERROR_TITLE,
+              description: result.error,
+              variant: "destructive"
+            })
+            return
+          }
+        })()
+      }
+    },[selectedBacking])
 
   const columns: ColumnDef<Backing>[] = [
     {
@@ -116,7 +144,7 @@ export function BackingManagement({backings, meta}:{backings:Backing[], meta: Me
         )
       },
       cell: ({ row }) => {
-        const amount = Number.parseFloat(row.getValue("amount"))
+        const amount = Number.parseFloat(row.getValue("amount"))/100
         return <div className="font-medium">{amount.toLocaleString()}DA</div>
       },
     },
@@ -135,7 +163,9 @@ export function BackingManagement({backings, meta}:{backings:Backing[], meta: Me
     {
       accessorKey: "created_at",
       header: "Date",
-      cell: ({ row }) => <div>{formatDateTimeSecond(row.getValue("created_at"))}</div>,
+      cell: ({ row }) => {
+        return <div>{row.getValue("created_at")}</div>
+      },
     },
     {
       accessorKey: "payment_method",
@@ -335,55 +365,151 @@ export function BackingManagement({backings, meta}:{backings:Backing[], meta: Me
 
         {/* View Backing Dialog */}
         <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-          <DialogContent className="sm:max-w-[600px]">
+          <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-gray-100 [&::-webkit-scrollbar-track]:rounded-lg [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded-lg hover:[&::-webkit-scrollbar-thumb]:bg-gray-400">
             <DialogHeader>
               <DialogTitle>Backing Details</DialogTitle>
               <DialogDescription>Detailed information about the selected backing.</DialogDescription>
             </DialogHeader>
             {selectedBacking && (
-              <div className="grid gap-4 py-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Backing #{selectedBacking.backing_id}</CardTitle>
-                    <CardDescription>Made on {formatDateTimeSecond(selectedBacking.created_at)}</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">Backer</p>
-                        <p>{selectedBacking.backer}</p>
+              <Tabs defaultValue="details" className="grid gap-4 py-4">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="details">Details</TabsTrigger>
+                  <TabsTrigger value="rewards">Rewards</TabsTrigger>
+                </TabsList>
+                <TabsContent value="details">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Backing #{selectedBacking.backing_id}</CardTitle>
+                      <CardDescription>Made on {selectedBacking.created_at}</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground">Backer</p>
+                          <p>{selectedBacking.backer}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground">Project</p>
+                          <p>{selectedBacking.project}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground">Amount</p>
+                          <p>{selectedBacking.amount.toLocaleString()}DA</p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground">Status</p>
+                          <Badge variant="outline">
+                            {selectedBacking.status}
+                          </Badge>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground">Payment Method</p>
+                          <p>{selectedBacking.payment_method}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground">Transaction ID</p>
+                          <p>{selectedBacking.transaction_id}</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">Project</p>
-                        <p>{selectedBacking.project}</p>
+                    </CardContent>
+                    <CardFooter className="flex flex-row-reverse justify-between">
+                      <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>
+                        Close
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                </TabsContent>
+                <TabsContent value="rewards" className="p-6 focus:outline-none">
+                    <Carousel opts={{align:"start", }}>
+                      <div className="hidden md:flex">
+                        <CarouselPrevious className="relative left-[calc(100%-100px)]" />
+                        <CarouselNext className="relative -right-[calc(100%-80px)]" />
                       </div>
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">Amount</p>
-                        <p>{selectedBacking.amount.toLocaleString()}DA</p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">Status</p>
-                        <Badge variant="outline">
-                          {selectedBacking.status}
-                        </Badge>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">Payment Method</p>
-                        <p>{selectedBacking.payment_method}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">Transaction ID</p>
-                        <p>{selectedBacking.transaction_id}</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                  <CardFooter className="flex flex-row-reverse justify-between">
-                    <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>
-                      Close
-                    </Button>
-                  </CardFooter>
-                </Card>
-              </div>
+                      <CarouselContent className="flex">
+                        {rewards?.map((reward, index) => (
+                          <CarouselItem key={index} className="basis-1/2 self-stretch relative">
+                            <Card
+                              key={index}
+                              className={`transition-colors ease-out duration-200 border-2 border-gray-200 h-full`}
+                            >
+                              <CardContent className="p-4">
+                                {reward.image_url && (
+                                  <Image
+                                    src={""}
+                                    placeholder="blur"
+                                    blurDataURL={BLUR_IMAGE_URL}
+                                    overrideSrc={reward.image_url}
+                                    alt="reward-img"
+                                    width={100}
+                                    height={100}
+                                    className="w-full h-[250px] mb-1 object-cover rounded-t-md"
+                                  />
+                                )}
+                                <div className="flex justify-between items-center mb-2">
+                                  <h5 className="font-medium">{reward.title}</h5>
+                                  <h4 className="font-bold text-lg">
+                                    {reward.amount / 100}DA
+                                  </h4>
+                                </div>
+                                <p className="text-sm text-gray-600 mb-3">
+                                  {reward.description}
+                                </p>
+
+                                {reward.includes && (
+                                  <div className="mb-3">
+                                    <p className="text-sm font-medium mb-1">
+                                      Includes:
+                                    </p>
+                                    <ul className="text-sm text-gray-600 space-y-1">
+                                      {reward.includes.map((item, i) => (
+                                        <li
+                                          key={i}
+                                          className="flex items-start gap-2"
+                                        >
+                                          <span className="text-[#3B82F6]">•</span>
+                                          <span>{item}</span>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+
+                                <div className="text-sm text-gray-600 mb-3">
+                                  Estimated delivery:{" "}
+                                  {new Date(reward.estimated_delivery).getMonth()}/
+                                  {new Date(
+                                    reward.estimated_delivery
+                                  ).getFullYear()}
+                                </div>
+                              </CardContent>
+                            </Card>
+                            <Button onClick={async()=>{
+                              setRewards(rewards.filter((reward2,index2)=> rewards[index2] !== rewards[index]))
+                              const result = await handleRewards({rewards: rewards}, (selectedBacking.project_id).toString(), "update")
+                              if(result.status){
+                                toast({
+                                  title: TOAST_SUCCESS_TITLE,
+                                  description: "Reward deleted successfully",
+                                  variant: "default"
+                                })
+                              }else{
+                                toast({
+                                  title: TOAST_ERROR_TITLE,
+                                  description: result.error,
+                                  variant: "destructive"
+                                })
+                              }
+                              
+                            }} variant="ghost" className="p-2 absolute bottom-2 right-2 bg-white border border-slate-200">
+                              <Trash2 className="text-red-500 h-7 w-7"/>
+                              <span className="sr-only">delete reward</span>
+                            </Button>
+                          </CarouselItem>
+                        ))}
+                      </CarouselContent>
+                    </Carousel>
+                  </TabsContent>
+              </Tabs>
             )}
           </DialogContent>
         </Dialog>

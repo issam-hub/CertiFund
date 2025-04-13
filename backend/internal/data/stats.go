@@ -13,6 +13,7 @@ type Stats struct {
 	SuccessfulProjects int     `json:"successful_projects"`
 	FailedProjects     int     `json:"failed_projects"`
 	TotalBackers       int     `json:"total_backers"`
+	TotalCreators      int     `json:"total_creators"`
 	TotalBackings      int     `json:"total_backings"`
 	TotalRefunds       int     `json:"total_refunds"`
 }
@@ -84,7 +85,7 @@ func (m StatsModel) GetTotalProjectsCount(stats *Stats) error {
 }
 
 func (m StatsModel) GetTotalMoneyRaised(stats *Stats) error {
-	query := `SELECT SUM(amount) FROM payment`
+	query := `SELECT SUM(amount)/100 FROM payment WHERE status = 'succeeded'`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -144,8 +145,33 @@ func (m StatsModel) GetTotalFailedProjectsCount(stats *Stats) error {
 
 	return nil
 }
+func (m StatsModel) GetTotalCreators(stats *Stats) error {
+	query := `SELECT DISTINCT COUNT(creator_id) OVER()
+	FROM project`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	var count sql.NullInt64
+	err := m.DB.QueryRowContext(ctx, query).Scan(&count)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil
+		}
+		return err
+	}
+
+	stats.TotalCreators = int(count.Int64)
+
+	return nil
+}
 func (m StatsModel) GetTotalBackers(stats *Stats) error {
-	query := `SELECT DISTINCT COUNT(*) OVER() FROM backing`
+	query := `SELECT DISTINCT COUNT(*) OVER()
+	FROM backing b
+	INNER JOIN payment pa
+	ON b.backing_id = pa.backing_id
+	WHERE pa.status = 'succeeded'`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -270,7 +296,7 @@ func (m StatsModel) GetProjectsOverview() ([]*Overview, error) {
 
 func (m StatsModel) GetTopFiveProjects() ([]*TopProject, error) {
 	query := `
-	SELECT pr.title, u.username AS creator, sum(pa.amount) AS total_raised
+	SELECT pr.title, u.username AS creator, sum(pa.amount)/100 AS total_raised
 	FROM backing b
 	INNER JOIN payment pa
 	ON pa.backing_id = b.backing_id
@@ -278,6 +304,7 @@ func (m StatsModel) GetTopFiveProjects() ([]*TopProject, error) {
 	ON b.project_id = pr.project_id
 	INNER JOIN user_t u
 	ON pr.creator_id = u.user_id
+	WHERE pa.status = 'succeeded'
 	GROUP BY creator, pr.title
 	ORDER BY total_raised DESC
 	LIMIT 5;
@@ -300,7 +327,6 @@ func (m StatsModel) GetTopFiveProjects() ([]*TopProject, error) {
 		if err != nil {
 			return nil, err
 		}
-
 		topProjects = append(topProjects, &topProject)
 	}
 
@@ -313,11 +339,12 @@ func (m StatsModel) GetTopFiveProjects() ([]*TopProject, error) {
 
 func (m StatsModel) GetTopFiveCreators() ([]*TopUser, error) {
 	query := `
-	SELECT u.username, u.image_url, COUNT(pr.project_id) AS project_count, COALESCE(SUM(pa.amount), 0) AS total_raised
+	SELECT u.username, u.image_url, COUNT(pr.project_id) AS project_count, COALESCE(SUM(pa.amount)/100, 0) AS total_raised
 	FROM project pr
 	LEFT JOIN backing b ON b.project_id = pr.project_id
 	LEFT JOIN payment pa ON b.backing_id = pa.backing_id
 	INNER JOIN user_t u ON pr.creator_id = u.user_id
+	WHERE pa.status = 'succeeded'
 	GROUP BY u.username, u.image_url
 	ORDER BY project_count DESC, total_raised DESC
 	LIMIT 5;
@@ -353,11 +380,12 @@ func (m StatsModel) GetTopFiveCreators() ([]*TopUser, error) {
 
 func (m StatsModel) GetTopFiveBackers() ([]*TopUser, error) {
 	query := `
-	SELECT u.username, u.image_url, COUNT(pr.project_id) AS project_count, SUM(pa.amount) AS total_raised
+	SELECT u.username, u.image_url, COUNT(pr.project_id) AS project_count, SUM(pa.amount)/100 AS total_raised
 	FROM backing b
 	INNER JOIN payment pa ON b.backing_id = pa.backing_id
 	INNER JOIN project pr ON b.project_id = pr.project_id
 	INNER JOIN user_t u ON b.backer_id = u.user_id
+	WHERE pa.status = 'succeeded'
 	GROUP BY u.username, u.image_url
 	ORDER BY project_count, total_raised DESC
 	LIMIT 5;

@@ -171,7 +171,6 @@ func (m RewardModel) Get(id int) (*Reward, error) {
 }
 
 func (m RewardModel) InsertBackingReward(backingID, rewardID int) error {
-	fmt.Printf("backing reward pair: %d %d", backingID, rewardID)
 	query := `INSERT INTO backing_reward (backing_id, reward_id) VALUES ($1, $2)`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
@@ -210,4 +209,33 @@ func (m RewardModel) DeleteBackingReward(backingID int) error {
 		return err
 	}
 	return nil
+}
+
+func (m RewardModel) GetAllByBacking(backingID int) (*[]Reward, error) {
+	query := `SELECT r.reward_id, r.project_id, r.title, r.description, r.amount, r.image_url, r.includes, r.estimated_delivery, r.is_available 
+	FROM reward r 
+	INNER JOIN backing_reward br 
+	ON br.reward_id = r.reward_id 
+	WHERE br.backing_id = $1`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	rows, err := m.DB.QueryContext(ctx, query, backingID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var rewards []Reward
+	for rows.Next() {
+		var reward Reward
+		err := rows.Scan(&reward.ID, &reward.ProjectID, &reward.Title, &reward.Description, &reward.Amount, &reward.ImageURL, &reward.Includes, &reward.EstimatedDelivery, &reward.IsAvailable)
+		if err != nil {
+			return nil, err
+		}
+		rewards = append(rewards, reward)
+	}
+
+	return &rewards, nil
 }
