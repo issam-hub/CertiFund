@@ -52,7 +52,7 @@ func (app *application) createPaymentIntentHandler(c echo.Context) error {
 	}
 
 	params := &stripe.PaymentIntentParams{
-		Amount:   stripe.Int64(int64(input.Amount)),
+		Amount:   stripe.Int64(int64(input.Amount) / 100),
 		Currency: stripe.String(string(stripe.CurrencyDZD)),
 	}
 
@@ -81,7 +81,7 @@ func (app *application) recordBackingHandler(c echo.Context) error {
 
 	var input struct {
 		PaymentIntentID string `json:"payment_intent_id"`
-		PaymentMethod   string `json:"paymentMethod"`
+		PaymentMethod   string `json:"payment_method"`
 		Rewards         []int  `json:"rewards"`
 	}
 
@@ -408,5 +408,22 @@ func (app *application) updateBackingHandler(c echo.Context) error {
 	return c.JSON(http.StatusOK, envelope{
 		"message": "Backing updated successfully",
 		"status":  payment.Status,
+	})
+}
+
+func (app *application) getBackingRewardsHandler(c echo.Context) error {
+	id, err := app.readIDParam(c)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusNotFound, err.Error())
+	}
+
+	rewards, err := app.models.Rewards.GetAllByBacking(id)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(http.StatusOK, envelope{
+		"message": "Rewards returned successfully",
+		"rewards": rewards,
 	})
 }

@@ -52,6 +52,7 @@ func (app *application) routes(e *echo.Echo) {
 	authGroup.POST("/backing/refund/:id", app.refundHandler, app.RequirePermission("backing:create"))
 	authGroup.DELETE("/backing/:id", app.deleteBackingHandler)
 	authGroup.PATCH("/backing/:id", app.updateBackingHandler)
+	authGroup.GET("/backing/rewards/:id", app.getBackingRewardsHandler)
 
 	// rewards
 	authGroup.POST("/rewards/create/:id", app.createRewardsHandler, app.RequirePermission("rewards:create"))

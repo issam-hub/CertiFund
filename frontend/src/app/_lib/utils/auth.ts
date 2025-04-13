@@ -1,4 +1,3 @@
-// utils/auth.ts
 import { cookies } from 'next/headers';
 import { TOKEN_COOKIE_NAME } from '../config';
 
@@ -21,8 +20,7 @@ export async function authFetch(url: string, options: RequestInit = {}) {
   
   // Handle authentication errors
   if (response.status === 401) {
-    // Clear auth cookie on unauthorized
-    cookieStore.delete(TOKEN_COOKIE_NAME);
+    cookieStore.delete(TOKEN_COOKIE_NAME)
   }
   
   return response;

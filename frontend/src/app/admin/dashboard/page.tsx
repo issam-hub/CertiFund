@@ -4,7 +4,7 @@ import { RecentProjects } from "@/app/_components/project/recentProjects"
 import { TopCreators } from "@/app/_components/project/topCreators"
 import { ProjectStats } from "@/app/_components/project/projectStats"
 import { TopBackers } from "@/app/_components/project/topBackers"
-import { CircleX, HandCoins, PartyPopper, Rocket, Undo2, Users, Wallet } from "lucide-react"
+import { CircleX, HandCoins, PartyPopper, Rocket, Sparkle, Undo2, Users, Wallet } from "lucide-react"
 import { getGeneralStats, getProjectsOverview, getTopFiveUsers, getTopFiveProjects, getCategoriesDistribution, getCreatorsAndBackers, getBackingsAndRefunds } from "@/app/_actions/dashboard"
 import CategoriesDistribution from "@/app/_components/project/categoriesDistribution"
 import CreatorsBackers from "@/app/_components/project/creatorsBackers"
@@ -99,7 +99,7 @@ export default async function Dashboardpage() {
             <div className="text-2xl font-bold">{generalStats.failed_projects}</div>
           </CardContent>
         </Card>
-        <Card className="col-span-full md:col-span-1">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium"><h2>Total backers</h2></CardTitle>
             <Users className="text-accentColor h-6 w-6"/>
@@ -108,7 +108,16 @@ export default async function Dashboardpage() {
             <div className="text-2xl font-bold">{generalStats.total_backers}</div>
           </CardContent>
         </Card>
-        <Card className="col-span-full md:col-span-2">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium"><h2>Total creators</h2></CardTitle>
+            <Sparkle className="text-accentColor h-6 w-6"/>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{generalStats.total_creators}</div>
+          </CardContent>
+        </Card>
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium"><h2>Total Backings</h2></CardTitle>
             <HandCoins className="text-accentColor h-6 w-6"/>
@@ -117,7 +126,7 @@ export default async function Dashboardpage() {
             <div className="text-2xl font-bold">{generalStats.total_backings}</div>
           </CardContent>
         </Card>
-        <Card className="col-span-full md:col-span-1">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium"><h2>Total refunds</h2></CardTitle>
             <Undo2 className="text-accentColor h-6 w-6"/>

@@ -380,6 +380,25 @@ export async function getRewards(projectId: number){
     }
 }
 
+export async function getRewardsByBacking(backingId: number){
+    const res = await authFetch(`${apiUrl}/backing/rewards/${backingId}`,{next:{tags:["backing-rewards"]}})
+
+    try {
+        if(!res.ok) {
+            const result = await res.json()
+            if(typeof result.error === "object"){
+                return {status:false, error: Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
+            }
+            return {status: false, ...result}
+          }  
+      
+          const result = await res.json();
+          return {status:true, ...result}
+    }catch(error: any){
+        return {status: false, error: error.message}
+    }
+}
+
 export async function publishUpdate(data: UpdateSchema, project_id: string){
     const res = await authFetch(`${apiUrl}/updates/create/${project_id}`,{
         method:'POST',
