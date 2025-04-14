@@ -18,7 +18,7 @@ func (app *application) routes(e *echo.Echo) {
 	publicGroup.GET("/projects/discover/:id", app.getProjectHandler)
 	publicGroup.GET("/projects", app.getProjectsHandler)
 	authGroup.PATCH("/projects/:id", app.updateProjectHandler, app.RequirePermission("projects:update"), app.VerifyProjectOwnership())
-	authGroup.DELETE("/projects/:id", app.deleteProjectHandler)
+	authGroup.DELETE("/projects/:id", app.deleteProjectHandler, app.RequirePermission("projects:delete"))
 	authGroup.GET("/projects/me", app.getProjectsByCreatorHandler)
 	publicGroup.GET("/projects/creator/:id", app.getProjectsByCreatorPublicHandler)
 	publicGroup.GET("/projects/backer/:id", app.getProjectsByBackerHandler)
@@ -37,7 +37,7 @@ func (app *application) routes(e *echo.Echo) {
 	publicGroup.GET("/users/discover/:id", app.getUserHandler)
 	authGroup.GET("/users/:id", app.getUserHandler, app.RequirePermission("users:read"))
 	publicGroup.POST("/users/login", app.loginUserHandler)
-	authGroup.POST("/users/logout/:id", app.logoutUserHandler)
+	authGroup.POST("/users/logout", app.logoutUserHandler)
 	authGroup.GET("/users/me", app.whoAmIHandler)
 	authGroup.PATCH("/users/update", app.updateProfileHandler)
 	authGroup.PATCH("/users/update/:id", app.updateUserHandler, app.RequirePermission("users:update"))
@@ -50,9 +50,9 @@ func (app *application) routes(e *echo.Echo) {
 	publicGroup.GET("/backing/projectBackers/:id", app.backersCountByProjectHandler)
 	authGroup.GET("/backing/didIbackIt/:id", app.didIBackThisProjectHandler)
 	authGroup.POST("/backing/refund/:id", app.refundHandler, app.RequirePermission("backing:create"))
-	authGroup.DELETE("/backing/:id", app.deleteBackingHandler)
-	authGroup.PATCH("/backing/:id", app.updateBackingHandler)
-	authGroup.GET("/backing/rewards/:id", app.getBackingRewardsHandler)
+	authGroup.DELETE("/backing/:id", app.deleteBackingHandler, app.RequirePermission("backing:delete"))
+	authGroup.PATCH("/backing/:id", app.updateBackingHandler, app.RequirePermission("backing:update"))
+	authGroup.GET("/backing/rewards/:id", app.getBackingRewardsHandler, app.RequirePermission("backing:rewards"))
 
 	// rewards
 	authGroup.POST("/rewards/create/:id", app.createRewardsHandler, app.RequirePermission("rewards:create"))
@@ -65,29 +65,29 @@ func (app *application) routes(e *echo.Echo) {
 	authGroup.DELETE("/updates/:id", app.deleteUpdateHandler, app.RequirePermission("updates:delete"))
 
 	// comments
-	authGroup.POST("/comments/create/:id", app.createCommentHandler)
+	authGroup.POST("/comments/create/:id", app.createCommentHandler, app.RequirePermission("comments:create"))
 	publicGroup.GET("/comments/:id", app.getAllCommentsHandler)
 
 	// stats
-	authGroup.GET("/stats/general", app.getStatsHandler)
-	authGroup.GET("/stats/overview", app.getProjectsOverviewHandler)
-	authGroup.GET("/stats/topProjects", app.getTopFiveProjectsHandler)
-	authGroup.GET("/stats/topCreators", app.getTopFiveCreatorsHandlers)
-	authGroup.GET("/stats/topBackers", app.getTopFiveBackersHandlers)
-	authGroup.GET("/stats/categoriesDist", app.getCategoriesDistributionHandler)
-	authGroup.GET("/stats/creatorsNbackers", app.getCreatorsBackersGrowthHandler)
-	authGroup.GET("/stats/backingsNrefunds", app.getBackingsRefundsHandler)
+	authGroup.GET("/stats/general", app.getStatsHandler, app.RequirePermission("stats"))
+	authGroup.GET("/stats/overview", app.getProjectsOverviewHandler, app.RequirePermission("stats"))
+	authGroup.GET("/stats/topProjects", app.getTopFiveProjectsHandler, app.RequirePermission("stats"))
+	authGroup.GET("/stats/topCreators", app.getTopFiveCreatorsHandlers, app.RequirePermission("stats"))
+	authGroup.GET("/stats/topBackers", app.getTopFiveBackersHandlers, app.RequirePermission("stats"))
+	authGroup.GET("/stats/categoriesDist", app.getCategoriesDistributionHandler, app.RequirePermission("stats"))
+	authGroup.GET("/stats/creatorsNbackers", app.getCreatorsBackersGrowthHandler, app.RequirePermission("stats"))
+	authGroup.GET("/stats/backingsNrefunds", app.getBackingsRefundsHandler, app.RequirePermission("stats"))
 
 	// tables
-	authGroup.GET("/tables/projects", app.getProjectsTableHandler)
-	authGroup.GET("/tables/users", app.getUsersTableHandler)
-	authGroup.GET("/tables/backings", app.getBackingsTableHandler)
-	authGroup.GET("/tables/disputes", app.getDisputesTableHandler)
+	authGroup.GET("/tables/projects", app.getProjectsTableHandler, app.RequirePermission("tables:projects"))
+	authGroup.GET("/tables/users", app.getUsersTableHandler, app.RequirePermission("tables:users"))
+	authGroup.GET("/tables/backings", app.getBackingsTableHandler, app.RequirePermission("tables:backings"))
+	authGroup.GET("/tables/disputes", app.getDisputesTableHandler, app.RequirePermission("tables:disputes"))
 
 	// disputes
-	authGroup.POST("/disputes/create/:id", app.createDisputeHandler)
-	authGroup.DELETE("/disputes/:id", app.deleteDisputeHandler)
-	authGroup.PATCH("/disputes/:id", app.updateDisputeHandler)
+	authGroup.POST("/disputes/create/:id", app.createDisputeHandler, app.RequirePermission("disputes:create"))
+	authGroup.DELETE("/disputes/:id", app.deleteDisputeHandler, app.RequirePermission("disputes:delete"))
+	authGroup.PATCH("/disputes/:id", app.updateDisputeHandler, app.RequirePermission("disputes:update"))
 
 	// feedback
 	authGroup.POST("/projects/like/:id", app.LikeProjectHandler)

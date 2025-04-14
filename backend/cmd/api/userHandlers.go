@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"projectx/internal/data"
 	"projectx/internal/validator"
@@ -264,7 +265,7 @@ func (app *application) loginUserHandler(c echo.Context) error {
 
 	match, err := user.Password.Matches(input.Password)
 	if err != nil {
-		return err
+		return echo.NewHTTPError(http.StatusInternalServerError, fmt.Sprintf("kima rah ygol el server: %s", err.Error()))
 	}
 
 	if !match {
@@ -284,12 +285,9 @@ func (app *application) loginUserHandler(c echo.Context) error {
 }
 
 func (app *application) logoutUserHandler(c echo.Context) error {
-	id, err := app.readIDParam(c)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusNotFound, err.Error())
-	}
+	user := c.Get("user").(*data.User)
 
-	err = app.models.Users.Logout(id)
+	err := app.models.Users.Logout(user.ID)
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrNoRecordFound):

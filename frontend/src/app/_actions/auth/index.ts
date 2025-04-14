@@ -121,8 +121,8 @@ export async function reactivateUser(id: string){
     }
 }
 
-export async function logout(id: string){
-    const res = await authFetch(`${apiUrl}/users/logout/${id}`,{method:"POST"})
+export async function logout(){
+    const res = await authFetch(`${apiUrl}/users/logout`,{method:"POST"})
     const cookieStore = await cookies()
     
     try {

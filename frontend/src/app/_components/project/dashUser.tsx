@@ -92,7 +92,7 @@ export default function DashUser() {
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem className="cursor-pointer" onClick={async()=>{
-              const result = await logout(user?.user_id as string)
+              const result = await logout()
               if(result.status){
                   toast({
                   title: TOAST_SUCCESS_TITLE,

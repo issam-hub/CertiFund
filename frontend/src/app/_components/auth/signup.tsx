@@ -47,7 +47,7 @@ export default function SignupPage() {
         variant: "default",
       });
   
-      router.push(`/activate/${result["user"].id}`)
+      router.push(`/activate/${result["user"].user_id}`)
       
     } else {
       toast({

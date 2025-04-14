@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"projectx/internal/data"
 	"projectx/internal/validator"
+	"slices"
 	"time"
 
 	"github.com/labstack/echo/v4"
@@ -173,6 +174,10 @@ func (app *application) updateProjectHandler(c echo.Context) error {
 
 	v := validator.New()
 
+	userAllowedUpdates := []string{"Pending Review", "Live"}
+	privilegedUserAllowedUpdates := []string{"Draft", "Approved", "Rejected", "Completed"}
+	orderedProjectStatus := []string{"Draft", "Pending Review", "Approved", "Rejected", "Live", "Completed"}
+
 	if input.Title != nil {
 		project.Title = *input.Title
 	}
@@ -192,6 +197,12 @@ func (app *application) updateProjectHandler(c echo.Context) error {
 		project.CurrentFunding = *input.CurrentFunding
 	}
 	if input.Status != nil {
+		if user.Role == "user" && !slices.Contains(userAllowedUpdates, *input.Status) && slices.Index(orderedProjectStatus, *input.Status) < slices.Index(orderedProjectStatus, project.Status) {
+			return echo.NewHTTPError(http.StatusForbidden, data.ErrActionsForbidden.Error())
+		}
+		if (user.Role == "admin" || user.Role == "reviewer") && !slices.Contains(privilegedUserAllowedUpdates, *input.Status) {
+			return echo.NewHTTPError(http.StatusForbidden, data.ErrActionsForbidden.Error())
+		}
 		project.Status = *input.Status
 	}
 	if input.Campaign != nil {
