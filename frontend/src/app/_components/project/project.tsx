@@ -35,8 +35,8 @@ export default function ProjectComp({project}:{project:UpdateProjectSchema}) {
 
         <div className="mb-2">
           <div className="flex justify-between text-sm mb-1">
-            <span className="font-medium">${project.current_funding.toLocaleString()}</span>
-            <span className="text-gray-500">of ${project.funding_goal.toLocaleString()}</span>
+            <span className="font-medium">{project.current_funding.toLocaleString()}DA</span>
+            <span className="text-gray-500">of {project.funding_goal.toLocaleString()}DA</span>
           </div>
           <div className={`relative h-2 rounded-full bg-slate-200 mt-3`}>
             <div style={{width:`${displayedCurrentFund}%`}} className='h-2 rounded-full bg-accentColor absolute top-0 left-0'></div>

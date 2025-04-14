@@ -8,7 +8,7 @@ export function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL('/', request.url));
     }
   
-    if (!token && !isAuthPage) {
+    if (!token && !isAuthPage && !request.nextUrl.pathname.includes("discover")) {
       const url = new URL('/login', request.url);
       url.searchParams.set('from', request.nextUrl.pathname);
       return NextResponse.redirect(url);

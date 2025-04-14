@@ -6,10 +6,11 @@ import (
 )
 
 var (
-	ErrNoRecordFound   = errors.New("record not found")
-	ErrEditConflict    = errors.New("edit conflict")
-	ErrFailedOpening   = errors.New("failed to open file")
-	ErrFailedUploading = errors.New("failed to upload the image")
+	ErrNoRecordFound    = errors.New("record not found")
+	ErrEditConflict     = errors.New("edit conflict")
+	ErrFailedOpening    = errors.New("failed to open file")
+	ErrFailedUploading  = errors.New("failed to upload the image")
+	ErrActionsForbidden = errors.New("you don't have the permission to perform this action")
 )
 
 type Models struct {
