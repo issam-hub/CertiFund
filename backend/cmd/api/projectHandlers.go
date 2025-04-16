@@ -175,7 +175,7 @@ func (app *application) updateProjectHandler(c echo.Context) error {
 	v := validator.New()
 
 	userAllowedUpdates := []string{"Pending Review", "Live"}
-	privilegedUserAllowedUpdates := []string{"Draft", "Approved", "Rejected", "Completed"}
+	privilegedUserAllowedUpdates := []string{"Approved", "Rejected", "Completed"}
 	orderedProjectStatus := []string{"Draft", "Pending Review", "Approved", "Rejected", "Live", "Completed"}
 
 	if input.Title != nil {

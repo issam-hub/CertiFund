@@ -184,13 +184,14 @@ func (m TablesModel) GetUsers(page, pageSize int) ([]*UsersTable, MetaData, erro
 	for rows.Next() {
 		row := &UsersTable{}
 		var amount sql.NullFloat64
+		var imageURL sql.NullString
 
 		err := rows.Scan(
 			&totalRecords,
 			&row.ID,
 			&row.Username,
 			&row.Email,
-			&row.ImageURL,
+			&imageURL,
 			&row.Activated,
 			&row.Role,
 			&row.ProjectsCreated,
@@ -204,6 +205,7 @@ func (m TablesModel) GetUsers(page, pageSize int) ([]*UsersTable, MetaData, erro
 		}
 
 		row.TotalContributed = amount.Float64
+		row.ImageURL = imageURL.String
 
 		table = append(table, row)
 	}

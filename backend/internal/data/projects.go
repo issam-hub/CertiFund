@@ -53,6 +53,7 @@ func ValidateProject(v *validator.Validator, project *Project) {
 
 	v.Check(project.Deadline.GoString() != "", "deadline", "Deadline must be provided")
 	v.Check(project.Deadline.After(time.Now()), "deadline", "Deadline should be after the date of today")
+	v.Check((project.Deadline.Sub(time.Now()).Hours()/24/30) <= 4, "deadline", "Deadline should not exceed 4 months since the date of today")
 
 	for _, category := range project.Categories {
 		v.Check(validator.In(category, categories...), "categories", "Invalid category")

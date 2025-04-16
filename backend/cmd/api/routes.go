@@ -37,6 +37,7 @@ func (app *application) routes(e *echo.Echo) {
 	publicGroup.GET("/users/discover/:id", app.getUserHandler)
 	authGroup.GET("/users/:id", app.getUserHandler, app.RequirePermission("users:read"))
 	publicGroup.POST("/users/login", app.loginUserHandler)
+	publicGroup.POST("/users/privilegedLogin", app.loginPrivilegedUserHandler)
 	authGroup.POST("/users/logout", app.logoutUserHandler)
 	authGroup.GET("/users/me", app.whoAmIHandler)
 	authGroup.PATCH("/users/update", app.updateProfileHandler)
