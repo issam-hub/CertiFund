@@ -419,6 +419,7 @@ export function UserManagement({users, meta}: { users: User[], meta: Metadata })
             </DialogHeader>
             {editedUser && (
               <form id="edit-user-form" onSubmit={async(e)=>{
+                e.preventDefault()
                 const result = await updateUser(editedUser, editedUser.user_id as string)
                 if(result.status){
                   toast({

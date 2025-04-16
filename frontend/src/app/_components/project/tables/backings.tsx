@@ -394,7 +394,7 @@ export function BackingManagement({backings, meta}:{backings:Backing[], meta: Me
                         </div>
                         <div>
                           <p className="text-sm font-medium text-muted-foreground">Amount</p>
-                          <p>{selectedBacking.amount.toLocaleString()}DA</p>
+                          <p>{(selectedBacking.amount/100).toLocaleString()}DA</p>
                         </div>
                         <div>
                           <p className="text-sm font-medium text-muted-foreground">Status</p>
@@ -522,6 +522,7 @@ export function BackingManagement({backings, meta}:{backings:Backing[], meta: Me
               <DialogDescription>Update backing information. Click save when you're done.</DialogDescription>
             </DialogHeader>
               <form id="edit-backing-form" onSubmit={async(e)=>{
+                e.preventDefault()
                 const formData = new FormData(e.currentTarget)
                 const result = await updateBacking(formData.get("status") as string, Number(selectedBacking?.payment_id))
                 if(result.status){

@@ -21,6 +21,7 @@ import { RefundButton } from "@/app/_components/project/refundButton"
 import RewardsSection from "@/app/_components/project/rewardSection"
 import { ProjectUpdates } from "@/app/_components/project/projectUpdatePage"
 import { ProjectComments } from "@/app/_components/project/projectCommentsForm"
+import { format } from "date-fns"
 
 
 export default async function ProjectDetailsPage({params}:{params: Promise<{id:string}>}) {
@@ -153,7 +154,7 @@ export default async function ProjectDetailsPage({params}:{params: Promise<{id:s
 
                 <div className="flex items-center gap-1 text-gray-600">
                   <Calendar className="h-4 w-4" />
-                  <span className="text-sm">Launched {new Date(project.launched_at).toUTCString()}</span>
+                  <span className="text-sm">Launched {format(project.launched_at, "MMMM d, yyyy 'at' h:mm a")}</span>
                 </div>
               </div>
             </div>

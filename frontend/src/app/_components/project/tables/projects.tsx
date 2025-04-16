@@ -740,6 +740,7 @@ export function ProjectManagement({projects,meta}:{projects: Project[], meta: Me
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <form id="edit-project-form" onSubmit={async(e)=>{
+              e.preventDefault()
               const formdata = new FormData(e.currentTarget)
               const result = await updateProject({status: formdata.get("status") as string}, (selectedProject?.project_id)?.toString() as string)
               if(result.status){
@@ -754,6 +755,7 @@ export function ProjectManagement({projects,meta}:{projects: Project[], meta: Me
                   description: result.error,
                   variant:"destructive"
                 })
+                
               }
               setIsEditDialogOpen(false)
             }} className="grid grid-cols-4 items-center gap-4">
@@ -765,13 +767,13 @@ export function ProjectManagement({projects,meta}:{projects: Project[], meta: Me
                   <SelectValue placeholder="Select project status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Draft">
+                  <SelectItem value="Draft" disabled>
                     <div className="flex items-center gap-2">
                       <NotepadTextDashed className="text-slate-700 h-5 w-5" />
                       <span>Draft</span>
                     </div>
                   </SelectItem>
-                  <SelectItem value="Pending Review">
+                  <SelectItem value="Pending Review" disabled>
                     <div className="flex items-center gap-2">
                       <CircleDot className="text-slate-700 h-5 w-5" />
                       <span>Pending Review</span>
@@ -789,7 +791,7 @@ export function ProjectManagement({projects,meta}:{projects: Project[], meta: Me
                       <span>Rejected</span>
                     </div>
                   </SelectItem>
-                  <SelectItem value="Live">
+                  <SelectItem value="Live" disabled>
                     <div className="flex items-center gap-2">
                       <Radio className="text-slate-700 h-5 w-5" />
                       <span>Live</span>

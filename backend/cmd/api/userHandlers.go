@@ -284,6 +284,61 @@ func (app *application) loginUserHandler(c echo.Context) error {
 	})
 }
 
+func (app *application) loginPrivilegedUserHandler(c echo.Context) error {
+	var input struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+		Role     string `json:"role"`
+	}
+
+	if err := c.Bind(&input); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+
+	v := validator.New()
+
+	data.ValidateEmail(v, input.Email)
+	data.ValidPlainText(v, &input.Password)
+
+	if !v.Valid() {
+		return echo.NewHTTPError(http.StatusUnprocessableEntity, v.Errors)
+	}
+
+	user, err := app.models.Users.GetByEmail(input.Email)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrNoRecordFound):
+			return echo.NewHTTPError(http.StatusUnauthorized, "Invalid authentication credentials")
+		default:
+			return err
+		}
+	}
+
+	if user.Role != input.Role {
+		return echo.NewHTTPError(http.StatusUnauthorized, "Invalid authentication credentials")
+	}
+
+	match, err := user.Password.Matches(input.Password)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, fmt.Sprintf("kima rah ygol el server: %s", err.Error()))
+	}
+
+	if !match {
+		return echo.NewHTTPError(http.StatusUnauthorized, "Invalid authentication credentials")
+	}
+
+	token, err := app.models.Tokens.New(user.ID, 7*24*time.Hour, data.ScopeAuth)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(http.StatusCreated, envelope{
+		"message":    "User logged in successfully",
+		"auth_token": token,
+		"user":       user,
+	})
+}
+
 func (app *application) logoutUserHandler(c echo.Context) error {
 	user := c.Get("user").(*data.User)
 

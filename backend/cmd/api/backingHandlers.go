@@ -52,7 +52,7 @@ func (app *application) createPaymentIntentHandler(c echo.Context) error {
 	}
 
 	params := &stripe.PaymentIntentParams{
-		Amount:   stripe.Int64(int64(input.Amount) / 100),
+		Amount:   stripe.Int64(int64(input.Amount)),
 		Currency: stripe.String(string(stripe.CurrencyDZD)),
 	}
 

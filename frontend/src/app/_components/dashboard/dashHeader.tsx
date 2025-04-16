@@ -9,7 +9,7 @@ export default function DashHeader() {
     const pathname = usePathname()
     const realPath = pathname.split("/admin")[1]
   return (
-    <header className="flex h-14 shrink-0 items-center gap-2 border-b font-[family-name:--font-montserrat]">
+    <header className={`flex h-14 shrink-0 items-center gap-2 border-b font-[family-name:--font-montserrat] ${pathname.includes("login") && "hidden"}`}>
         <SidebarTrigger className='ml-2'/>
         <Separator orientation='vertical' className='h-5'/>
         <Breadcrumb className='p-5'>

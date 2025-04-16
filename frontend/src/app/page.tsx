@@ -24,6 +24,7 @@ import {
 import Image from "next/image"
 import Link from "next/link"
 import ProjectsWithFilters from "./_components/project/projectsWithFilters"
+import { BackgroundBeams } from "./_components/global/backgroundBeams"
 
 export default function LandingPage() {
   return (
@@ -31,25 +32,8 @@ export default function LandingPage() {
       {/* Hero Section */}
       <section className="relative bg-gradient-to-br from-[#1F2937] to-[#1E3A8A] text-white overflow-hidden">
         {/* Background Pattern */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-0 left-0 w-full h-full">
-            {[...Array(30)].map((_, i) => {
-              const randomNumber = Math.random()
-              return (
-                <div
-                  key={i}
-                  className="absolute rounded-full bg-white"
-                  style={{
-                    width: `${randomNumber * 10 + 5}px`,
-                    height: `${randomNumber * 10 + 5}px`,
-                    top: `${Math.random() * 100}%`,
-                    left: `${Math.random() * 100}%`,
-                    opacity: Math.random() * 0.5 + 0.2,
-                  }}
-                />
-              )
-            })}
-          </div>
+        <div className="absolute inset-0">
+          <BackgroundBeams/>
         </div>
 
         <div className="container mx-auto px-4 py-20 relative z-10">

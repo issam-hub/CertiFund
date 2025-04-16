@@ -50,16 +50,15 @@ export function BackProjectForm({ projectId,rewards }: { projectId: number, rewa
   const amountInRewards = getSelectedRewardsData()?.reduce((total, reward) => total + reward.amount, 0) as number
 
     const form = useForm<BackProjectSchema>({
-      resolver: zodResolver(backProjectSchema),
-      defaultValues:{
-        amount: 0
-      }
+      resolver: zodResolver(backProjectSchema)
     })
 
     form.setValue("amount", amountInRewards)
 
       async function onSubmit(values: BackProjectSchema) {
         setIsLoading(true)
+
+        console.log("amount: ", values.amount)
 
         const intent = await createPaymentIntent(Number(user?.user_id), projectId, values.amount*100)
         if (!intent.status){

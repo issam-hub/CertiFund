@@ -75,6 +75,44 @@ export async function login(data: LoginFormSchema){
         return {status:false, error: error.message}
     }
 }
+export async function privilegedLogin(data: LoginFormSchema, role: string){
+    let toBesent = {
+        email: data.email,
+        password: data.password,
+        role: role
+    }
+
+    const cookieStore = await cookies()
+    
+    const res = await fetch(`${apiUrl}/users/privilegedLogin`,{
+        method:"POST",
+        headers:{
+            "Content-Type":"application/json"
+        },
+        body: JSON.stringify(toBesent)
+    })
+
+    try {
+        if(!res.ok) {
+            const result = await res.json()
+            if(typeof result.error === "object"){
+                return {status:false, error: Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
+            }
+            return {status:false, ...result}
+          }    
+      
+          const data = await res.json();
+          cookieStore.set(TOKEN_COOKIE_NAME, data[TOKEN_COOKIE_NAME]["token"], {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            maxAge: 60 * 60 * 24 * 7, 
+            path: '/'
+          })
+          return {status:true, ...data}
+    }catch(error: any){
+        return {status:false, error: error.message}
+    }
+}
 
 export async function activateUser(token: string){
     const cookieStore = await cookies()
