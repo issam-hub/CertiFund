@@ -12,7 +12,7 @@ import {
   type ColumnFiltersState,
   type SortingState,
 } from "@tanstack/react-table"
-import { ArrowUpDown, ChevronDown, MoreHorizontal, Search } from "lucide-react"
+import { ArrowUpDown, ChevronDown, CirclePlus, Eye, EyeOff, Loader2, MoreHorizontal, Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
@@ -41,10 +41,14 @@ import { Label } from "@/components/ui/label"
 import { Metadata, User } from "@/app/_lib/types"
 import Link from "next/link"
 import { format } from "date-fns"
-import { deleteUser, updateUser } from "@/app/_actions/user"
+import { createUser, deleteUser, updateUser } from "@/app/_actions/user"
 import { useToast } from "@/hooks/use-toast"
 import { TOAST_ERROR_TITLE, TOAST_SUCCESS_TITLE } from "@/app/_lib/constants"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useForm } from "react-hook-form"
+import { createUserSchema, CreateUserSchema } from "@/app/_lib/schemas/auth"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 
 
 export function UserManagement({users, meta}: { users: User[], meta: Metadata }) {
@@ -54,9 +58,21 @@ export function UserManagement({users, meta}: { users: User[], meta: Metadata })
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [editedUser, setEditedUser] = useState<User | null>(null)
+  const [showPassword, setShowPassword] = useState(false)
 
   const {toast} = useToast()
+
+  const form = useForm<CreateUserSchema>({
+    resolver: zodResolver(createUserSchema),
+    defaultValues:{
+      username:"",
+      email:"",
+      password:"",
+      role:"admin"
+    }
+  })
 
   const columns: ColumnDef<User>[] = [
     {
@@ -222,10 +238,30 @@ export function UserManagement({users, meta}: { users: User[], meta: Metadata })
     },
   })
 
-    const handleRowClick = (user: User) => {
-      setSelectedUser(user)
-      setIsViewDialogOpen(true)
+  const handleRowClick = (user: User) => {
+    setSelectedUser(user)
+    setIsViewDialogOpen(true)
+  }
+
+  async function onSubmit(values: CreateUserSchema) {
+    const result = await createUser(values)
+    if(result.status) {
+      toast({
+        title: TOAST_SUCCESS_TITLE,
+        description: "User create successfully",
+        variant: "default",
+      });
+      
+    } else {
+      toast({
+        title: TOAST_ERROR_TITLE,
+        description: result.error,
+        variant: "destructive",
+      });
     }
+    form.reset()
+    setIsAddDialogOpen(false)
+  }
 
   return (
     <div className="container mx-auto px-5 py-10">
@@ -237,8 +273,15 @@ export function UserManagement({users, meta}: { users: User[], meta: Metadata })
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search users..."
-                value={(table.getColumn("username")?.getFilterValue() as string) ?? ""}
-                onChange={(event) => table.getColumn("username")?.setFilterValue(event.target.value)}
+                value={
+                  (table.getColumn("username")?.getFilterValue() as string) ??
+                  ""
+                }
+                onChange={(event) =>
+                  table
+                    .getColumn("username")
+                    ?.setFilterValue(event.target.value)
+                }
                 className="pl-8"
               />
             </div>
@@ -258,14 +301,25 @@ export function UserManagement({users, meta}: { users: User[], meta: Metadata })
                         key={column.id}
                         className="capitalize"
                         checked={column.getIsVisible()}
-                        onCheckedChange={(value) => column.toggleVisibility(!!value)}
+                        onCheckedChange={(value) =>
+                          column.toggleVisibility(!!value)
+                        }
                       >
                         {column.id}
                       </DropdownMenuCheckboxItem>
-                    )
+                    );
                   })}
               </DropdownMenuContent>
             </DropdownMenu>
+            <Button
+              onClick={() => {
+                setIsAddDialogOpen(true);
+              }}
+              className="bg-accentColor hover:bg-secondaryColor text-white"
+            >
+              <CirclePlus />
+              <span className="text-xs">Add User</span>
+            </Button>
           </div>
         </div>
         <div className="rounded-md border">
@@ -276,9 +330,14 @@ export function UserManagement({users, meta}: { users: User[], meta: Metadata })
                   {headerGroup.headers.map((header) => {
                     return (
                       <TableHead key={header.id}>
-                        {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
                       </TableHead>
-                    )
+                    );
                   })}
                 </TableRow>
               ))}
@@ -286,20 +345,28 @@ export function UserManagement({users, meta}: { users: User[], meta: Metadata })
             <TableBody>
               {table.getRowModel().rows?.length ? (
                 table.getRowModel().rows.map((row) => (
-                  <TableRow 
-                      key={row.id} 
-                      data-state={row.getIsSelected() && "selected"}
-                      onClick={() => handleRowClick(row.original)}
-                      className="cursor-pointer hover:bg-muted/50"
+                  <TableRow
+                    key={row.id}
+                    data-state={row.getIsSelected() && "selected"}
+                    onClick={() => handleRowClick(row.original)}
+                    className="cursor-pointer hover:bg-muted/50"
                   >
                     {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
+                      <TableCell key={cell.id}>
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </TableCell>
                     ))}
                   </TableRow>
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={columns.length} className="h-24 text-center">
+                  <TableCell
+                    colSpan={columns.length}
+                    className="h-24 text-center"
+                  >
                     No results.
                   </TableCell>
                 </TableRow>
@@ -309,19 +376,19 @@ export function UserManagement({users, meta}: { users: User[], meta: Metadata })
         </div>
         <div className="flex items-center justify-end space-x-2">
           <div className="flex-1 text-sm text-muted-foreground">
-            {table.getFilteredSelectedRowModel().rows.length} of {table.getFilteredRowModel().rows.length} row(s)
-            selected.
+            {table.getFilteredSelectedRowModel().rows.length} of{" "}
+            {table.getFilteredRowModel().rows.length} row(s) selected.
           </div>
           <div className="space-x-2">
             <Button variant={"outline"} size={"sm"} asChild>
               <Link
-                  className={`${
-                      meta.current_page <= 1 &&
-                      "pointer-events-none bg-slate-50 text-slate-400"
-                  }`}
-                  href={`/admin/dashboard/users?page=${meta.current_page - 1}`}
+                className={`${
+                  meta.current_page <= 1 &&
+                  "pointer-events-none bg-slate-50 text-slate-400"
+                }`}
+                href={`/admin/dashboard/users?page=${meta.current_page - 1}`}
               >
-                  Previous
+                Previous
               </Link>
             </Button>
             <Button asChild variant="outline" size="sm">
@@ -343,7 +410,9 @@ export function UserManagement({users, meta}: { users: User[], meta: Metadata })
           <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>
               <DialogTitle>User Details</DialogTitle>
-              <DialogDescription>Detailed information about the selected user.</DialogDescription>
+              <DialogDescription>
+                Detailed information about the selected user.
+              </DialogDescription>
             </DialogHeader>
             {selectedUser && (
               <div className="grid gap-4 py-4">
@@ -351,56 +420,84 @@ export function UserManagement({users, meta}: { users: User[], meta: Metadata })
                   <CardHeader className="flex flex-row items-center gap-4">
                     <Avatar className="h-16 w-16">
                       <AvatarImage src={selectedUser.image_url} alt="Avatar" />
-                      <AvatarFallback>{selectedUser.username.charAt(0)}</AvatarFallback>
+                      <AvatarFallback>
+                        {selectedUser.username.charAt(0)}
+                      </AvatarFallback>
                     </Avatar>
                     <div>
                       <CardTitle>{selectedUser.username}</CardTitle>
-                      <CardDescription>Joined on {format(selectedUser.created_at, "MMMM d, yyyy 'at' h:mm a")}</CardDescription>
+                      <CardDescription>
+                        Joined on{" "}
+                        {format(
+                          selectedUser.created_at,
+                          "MMMM d, yyyy 'at' h:mm a"
+                        )}
+                      </CardDescription>
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <p className="text-sm font-medium text-muted-foreground">Email</p>
+                        <p className="text-sm font-medium text-muted-foreground">
+                          Email
+                        </p>
                         <p>{selectedUser.email}</p>
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-muted-foreground">Role</p>
+                        <p className="text-sm font-medium text-muted-foreground">
+                          Role
+                        </p>
                         <Badge
                           variant={
                             selectedUser.role === "admin"
                               ? "default"
                               : selectedUser.role === "creator"
-                                ? "outline"
-                                : "secondary"
+                              ? "outline"
+                              : "secondary"
                           }
                         >
                           {selectedUser.role}
                         </Badge>
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-muted-foreground">Status</p>
-                        <Badge variant={selectedUser.activated ? "outline" : "destructive"}
+                        <p className="text-sm font-medium text-muted-foreground">
+                          Status
+                        </p>
+                        <Badge
+                          variant={
+                            selectedUser.activated ? "outline" : "destructive"
+                          }
                         >
                           {selectedUser.activated ? "Active" : "Inactive"}
                         </Badge>
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-muted-foreground">Projects Created</p>
+                        <p className="text-sm font-medium text-muted-foreground">
+                          Projects Created
+                        </p>
                         <p>{selectedUser.projects_created}</p>
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-muted-foreground">Projects Backed</p>
+                        <p className="text-sm font-medium text-muted-foreground">
+                          Projects Backed
+                        </p>
                         <p>{selectedUser.projects_backed}</p>
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-muted-foreground">Total Contributed</p>
-                        <p>${selectedUser.total_contributed.toLocaleString()}</p>
+                        <p className="text-sm font-medium text-muted-foreground">
+                          Total Contributed
+                        </p>
+                        <p>
+                          ${selectedUser.total_contributed.toLocaleString()}
+                        </p>
                       </div>
                     </div>
                   </CardContent>
                   <CardFooter className="flex flex-row-reverse justify-between">
-                    <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>
+                    <Button
+                      variant="outline"
+                      onClick={() => setIsViewDialogOpen(false)}
+                    >
                       Close
                     </Button>
                   </CardFooter>
@@ -415,31 +512,47 @@ export function UserManagement({users, meta}: { users: User[], meta: Metadata })
           <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>
               <DialogTitle>Edit User</DialogTitle>
-              <DialogDescription>Update user information. Click save when you're done.</DialogDescription>
+              <DialogDescription>
+                Update user information. Click save when you're done.
+              </DialogDescription>
             </DialogHeader>
             {editedUser && (
-              <form id="edit-user-form" onSubmit={async(e)=>{
-                e.preventDefault()
-                const result = await updateUser(editedUser, editedUser.user_id as string)
-                if(result.status){
-                  toast({
-                    title: TOAST_SUCCESS_TITLE,
-                    description: "Project updated successfully",
-                    variant: "default"
-                  })
-                }else{
-                  toast({
-                    title: TOAST_ERROR_TITLE,
-                    description: result.error,
-                    variant:"destructive"
-                  })
-                }
-                setIsEditDialogOpen(false)
-              }} className="grid gap-4 py-4">
+              <form
+                id="edit-user-form"
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  const result = await updateUser(
+                    editedUser,
+                    editedUser.user_id as string
+                  );
+                  if (result.status) {
+                    toast({
+                      title: TOAST_SUCCESS_TITLE,
+                      description: "Project updated successfully",
+                      variant: "default",
+                    });
+                  } else {
+                    toast({
+                      title: TOAST_ERROR_TITLE,
+                      description: result.error,
+                      variant: "destructive",
+                    });
+                  }
+                  setIsEditDialogOpen(false);
+                }}
+                className="grid gap-4 py-4"
+              >
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="role" className="font-semibold">Role:</Label>
-                    <Select defaultValue={editedUser.role} onValueChange={(value) => setEditedUser({ ...editedUser, role: value })}>
+                    <Label htmlFor="role" className="font-semibold">
+                      Role:
+                    </Label>
+                    <Select
+                      defaultValue={editedUser.role}
+                      onValueChange={(value) =>
+                        setEditedUser({ ...editedUser, role: value })
+                      }
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Select a role" />
                       </SelectTrigger>
@@ -451,8 +564,20 @@ export function UserManagement({users, meta}: { users: User[], meta: Metadata })
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="status" className="font-semibold">Status:</Label>
-                    <Select defaultValue={editedUser.activated? "active":"inactive"} onValueChange={(value) => setEditedUser({ ...editedUser, activated: value === "active"? true : false })}>
+                    <Label htmlFor="status" className="font-semibold">
+                      Status:
+                    </Label>
+                    <Select
+                      defaultValue={
+                        editedUser.activated ? "active" : "inactive"
+                      }
+                      onValueChange={(value) =>
+                        setEditedUser({
+                          ...editedUser,
+                          activated: value === "active" ? true : false,
+                        })
+                      }
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Select a status" />
                       </SelectTrigger>
@@ -466,7 +591,10 @@ export function UserManagement({users, meta}: { users: User[], meta: Metadata })
               </form>
             )}
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+              <Button
+                variant="outline"
+                onClick={() => setIsEditDialogOpen(false)}
+              >
                 Cancel
               </Button>
               <Button
@@ -485,33 +613,38 @@ export function UserManagement({users, meta}: { users: User[], meta: Metadata })
             <DialogHeader>
               <DialogTitle>Confirm Deletion</DialogTitle>
               <DialogDescription>
-                Are you sure you want to delete this user? This action cannot be undone.
+                Are you sure you want to delete this user? This action cannot be
+                undone.
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+              <Button
+                variant="outline"
+                onClick={() => setIsDeleteDialogOpen(false)}
+              >
                 Cancel
               </Button>
               <Button
                 variant="destructive"
-                onClick={async() => {
-                  const result = await deleteUser(selectedUser?.user_id as string)
-                  if(result.status){
-                      toast({
-                          title: TOAST_SUCCESS_TITLE,
-                          description: "User deleted successfully",
-                          variant:"default"
-                      })
-                  }
-                  else{
-                      toast({
-                          title: TOAST_ERROR_TITLE,
-                          description: result.error,
-                          variant:"destructive"
-                      })
+                onClick={async () => {
+                  const result = await deleteUser(
+                    selectedUser?.user_id as string
+                  );
+                  if (result.status) {
+                    toast({
+                      title: TOAST_SUCCESS_TITLE,
+                      description: "User deleted successfully",
+                      variant: "default",
+                    });
+                  } else {
+                    toast({
+                      title: TOAST_ERROR_TITLE,
+                      description: result.error,
+                      variant: "destructive",
+                    });
                   }
 
-                  setIsDeleteDialogOpen(false)
+                  setIsDeleteDialogOpen(false);
                 }}
               >
                 Delete
@@ -519,8 +652,135 @@ export function UserManagement({users, meta}: { users: User[], meta: Metadata })
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+          <DialogContent className="sm:max-w-[450px]">
+            <DialogHeader>
+              <DialogTitle>Create User</DialogTitle>
+              <DialogDescription>
+                Create a new user. Click create when you're done.
+              </DialogDescription>
+            </DialogHeader>
+            <Form {...form}>
+              <form
+                id="create-user-form"
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-4 py-4"
+              >
+                <FormField
+                  control={form.control}
+                  name="username"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="font-semibold">
+                        Username:
+                      </FormLabel>
+                      <FormControl>
+                        <Input placeholder="example user" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="font-semibold">Email:</FormLabel>
+                      <FormControl>
+                        <Input placeholder="john@example.com" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="font-semibold">Password:</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Input
+                            type={showPassword ? "text" : "password"}
+                            {...field}
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className={`absolute top-1/2 -translate-y-1/2 h-fit p-0 hover:bg-transparent right-5`}
+                            onClick={() => setShowPassword(!showPassword)}
+                          >
+                            {showPassword ? (
+                              <EyeOff className="h-4 w-4 text-muted-foreground" />
+                            ) : (
+                              <Eye className="h-4 w-4 text-muted-foreground" />
+                            )}
+                          </Button>
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="role"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="font-semibold">Role:</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a role" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="admin">
+                            Admin
+                          </SelectItem>
+                          <SelectItem value="reviewer">
+                            Reviewer
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </form>
+            </Form>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setIsAddDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="bg-accentColor hover:bg-secondaryColor text-white"
+                form="create-user-form"
+                disabled={form.formState.isSubmitting}
+              >
+                {form.formState.isSubmitting ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <>
+                    Create
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
-  )
+  );
 }
 

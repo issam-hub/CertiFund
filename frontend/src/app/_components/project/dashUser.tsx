@@ -84,7 +84,7 @@ export default function DashUser() {
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem asChild>
-                <Link href={`/admin/profile`} className="cursor-pointer">
+                <Link href={`/${user?.role}/profile`} className="cursor-pointer">
                   <UserRound />
                   Profile
                 </Link>
@@ -99,7 +99,7 @@ export default function DashUser() {
                   description: "You logged out successfully",
                   variant: "default",
                   });
-                  router.push("/login")
+                  router.push("/admin/login")
               }else{
                   toast({
                   title: TOAST_ERROR_TITLE,

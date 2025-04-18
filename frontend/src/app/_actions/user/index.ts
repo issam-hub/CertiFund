@@ -1,7 +1,7 @@
 "use server"
 
 import { apiUrl, TOKEN_COOKIE_NAME } from "@/app/_lib/config";
-import { PasswordChangeSchema, ProfileSchema } from "@/app/_lib/schemas/auth";
+import { CreateUserSchema, PasswordChangeSchema, ProfileSchema } from "@/app/_lib/schemas/auth";
 import { User } from "@/app/_lib/types";
 import { authFetch } from "@/app/_lib/utils/auth";
 import { revalidateTag } from "next/cache";
@@ -172,4 +172,29 @@ export async function getCreatedBackedCount(id: string) {
     
     const result = await res.json()
     return {status:true, ...result}
+}
+
+export async function createUser(values: CreateUserSchema){
+    const res = await authFetch(`${apiUrl}/users/create`,{
+        method:"POST",
+        headers:{
+            "Content-Type":"application/json"
+        },
+        body: JSON.stringify(values)
+    })
+
+    try {
+        if(!res.ok) {
+            const result = await res.json()
+            if(typeof result.error === "object"){
+                return {status:false, error: Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
+            }
+            return {status:false, ...result}
+          }    
+      
+          const result = await res.json();
+          return {status:true, ...result}
+    }catch(error: any){
+        return {statuserror: error.message}
+    }
 }

@@ -29,6 +29,16 @@ type Project struct {
 	Version        int32          `json:"version"`
 	CreatorID      int            `json:"creator_id"`
 	Rewards        []Reward       `json:"rewards,omitempty"`
+	IsSuspicious   bool           `json:"is_suspicious"`
+}
+
+type Review struct {
+	ID         int       `json:"review_id"`
+	Status     string    `json:"status"`
+	Feedback   string    `json:"feedback"`
+	ReviewedAt time.Time `json:"reviewed_at"`
+	ReviewerID int       `json:"reviewer_id"`
+	ProjectID  int       `json:"project_id"`
 }
 
 type ProjectModel struct {
@@ -70,6 +80,11 @@ func ValidateCategories(v *validator.Validator, categories []string) {
 
 func ValidateTitle(v *validator.Validator, title string) {
 	v.Check(len(title) <= 100, "title", "Title should be less than or equal to 100 character")
+}
+
+func ValidateReview(v *validator.Validator, review *Review) {
+	v.Check(validator.In(review.Status, "Approved", "Rejected", "Flagged"), "status", "Status should be either approved, rejected or flagged")
+	v.Check(validator.InBetween(review.Feedback, 10, 500), "feedback", "Feedback should be between 10 and 500 characters")
 }
 
 func (m ProjectModel) GetAll(title string, categories []string, filters Filter) ([]*Project, MetaData, error) {
@@ -204,12 +219,55 @@ func (m ProjectModel) Get(id int) (*Project, error) {
 
 	return &project, nil
 }
+func (m ProjectModel) GetPublic(id int) (*Project, error) {
+	if id < 1 {
+		return nil, ErrNoRecordFound
+	}
+	var project Project
+	var projectImgVar sql.NullString
+	var campaignVar sql.NullString
+	query := `SELECT project_id, title, description, categories, funding_goal, current_funding, deadline, status, project_img, campaign, created_at, updated_at, launched_at, version, creator_id FROM project WHERE project_id = $1 AND (status = 'Live' OR status = 'Completed')`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := m.DB.QueryRowContext(ctx, query, id).Scan(
+		&project.ID,
+		&project.Title,
+		&project.Description,
+		&project.Categories,
+		&project.FundingGoal,
+		&project.CurrentFunding,
+		&project.Deadline,
+		&project.Status,
+		&projectImgVar,
+		&campaignVar,
+		&project.CreatedAt,
+		&project.UpdatedAt,
+		&project.LaunchedAt,
+		&project.Version,
+		&project.CreatorID,
+	)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, ErrNoRecordFound
+		default:
+			return nil, err
+		}
+	}
+
+	project.ProjectImg = projectImgVar.String
+	project.Campaign = campaignVar.String
+
+	return &project, nil
+}
 
 func (m ProjectModel) Update(project *Project) error {
 	query := `
 		UPDATE project SET 
-		title = $1, description = $2, categories = $3, funding_goal = $4, current_funding = $5, deadline = $6, status = $7, project_img = $8, campaign = $9, launched_at = $10, version = version + 1
-		WHERE project_id = $11 AND version = $12 RETURNING updated_at, version
+		title = $1, description = $2, categories = $3, funding_goal = $4, current_funding = $5, deadline = $6, status = $7, project_img = $8, campaign = $9, launched_at = $10, is_suspicious = $11, version = version + 1
+		WHERE project_id = $12 AND version = $13 RETURNING updated_at, version
 	`
 
 	args := []interface{}{
@@ -223,6 +281,7 @@ func (m ProjectModel) Update(project *Project) error {
 		project.ProjectImg,
 		project.Campaign,
 		project.LaunchedAt,
+		project.IsSuspicious,
 		project.ID,
 		project.Version,
 	}
@@ -505,4 +564,183 @@ func (m ProjectModel) GetAllSavedByCurrentUser(userID int) ([]*Project, error) {
 	}
 
 	return projects, nil
+}
+
+func (m ProjectModel) ReviewProject(review *Review) error {
+	query := `INSERT INTO project_review
+	(status, feedback, reviewer_id, project_id)
+	VALUES ($1, $2, $3, $4)
+	RETURNING review_id, reviewed_at`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	args := []interface{}{
+		review.Status,
+		review.Feedback,
+		review.ReviewerID,
+		review.ProjectID,
+	}
+
+	return m.DB.QueryRowContext(ctx, query, args...).Scan(
+		&review.ID,
+		&review.ReviewedAt,
+	)
+}
+
+func (m ProjectModel) GetReview(userId int, projectId int) (*Review, error) {
+	query := `SELECT review_id, status, feedback FROM project_review WHERE project_id = $1 AND user_id = $2 ORDER BY review_id DESC LIMIT 1`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	var review Review
+
+	args := []interface{}{
+		projectId,
+		userId,
+	}
+	err := m.DB.QueryRowContext(ctx, query, args...).Scan(
+		&review.ID,
+		&review.Status,
+		&review.Feedback,
+	)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, ErrNoRecordFound
+		default:
+			return nil, err
+		}
+	}
+
+	return &review, nil
+}
+
+func (m ProjectModel) GetAllByReviewer(reviewerID, page, pageSize int) ([]*Project, MetaData, error) {
+	offset := (page - 1) * pageSize
+
+	query := `
+		SELECT COUNT(pr.project_id) OVER(), pr.project_id, pr.title, pr.description, pr.categories, pr.funding_goal, pr.current_funding, pr.deadline, pr.status, pr.project_img, pr.campaign, pr.created_at, pr.updated_at, pr.launched_at, pr.version, pr.creator_id, pr.is_suspicious
+		FROM project pr INNER JOIN project_review pre ON pr.project_id = pre.project_id WHERE pre.reviewer_id = $1 AND pre.status <> 'Flagged'
+		LIMIT $2 OFFSET $3
+	`
+
+	projects := []*Project{}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	args := []interface{}{reviewerID, pageSize, offset}
+
+	rows, err := m.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, MetaData{}, err
+	}
+
+	totalRecords := 0
+	for rows.Next() {
+		project := &Project{}
+		var projectImgVar sql.NullString
+		var campaignVar sql.NullString
+
+		err := rows.Scan(
+			&totalRecords,
+			&project.ID,
+			&project.Title,
+			&project.Description,
+			&project.Categories,
+			&project.FundingGoal,
+			&project.CurrentFunding,
+			&project.Deadline,
+			&project.Status,
+			&projectImgVar,
+			&campaignVar,
+			&project.CreatedAt,
+			&project.UpdatedAt,
+			&project.LaunchedAt,
+			&project.Version,
+			&project.CreatorID,
+			&project.IsSuspicious,
+		)
+		if err != nil {
+			return nil, MetaData{}, err
+		}
+
+		project.ProjectImg = projectImgVar.String
+		project.Campaign = campaignVar.String
+
+		projects = append(projects, project)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, MetaData{}, err
+	}
+
+	metaData := calculateMetadata(totalRecords, page, pageSize)
+
+	return projects, metaData, nil
+}
+
+func (m ProjectModel) GetAllFlaggedByReviewer(reviewerID, page, pageSize int) ([]*Project, MetaData, error) {
+	offset := (page - 1) * pageSize
+
+	query := `
+		SELECT COUNT(pr.project_id) OVER(), pr.project_id, pr.title, pr.description, pr.categories, pr.funding_goal, pr.current_funding, pr.deadline, pr.status, pr.project_img, pr.campaign, pr.created_at, pr.updated_at, pr.launched_at, pr.version, pr.creator_id, pr.is_suspicious
+		FROM project pr INNER JOIN project_review pre ON pr.project_id = pre.project_id WHERE pre.reviewer_id = $1 AND pre.status = 'Flagged'
+		LIMIT $2 OFFSET $3
+	`
+
+	projects := []*Project{}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	args := []interface{}{reviewerID, pageSize, offset}
+
+	rows, err := m.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, MetaData{}, err
+	}
+
+	totalRecords := 0
+	for rows.Next() {
+		project := &Project{}
+		var projectImgVar sql.NullString
+		var campaignVar sql.NullString
+
+		err := rows.Scan(
+			&totalRecords,
+			&project.ID,
+			&project.Title,
+			&project.Description,
+			&project.Categories,
+			&project.FundingGoal,
+			&project.CurrentFunding,
+			&project.Deadline,
+			&project.Status,
+			&projectImgVar,
+			&campaignVar,
+			&project.CreatedAt,
+			&project.UpdatedAt,
+			&project.LaunchedAt,
+			&project.Version,
+			&project.CreatorID,
+			&project.IsSuspicious,
+		)
+		if err != nil {
+			return nil, MetaData{}, err
+		}
+
+		project.ProjectImg = projectImgVar.String
+		project.Campaign = campaignVar.String
+
+		projects = append(projects, project)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, MetaData{}, err
+	}
+
+	metaData := calculateMetadata(totalRecords, page, pageSize)
+
+	return projects, metaData, nil
 }

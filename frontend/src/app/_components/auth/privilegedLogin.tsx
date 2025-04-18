@@ -5,7 +5,7 @@ import Link from "next/link"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
-import { ArrowRight, Eye, EyeOff, Github, KeyRound, Loader2, Shield } from "lucide-react"
+import { ArrowRight, CheckCircle, ClipboardCheck, Eye, EyeOff, Github, KeyRound, Loader2, Shield } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
@@ -21,7 +21,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { login, privilegedLogin } from "@/app/_actions/auth"
 
 
-export default function AdminLoginPage() {
+export default function PrivilegedLoginPage({role}:{role:string}) {
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [, setIsAuthenticated] = useAtom(isAuthenticatedAtom);
@@ -41,7 +41,7 @@ export default function AdminLoginPage() {
 
   async function onSubmit(values: LoginFormSchema) {
     setIsLoading(true)
-    const result = await privilegedLogin(values, "admin")
+    const result = await privilegedLogin(values, role)
     if(result.status) {
       toast({
         title: TOAST_SUCCESS_TITLE,
@@ -51,7 +51,7 @@ export default function AdminLoginPage() {
       
       setIsAuthenticated(true);
       setUser(result["user"])
-      router.push('/admin/dashboard')
+      router.push(`/${role}/dashboard`)
     } else {
       toast({
         title: TOAST_ERROR_TITLE,
@@ -66,33 +66,67 @@ export default function AdminLoginPage() {
   return (
     <div className="grid min-h-full md:grid-cols-2">
       {/* Left Side - Hero Section */}
-      <div className="relative hidden md:flex flex-col justify-between p-10 bg-[url('/signup-2.jpeg')] bg-cover before:content-[''] before:absolute before:top-0 before:left-0 before:h-full before:w-full before:bg-[rgb(30_58_138/90%)] before:block text-white">
-        <div>
-        </div>
-        <div className="space-y-6 relative">
-          <h2 className="text-4xl font-bold leading-tight">
-          Welcome to the Admin Dashboard
-          </h2>
-          <p className="text-lg text-blue-200">
-          Manage your platform, monitor projects, and support your community.
-          </p>
-        </div>
-        <div className="relative flex gap-3">
-            <KeyRound className="h-5 w-5 text-lightAccentColor" />
-            <p className="text-sm text-blue-200">Secure administrator access only</p>
-        </div>
-      </div>
+      {
+        role === "admin" ? (
+          <div className="relative hidden md:flex flex-col justify-between p-10 bg-[url('/signup-2.jpeg')] bg-cover before:content-[''] before:absolute before:top-0 before:left-0 before:h-full before:w-full before:bg-[rgb(30_58_138/90%)] before:block text-white">
+            <div>
+            </div>
+            <div className="space-y-6 relative">
+              <h2 className="text-4xl font-bold leading-tight">
+              Welcome to the Admin Dashboard
+              </h2>
+              <p className="text-lg text-blue-200">
+              Manage your platform, monitor projects, and support your community.
+              </p>
+            </div>
+            <div className="relative flex gap-3">
+                <KeyRound className="h-5 w-5 text-lightAccentColor" />
+                <p className="text-sm text-blue-200">Secure administrator access only</p>
+            </div>
+          </div>
+        ):(
+          <div className="relative hidden md:flex flex-col justify-between p-10 bg-[url('/signup-2.jpeg')] bg-cover before:content-[''] before:absolute before:top-0 before:left-0 before:h-full before:w-full before:bg-[rgb(30_58_138/90%)] before:block text-white">
+            <div>
+            </div>
+            <div className="space-y-6 relative">
+              <h2 className="text-4xl font-bold leading-tight">
+              Welcome to the Review Panel
+              </h2>
+              <p className="text-lg text-blue-200">
+              Evaluate projects, provide feedback, and help maintain quality standards.
+              </p>
+            </div>
+            <div className="relative flex gap-3">
+                <CheckCircle className="h-5 w-5 text-lightAccentColor" />
+                <p className="text-sm text-blue-200">Your expertise makes a difference</p>
+            </div>
+          </div>
+          
+        )
+      }
 
       {/* Right Side - Sign Up Form */}
       <div className="flex items-center justify-center p-6 bg-white">
         <div className="w-full max-w-md space-y-8">
-          <div className="space-y-2 text-center">
-            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[#1E3A8A]">
-              <Shield className="h-6 w-6 text-white" />
+          {
+            role === "admin" ? (
+            <div className="space-y-2 text-center">
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[#1E3A8A]">
+                <Shield className="h-6 w-6 text-white" />
+              </div>
+              <h2 className="text-3xl font-bold text-primaryColor">Administrator Access</h2>
+              <p className="text-muted-foreground">Sign in to access the administration dashboard</p>
             </div>
-            <h2 className="text-3xl font-bold text-primaryColor">Administrator Access</h2>
-            <p className="text-muted-foreground">Sign in to access the administration dashboard</p>
-          </div>
+            ):(
+            <div className="space-y-2 text-center">
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[#1E3A8A]">
+                <ClipboardCheck className="h-6 w-6 text-white" />
+              </div>
+              <h2 className="text-3xl font-bold text-primaryColor">Reviewer Access</h2>
+              <p className="text-muted-foreground">Sign in to access your review dashboard</p>
+            </div>
+            )
+          }
 
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">

@@ -8,7 +8,7 @@ import { UpdateProjectSchema } from '@/app/_lib/schemas/project';
 import ProjectForm from '@/components/projectForm';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { deleteProject, deleteUpdate, updateProject } from '@/app/_actions/projects';
+import { deleteProject, deleteUpdate, getReview, updateProject } from '@/app/_actions/projects';
 import { TOAST_ERROR_TITLE, TOAST_SUCCESS_TITLE } from '@/app/_lib/constants';
 import {
   AlertDialog,
@@ -211,6 +211,7 @@ export default function ProjectOverview({ data, updates }: ProjectOverviewProps)
   const [expandedStep, setExpandedStep] = useState<string>("");
   const [timeRemaining, setTimeRemaining] = useState<string>(getTimeDifference(data.deadline));
   const [showUpdateForm, setShowUpdateForm] = useState<boolean>(false);
+  const [feedback, setFeedback] = useState<string>()
   const {toast} = useToast()
   const router = useRouter()
 
@@ -259,6 +260,18 @@ export default function ProjectOverview({ data, updates }: ProjectOverviewProps)
   const handleShowProjectUpdate = (newValue:boolean)=>{
     setShowUpdateForm(newValue)
   }
+
+  useEffect(()=>{
+    if(data.status === "Rejected"){
+      (async()=>{
+        const result = await getReview(Number(data.project_id))
+        if(!result.status){
+          throw new Error(result.error)
+        }
+        setFeedback(result["review"].feedback)
+      })()
+    }
+  },[])
 
   return (
     <div className="container mx-auto py-8 max-w-[80%] max-lg:max-w-full max-lg:px-2 mb-[70px]">
@@ -490,7 +503,9 @@ export default function ProjectOverview({ data, updates }: ProjectOverviewProps)
                       Project rejected
                     </span>
                     <div className="text-xs text-slate-600">
-                      Your campaign cannot be published at this time
+                      {
+                        feedback
+                      }
                     </div>
                   </div>
                 }
@@ -505,7 +520,6 @@ export default function ProjectOverview({ data, updates }: ProjectOverviewProps)
                         "story",
                         "funding",
                         "basics",
-                        "rules",
                       ].filter((item) => completedSteps.indexOf(item) < 0);
                       if (isEverythingCompleted.length !== 0) {
                         toast({

@@ -94,6 +94,7 @@ export interface Project {
   version: number
   creator: string
   creator_img: string
+  is_suspicious: boolean
 }
 
 export interface Metadata {

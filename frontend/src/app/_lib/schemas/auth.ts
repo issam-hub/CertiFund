@@ -58,3 +58,21 @@ export const passwordChangeSchema = z
   )
 
 export type PasswordChangeSchema = z.infer<typeof passwordChangeSchema>
+
+export const createUserSchema = z.object({
+  username: z.string().min(2, {
+    message: "* Name must be at least 2 characters.",
+  }),
+  email: z.string().email({
+    message: "* Please enter a valid email address.",
+  }),
+  password: z.string().min(8, {
+    message: "* Password must be at least 8 characters.",
+  }).regex(/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$/,{message:"* Password must include at least one uppercase letter, one lowercase letter, one number and one special character"}),
+  role: z.enum(["reviewer", "admin"], {
+    required_error: "Please select a role",
+    invalid_type_error: "Role must be either an Admin or a Reviewer"
+  }),
+})
+
+export type CreateUserSchema = z.infer<typeof createUserSchema>

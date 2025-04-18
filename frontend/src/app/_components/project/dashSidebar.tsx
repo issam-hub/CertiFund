@@ -19,9 +19,14 @@ import { ChevronsUpDown, ChevronUp, Flag, Folder, HandCoins, HelpCircle, LayoutD
 import Image from "next/image"
 import Link from "next/link"
 import DashUser from "./dashUser"
+import AdminLinks from "../user/adminLinks"
+import { useAtomValue } from "jotai"
+import { userAtom } from "@/app/_store/shared"
+import ReviewerLinks from "../user/reviewLinks"
   
   export function DashSidebar() {
     const sidebarState = useSidebar()
+    const user = useAtomValue(userAtom)
 
     return (
       <Sidebar collapsible="icon">
@@ -33,53 +38,13 @@ import DashUser from "./dashUser"
           </SidebarMenu>
         </SidebarHeader>
         <SidebarContent>
-          <SidebarGroup>
-            <SidebarGroupLabel>Platform</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <Link href={"/admin/dashboard"}>
-                      <LayoutDashboard className="h-5 w-5" />
-                      <span>Dashboard</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <Link href={"/admin/dashboard/projects"}>
-                      <Folder className="h-5 w-5" />
-                      <span>Projects</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <Link href={"/admin/dashboard/backings"}>
-                      <HandCoins className="h-5 w-5" />
-                      <span>Backings</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <Link href={"/admin/dashboard/users"}>
-                      <Users className="h-5 w-5" />
-                      <span>Users</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <Link href={"/admin/dashboard/disputes"}>
-                      <Flag className="h-5 w-5" />
-                      <span>Disputes</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
+          {
+            user?.role === "admin" ? (
+              <AdminLinks/>
+            ):(
+              <ReviewerLinks/>
+            )
+          }
           <SidebarSeparator className="h-[1px] bg-slate-500"/>
           <SidebarGroup>
             <SidebarGroupLabel>Settings</SidebarGroupLabel>

@@ -1,13 +1,16 @@
 "use client"
+import { userAtom } from '@/app/_store/shared'
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb'
 import { Separator } from '@/components/ui/separator'
 import { SidebarTrigger } from '@/components/ui/sidebar'
+import { useAtomValue } from 'jotai'
 import { usePathname } from 'next/navigation'
 import React from 'react'
 
 export default function DashHeader() {
     const pathname = usePathname()
-    const realPath = pathname.split("/admin")[1]
+    const realPath = pathname.split(/(\/admin|\/reviewer)/)[2]
+    const user = useAtomValue(userAtom)
   return (
     <header className={`flex h-14 shrink-0 items-center gap-2 border-b font-[family-name:--font-montserrat] ${pathname.includes("login") && "hidden"}`}>
         <SidebarTrigger className='ml-2'/>
@@ -17,7 +20,7 @@ export default function DashHeader() {
                 {
                     realPath.split("/").slice(1).map((path, index) => {
                         const isLast = index === realPath.split("/").slice(1).length - 1
-                        const href = realPath.includes("profile") ? "/admin/profile" : `/admin${realPath}`
+                        const href = realPath.includes("profile") ? `/${user?.role}/profile` : `/${user?.role}${realPath}`
                         const capitalizedPath = path.charAt(0).toUpperCase() + path.slice(1)
                         return (
                             <React.Fragment key={index}>
