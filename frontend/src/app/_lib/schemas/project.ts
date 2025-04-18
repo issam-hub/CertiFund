@@ -82,3 +82,15 @@ export const resolveFormSchema = z.object({
 })
 
 export type ResolveFormSchema = z.infer<typeof resolveFormSchema>
+
+export const reviewFormSchema = z.object({
+  status: z.enum(["Approved", "Rejected"], {
+    required_error: "Please select your decision",
+    invalid_type_error: "Decision must be either approve or reject",
+  }),
+  feedback: z.string()
+  .min(10, "Feedback must be at least 10 characters")
+  .max(500, "Feedback must be less than 500 characters")
+})
+
+export type ReviewFormSchema = z.infer<typeof reviewFormSchema>

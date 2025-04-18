@@ -15,7 +15,7 @@ func (app *application) routes(e *echo.Echo) {
 	// project
 	authGroup.POST("/projects/create", app.createProjectHandler, app.RequirePermission("projects:create"))
 	authGroup.GET("/projects/:id", app.getProjectHandler, app.VerifyProjectOwnership())
-	publicGroup.GET("/projects/discover/:id", app.getProjectHandler)
+	publicGroup.GET("/projects/discover/:id", app.getPublicProjectHandler)
 	publicGroup.GET("/projects", app.getProjectsHandler)
 	authGroup.PATCH("/projects/:id", app.updateProjectHandler, app.RequirePermission("projects:update"), app.VerifyProjectOwnership())
 	authGroup.DELETE("/projects/:id", app.deleteProjectHandler, app.RequirePermission("projects:delete"))
@@ -23,6 +23,10 @@ func (app *application) routes(e *echo.Echo) {
 	publicGroup.GET("/projects/creator/:id", app.getProjectsByCreatorPublicHandler)
 	publicGroup.GET("/projects/backer/:id", app.getProjectsByBackerHandler)
 	authGroup.GET("/projects/saved", app.getSavedProjectsByCurrentUserHandler)
+	authGroup.POST("/projects/review/:id", app.reviewProjectHandler)
+	authGroup.GET("/projects/review/:id", app.getReviewHandler)
+	authGroup.GET("/projects/reviewer/:id", app.getProjectsByReviewerHandler)
+	authGroup.GET("/projects/flagged/reviewer/:id", app.getFlaggedProjectsByReviewerHandler)
 
 	// image upload
 	authGroup.POST("/projects/image/upload", app.fileUploadHandler)
@@ -81,6 +85,7 @@ func (app *application) routes(e *echo.Echo) {
 
 	// tables
 	authGroup.GET("/tables/projects", app.getProjectsTableHandler, app.RequirePermission("tables:projects"))
+	authGroup.GET("/tables/pendingProjects", app.getPendingProjectsTableHandler, app.RequirePermission("tables:projects"))
 	authGroup.GET("/tables/users", app.getUsersTableHandler, app.RequirePermission("tables:users"))
 	authGroup.GET("/tables/backings", app.getBackingsTableHandler, app.RequirePermission("tables:backings"))
 	authGroup.GET("/tables/disputes", app.getDisputesTableHandler, app.RequirePermission("tables:disputes"))

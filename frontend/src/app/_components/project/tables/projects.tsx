@@ -12,7 +12,7 @@ import {
   type ColumnFiltersState,
   type SortingState,
 } from "@tanstack/react-table"
-import { ArrowUpDown, Check, CheckCheck, ChevronDown, CircleDot, MoreHorizontal, NotepadTextDashed, Radio, Search, Trash2, X } from "lucide-react"
+import { ArrowUpDown, Check, CheckCheck, ChevronDown, CircleDot, Loader2, MoreHorizontal, NotepadTextDashed, Radio, Search, Trash2, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
@@ -48,6 +48,14 @@ import { toast, useToast } from "@/hooks/use-toast"
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel'
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useForm } from "react-hook-form"
+import { reviewFormSchema, ReviewFormSchema } from "@/app/_lib/schemas/project"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { reviewProject } from "@/app/_actions/dashboard"
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { Textarea } from "@/components/ui/textarea"
+import { useAtomValue } from "jotai"
+import { userAtom } from "@/app/_store/shared"
 
 
 export function ProjectManagement({projects,meta}:{projects: Project[], meta: Metadata}) {
@@ -56,9 +64,11 @@ export function ProjectManagement({projects,meta}:{projects: Project[], meta: Me
   const [selectedProject, setSelectedProject] = useState<Project | null>(null)
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [isFlagDialogOpen, setIsFlagDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [rewards, setRewards] = useState<Reward[] |undefined>([])
   const {toast} = useToast()
+  const user = useAtomValue(userAtom)
 
   useEffect(()=>{
     if(selectedProject){
@@ -203,6 +213,14 @@ export function ProjectManagement({projects,meta}:{projects: Project[], meta: Me
       },
     },
     {
+      accessorKey: "is_suspicious",
+      header: "Is suspicious",
+      cell: ({ row }) => {
+        const isSus = row.getValue("is_suspicious")
+        return <Badge className={`${isSus ? "border-orange-500 text-orange-500 hover:bg-orange-200" : "border-green-400 text-green-400 hover:bg-green-200"} bg-transparent`}>{isSus ? "True" : "False"}</Badge>
+      },
+    },
+    {
         id: "actions",
         enableHiding: false,
         cell: ({ row }) => {
@@ -229,8 +247,21 @@ export function ProjectManagement({projects,meta}:{projects: Project[], meta: Me
                     setIsEditDialogOpen(true)
                   }}
                 >
-                  Update project
+                  Review project
                 </DropdownMenuItem>
+                {
+                  user?.role === "reviewer" && (
+                  <DropdownMenuItem
+                    onClick={(e)=>{
+                      e.stopPropagation()
+                      setSelectedProject(project)
+                      setIsFlagDialogOpen(true)
+                    }}
+                  >
+                    Flag project as suspicious
+                  </DropdownMenuItem>
+                  )
+                }
                 <DropdownMenuItem
                   className="text-destructive focus:text-destructive"
                   onClick={(e) => {
@@ -267,6 +298,43 @@ export function ProjectManagement({projects,meta}:{projects: Project[], meta: Me
     setSelectedProject(project)
     setIsViewDialogOpen(true)
   }
+
+  const form = useForm<ReviewFormSchema>({
+    resolver: zodResolver(reviewFormSchema),
+    defaultValues: {
+      status: undefined,
+      feedback: "",
+    },
+  })
+
+  async function onSubmit(data: ReviewFormSchema){
+    const reviewResult = await reviewProject(data, Number(selectedProject?.project_id))
+    if (reviewResult.status){
+      toast({
+        title: TOAST_SUCCESS_TITLE,
+        description: "Project reviewed successfully",
+      })
+    }else{
+      toast({
+        title: TOAST_ERROR_TITLE,
+        description: reviewResult.error,
+        variant:"destructive"
+      })
+    }
+    
+    const result = await updateProject({status: data.status}, (selectedProject?.project_id)?.toString() as string)
+    if(!result.status){
+      toast({
+        title: TOAST_ERROR_TITLE,
+        description: result.error,
+        variant:"destructive"
+      })
+    }
+    
+    setIsEditDialogOpen(false)
+  }
+
+  
 
   return (
     <div className="container mx-auto px-5 py-10">
@@ -416,9 +484,7 @@ export function ProjectManagement({projects,meta}:{projects: Project[], meta: Me
                     />
                   </div>
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex flex-col justify-end p-6">
-                    <Badge
-                      className="mb-2 w-fit"
-                    >
+                    <Badge className="mb-2 w-fit">
                       {selectedProject.status}
                     </Badge>
                     <h2 className="text-2xl md:text-3xl font-bold text-white mb-1">
@@ -426,7 +492,10 @@ export function ProjectManagement({projects,meta}:{projects: Project[], meta: Me
                     </h2>
                     <div className="flex items-center gap-2">
                       <Avatar className="h-6 w-6 border border-white/20">
-                        <AvatarImage src={selectedProject.creator_img} alt={selectedProject.creator} />
+                        <AvatarImage
+                          src={selectedProject.creator_img}
+                          alt={selectedProject.creator}
+                        />
                         <AvatarFallback className="bg-accent text-white">
                           {selectedProject.creator[0].toUpperCase()}
                         </AvatarFallback>
@@ -477,7 +546,10 @@ export function ProjectManagement({projects,meta}:{projects: Project[], meta: Me
                             Funding Goal
                           </h3>
                           <p className="text-3xl font-bold">
-                            {(selectedProject.funding_goal/100).toLocaleString()}DA
+                            {(
+                              selectedProject.funding_goal / 100
+                            ).toLocaleString()}
+                            DA
                           </p>
                         </div>
                         <div>
@@ -485,7 +557,10 @@ export function ProjectManagement({projects,meta}:{projects: Project[], meta: Me
                             Current Funding
                           </h3>
                           <p className="text-3xl font-bold text-accentColor">
-                            {(selectedProject.current_funding/100).toLocaleString()}DA
+                            {(
+                              selectedProject.current_funding / 100
+                            ).toLocaleString()}
+                            DA
                           </p>
                         </div>
                       </div>
@@ -581,15 +656,21 @@ export function ProjectManagement({projects,meta}:{projects: Project[], meta: Me
                     />
                   </TabsContent>
 
-                  <TabsContent value="rewards" className="p-6 focus:outline-none">
-                    <Carousel opts={{align:"start", }}>
+                  <TabsContent
+                    value="rewards"
+                    className="p-6 focus:outline-none"
+                  >
+                    <Carousel opts={{ align: "start" }}>
                       <div className="hidden md:flex">
                         <CarouselPrevious className="relative left-[calc(100%-100px)]" />
                         <CarouselNext className="relative -right-[calc(100%-80px)]" />
                       </div>
                       <CarouselContent className="flex">
                         {rewards?.map((reward, index) => (
-                          <CarouselItem key={index} className="basis-1/2 self-stretch relative">
+                          <CarouselItem
+                            key={index}
+                            className="basis-1/2 self-stretch relative"
+                          >
                             <Card
                               key={index}
                               className={`transition-colors ease-out duration-200 border-2 border-gray-200 h-full`}
@@ -608,7 +689,9 @@ export function ProjectManagement({projects,meta}:{projects: Project[], meta: Me
                                   />
                                 )}
                                 <div className="flex justify-between items-center mb-2">
-                                  <h5 className="font-medium">{reward.title}</h5>
+                                  <h5 className="font-medium">
+                                    {reward.title}
+                                  </h5>
                                   <h4 className="font-bold text-lg">
                                     {reward.amount / 100}DA
                                   </h4>
@@ -628,7 +711,9 @@ export function ProjectManagement({projects,meta}:{projects: Project[], meta: Me
                                           key={i}
                                           className="flex items-start gap-2"
                                         >
-                                          <span className="text-[#3B82F6]">•</span>
+                                          <span className="text-[#3B82F6]">
+                                            •
+                                          </span>
                                           <span>{item}</span>
                                         </li>
                                       ))}
@@ -638,32 +723,47 @@ export function ProjectManagement({projects,meta}:{projects: Project[], meta: Me
 
                                 <div className="text-sm text-gray-600 mb-3">
                                   Estimated delivery:{" "}
-                                  {new Date(reward.estimated_delivery).getMonth()}/
+                                  {new Date(
+                                    reward.estimated_delivery
+                                  ).getMonth()}
+                                  /
                                   {new Date(
                                     reward.estimated_delivery
                                   ).getFullYear()}
                                 </div>
                               </CardContent>
                             </Card>
-                            <Button onClick={async()=>{
-                              setRewards(rewards.filter((reward2,index2)=> rewards[index2] !== rewards[index]))
-                              const result = await handleRewards({rewards: rewards}, (selectedProject?.project_id).toString(), "update")
-                              if(result.status){
-                                toast({
-                                  title: TOAST_SUCCESS_TITLE,
-                                  description: "Reward deleted successfully",
-                                  variant: "default"
-                                })
-                              }else{
-                                toast({
-                                  title: TOAST_ERROR_TITLE,
-                                  description: result.error,
-                                  variant: "destructive"
-                                })
-                              }
-                              
-                            }} variant="ghost" className="p-2 absolute bottom-2 right-2 bg-white border border-slate-200">
-                              <Trash2 className="text-red-500 h-7 w-7"/>
+                            <Button
+                              onClick={async () => {
+                                setRewards(
+                                  rewards.filter(
+                                    (reward2, index2) =>
+                                      rewards[index2] !== rewards[index]
+                                  )
+                                );
+                                const result = await handleRewards(
+                                  { rewards: rewards },
+                                  (selectedProject?.project_id).toString(),
+                                  "update"
+                                );
+                                if (result.status) {
+                                  toast({
+                                    title: TOAST_SUCCESS_TITLE,
+                                    description: "Reward deleted successfully",
+                                    variant: "default",
+                                  });
+                                } else {
+                                  toast({
+                                    title: TOAST_ERROR_TITLE,
+                                    description: result.error,
+                                    variant: "destructive",
+                                  });
+                                }
+                              }}
+                              variant="ghost"
+                              className="p-2 absolute bottom-2 right-2 bg-white border border-slate-200"
+                            >
+                              <Trash2 className="text-red-500 h-7 w-7" />
                               <span className="sr-only">delete reward</span>
                             </Button>
                           </CarouselItem>
@@ -687,6 +787,58 @@ export function ProjectManagement({projects,meta}:{projects: Project[], meta: Me
         </Dialog>
 
         {/* Delete Confirmation Dialog */}
+        <Dialog open={isFlagDialogOpen} onOpenChange={setIsFlagDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Confirm Flagging</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to flag this project as suspicious?
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setIsFlagDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="bg-orange-400 hover:bg-orange-500 text-white"
+                onClick={async () => {
+                  const reviewResult = await reviewProject({status:"Flagged", feedback:""}, Number(selectedProject?.project_id))
+                  if (!reviewResult.status){
+                    toast({
+                      title: TOAST_ERROR_TITLE,
+                      description: reviewResult.error,
+                      variant:"destructive"
+                    })
+                  }
+
+                  const result = await updateProject(
+                    { is_suspicious: true },
+                    (selectedProject?.project_id)?.toString() as string
+                  );
+                  if (result.status) {
+                    toast({
+                      title: TOAST_SUCCESS_TITLE,
+                      description: "Project flagged successfully",
+                      variant: "default",
+                    });
+                    setIsFlagDialogOpen(false)
+                  } else {
+                    toast({
+                      title: TOAST_ERROR_TITLE,
+                      description: result.error,
+                      variant: "destructive",
+                    });
+                  }
+                }}
+              >
+                Flag
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
         <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
           <DialogContent>
             <DialogHeader>
@@ -705,22 +857,24 @@ export function ProjectManagement({projects,meta}:{projects: Project[], meta: Me
               </Button>
               <Button
                 variant="destructive"
-                onClick={async() => {
+                onClick={async () => {
                   // Handle deletion logic here
-                  const result = await deleteProject((selectedProject?.project_id)?.toString() as string)
-                  if(result.status){
+                  const result = await deleteProject(
+                    selectedProject?.project_id?.toString() as string
+                  );
+                  if (result.status) {
                     toast({
                       title: TOAST_SUCCESS_TITLE,
                       description: "The project has been deleted successfully.",
-                      variant: "default"
-                    })
+                      variant: "default",
+                    });
                     setIsDeleteDialogOpen(false);
-                  }else{
+                  } else {
                     toast({
                       title: TOAST_ERROR_TITLE,
                       description: result.error,
-                      variant: "destructive"
-                    })
+                      variant: "destructive",
+                    });
                   }
                 }}
               >
@@ -731,99 +885,95 @@ export function ProjectManagement({projects,meta}:{projects: Project[], meta: Me
         </Dialog>
 
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Edit project</DialogTitle>
-            <DialogDescription>
-              Make changes to this project here. Click save when you're done.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <form id="edit-project-form" onSubmit={async(e)=>{
-              e.preventDefault()
-              const formdata = new FormData(e.currentTarget)
-              const result = await updateProject({status: formdata.get("status") as string}, (selectedProject?.project_id)?.toString() as string)
-              if(result.status){
-                toast({
-                  title: TOAST_SUCCESS_TITLE,
-                  description: "Project updated successfully",
-                  variant: "default"
-                })
-              }else{
-                toast({
-                  title: TOAST_ERROR_TITLE,
-                  description: result.error,
-                  variant:"destructive"
-                })
-                
-              }
-              setIsEditDialogOpen(false)
-            }} className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="name" className="text-right font-semibold">
-                Status:
-              </Label>
-              <Select name="status" defaultValue={selectedProject?.status}>
-                <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Select project status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Draft" disabled>
-                    <div className="flex items-center gap-2">
-                      <NotepadTextDashed className="text-slate-700 h-5 w-5" />
-                      <span>Draft</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="Pending Review" disabled>
-                    <div className="flex items-center gap-2">
-                      <CircleDot className="text-slate-700 h-5 w-5" />
-                      <span>Pending Review</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="Approved">
-                    <div className="flex items-center gap-2">
-                      <Check className="text-slate-700 h-5 w-5" />
-                      <span>Approved</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="Rejected">
-                    <div className="flex items-center gap-2">
-                      <X className="text-slate-700 h-5 w-5" />
-                      <span>Rejected</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="Live" disabled>
-                    <div className="flex items-center gap-2">
-                      <Radio className="text-slate-700 h-5 w-5" />
-                      <span>Live</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="Completed">
-                    <div className="flex items-center gap-2">
-                      <CheckCheck className="text-slate-700 h-5 w-5" />
-                      <span>Completed</span>
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </form>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsEditDialogOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button 
-              type="submit"
-              form="edit-project-form"
-              className="bg-accentColor text-white hover:bg-secondaryColor"
-            >
-              Save changes
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Review project</DialogTitle>
+              <DialogDescription>
+                Review this project submission and decide whether to approve or
+                reject.
+              </DialogDescription>
+            </DialogHeader>
+            <Form {...form}>
+              <form
+                id="review-project-form"
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-4 py-4"
+              >
+                <FormItem>
+                  <FormLabel htmlFor="status" className="font-semibold">
+                    Decision:
+                  </FormLabel>
+                  <FormField
+                    control={form.control}
+                    name="status"
+                    render={({ field }) => (
+                      <FormItem>
+                        <Select onValueChange={field.onChange}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a decision" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value={"Approved"}>
+                              Approve
+                            </SelectItem>
+                            <SelectItem value={"Rejected"}>
+                              Reject
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </FormItem>
+
+                <FormField
+                  control={form.control}
+                  name="feedback"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="font-semibold">Feedback:</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Please provide details about your decision..."
+                          className="min-h-[120px]"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </form>
+            </Form>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setIsEditDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                form="review-project-form"
+                className="bg-accentColor text-white hover:bg-secondaryColor"
+                disabled={form.formState.isSubmitting}
+              >
+                {
+                  form.formState.isSubmitting ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin"/>
+                  ):(
+                    <>
+                      Save changes
+                    </>
+                  )
+                }
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

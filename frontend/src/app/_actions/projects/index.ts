@@ -75,7 +75,7 @@ export async function getProjectPublic(id: string) {
     return {status:true, ...result}
 }
 
-export async function updateProject(data: BasicsFormData|FundingFormData|StoryFormData|{status:string,launched_at?:string}, id: string){
+export async function updateProject(data: BasicsFormData|FundingFormData|StoryFormData|{status:string,launched_at?:string}|{is_suspicious:boolean}, id: string){
     const res = await authFetch(`${apiUrl}/projects/${id}`,{
         method:"PATCH",
         headers:{
@@ -821,6 +821,63 @@ export async function didISaveThis(projectId: number) {
         if(typeof result.error === "object"){
             return {status:false, error:Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
         }else if(result.error === "Project not found"){
+            notFound()
+        }else{
+            return {status:false, ...result}
+        }
+    }
+
+    
+    const result = await res.json()
+    return {status:true, ...result}
+}
+
+export async function getReview(projectId: number) {
+    const res = await authFetch(`${apiUrl}/projects/review/${projectId}`, {cache:"no-store", next:{tags:["projects-review"]}})
+
+    if(!res.ok){
+        const result = await res.json()
+        if(typeof result.error === "object"){
+            return {status:false, error:Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
+        }else if(result.error === "Project not found"){
+            notFound()
+        }else{
+            return {status:false, ...result}
+        }
+    }
+
+    
+    const result = await res.json()
+    return {status:true, ...result}
+}
+
+export async function getProjectByReviewer(reviewer: number) {
+    const res = await authFetch(`${apiUrl}/projects/reviewer/${reviewer}`, {cache:"no-store", next:{tags:["projects-reviewer"]}})
+
+    if(!res.ok){
+        const result = await res.json()
+        if(typeof result.error === "object"){
+            return {status:false, error:Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
+        }else if(result.error === "User not found"){
+            notFound()
+        }else{
+            return {status:false, ...result}
+        }
+    }
+
+    
+    const result = await res.json()
+    return {status:true, ...result}
+}
+
+export async function getFlaggedProjectByReviewer(reviewer: number) {
+    const res = await authFetch(`${apiUrl}/projects/flagged/reviewer/${reviewer}`, {cache:"no-store", next:{tags:["projects-reviewer"]}})
+
+    if(!res.ok){
+        const result = await res.json()
+        if(typeof result.error === "object"){
+            return {status:false, error:Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
+        }else if(result.error === "User not found"){
             notFound()
         }else{
             return {status:false, ...result}

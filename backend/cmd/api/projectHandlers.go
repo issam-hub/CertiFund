@@ -126,6 +126,35 @@ func (app *application) getProjectHandler(c echo.Context) error {
 	})
 }
 
+func (app *application) getPublicProjectHandler(c echo.Context) error {
+	id, err := app.readIDParam(c)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusNotFound, err.Error())
+	}
+
+	project, err := app.models.Projects.GetPublic(id)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrNoRecordFound):
+			return echo.NewHTTPError(http.StatusNotFound, "Project not found")
+		default:
+			return err
+		}
+	}
+
+	rewards, err := app.models.Rewards.GetAll(id)
+	if err != nil {
+		return err
+	}
+
+	project.Rewards = *rewards
+
+	return c.JSON(http.StatusOK, envelope{
+		"message": "Project returned successfully",
+		"project": project,
+	})
+}
+
 func (app *application) updateProjectHandler(c echo.Context) error {
 	id, err := app.readIDParam(c)
 	if err != nil {
@@ -153,6 +182,7 @@ func (app *application) updateProjectHandler(c echo.Context) error {
 		Status         *string    `json:"status,omitempty"`
 		Campaign       *string    `json:"campaign,omitempty"`
 		LaunchedAt     *time.Time `json:"launched_at,omitempty"`
+		IsSuspicious   bool       `json:"is_suspicious"`
 	}
 
 	if err := c.Bind(&input); err != nil {
@@ -215,6 +245,9 @@ func (app *application) updateProjectHandler(c echo.Context) error {
 		project.LaunchedAt = *input.LaunchedAt
 		v.Check(project.LaunchedAt.After(project.CreatedAt), "launchedAt", "Launch date should be after the date of project creation")
 		v.Check(project.LaunchedAt.Before(project.Deadline), "launchedAt", "Launch date should be before the date of deadline")
+	}
+	if input.IsSuspicious {
+		project.IsSuspicious = input.IsSuspicious
 	}
 
 	if data.ValidateProject(v, project); !v.Valid() {
@@ -467,5 +500,179 @@ func (app *application) getAllUpdatesHandler(c echo.Context) error {
 		"message":  "Updates returned successfully",
 		"metadata": metadata,
 		"updates":  updates,
+	})
+}
+
+func (app *application) reviewProjectHandler(c echo.Context) error {
+	user := c.Get("user").(*data.User)
+
+	id, err := app.readIDParam(c)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusNotFound, err.Error())
+	}
+
+	_, err = app.models.Projects.Get(id)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrNoRecordFound):
+			return echo.NewHTTPError(http.StatusNotFound, "Project not found")
+		default:
+			return err
+		}
+	}
+
+	var input struct {
+		Status   string `json:"status"`
+		Feedback string `json:"feedback"`
+	}
+
+	if err := c.Bind(&input); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Error while processing data")
+	}
+
+	v := validator.New()
+
+	review := &data.Review{
+		Status:     input.Status,
+		Feedback:   input.Feedback,
+		ReviewerID: user.ID,
+		ProjectID:  id,
+	}
+
+	if data.ValidateReview(v, review); !v.Valid() {
+		return echo.NewHTTPError(http.StatusUnprocessableEntity, v.Errors)
+	}
+
+	err = app.models.Projects.ReviewProject(review)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(http.StatusCreated, envelope{
+		"message": "Project reviewed successfully",
+		"review":  review,
+	})
+}
+
+func (app *application) getReviewHandler(c echo.Context) error {
+	user := c.Get("user").(*data.User)
+	id, err := app.readIDParam(c)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusNotFound, err.Error())
+	}
+
+	_, err = app.models.Projects.Get(id)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrNoRecordFound):
+			return echo.NewHTTPError(http.StatusNotFound, "Project not found")
+		default:
+			return err
+		}
+	}
+
+	review, err := app.models.Projects.GetReview(user.ID, id)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrNoRecordFound):
+			return echo.NewHTTPError(http.StatusNotFound, "Project not found")
+		default:
+			return err
+		}
+	}
+
+	return c.JSON(http.StatusOK, envelope{
+		"message": "Review returned successfully",
+		"review":  review,
+	})
+}
+
+func (app *application) getProjectsByReviewerHandler(c echo.Context) error {
+	id, err := app.readIDParam(c)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusNotFound, err.Error())
+	}
+
+	_, err = app.models.Users.GetByID(id)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrNoRecordFound):
+			return echo.NewHTTPError(http.StatusNotFound, "User not found")
+		default:
+			return err
+		}
+	}
+
+	var input struct {
+		Page     int `json:"page"`
+		PageSize int `json:"page_size"`
+	}
+
+	v := validator.New()
+
+	input.Page = app.readInt(c.QueryParams(), "page", 1, v)
+	input.PageSize = app.readInt(c.QueryParams(), "page_size", 5, v)
+
+	v.Check(input.Page >= 1 && input.PageSize <= 10_000_000, "page", "page must be between 1 and 10000000")
+	v.Check(input.PageSize >= 1 && input.PageSize <= 100, "page_size", "page size must be between 1 and 100")
+
+	if !v.Valid() {
+		return echo.NewHTTPError(http.StatusUnprocessableEntity, v.Errors)
+	}
+
+	projects, metadata, err := app.models.Projects.GetAllByReviewer(id, input.Page, input.PageSize)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(http.StatusOK, envelope{
+		"message":  "projects returned successfully",
+		"projects": projects,
+		"metadata": metadata,
+	})
+}
+
+func (app *application) getFlaggedProjectsByReviewerHandler(c echo.Context) error {
+	id, err := app.readIDParam(c)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusNotFound, err.Error())
+	}
+
+	_, err = app.models.Users.GetByID(id)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrNoRecordFound):
+			return echo.NewHTTPError(http.StatusNotFound, "User not found")
+		default:
+			return err
+		}
+	}
+
+	var input struct {
+		Page     int `json:"page"`
+		PageSize int `json:"page_size"`
+	}
+
+	v := validator.New()
+
+	input.Page = app.readInt(c.QueryParams(), "page", 1, v)
+	input.PageSize = app.readInt(c.QueryParams(), "page_size", 5, v)
+
+	v.Check(input.Page >= 1 && input.PageSize <= 10_000_000, "page", "page must be between 1 and 10000000")
+	v.Check(input.PageSize >= 1 && input.PageSize <= 100, "page_size", "page size must be between 1 and 100")
+
+	if !v.Valid() {
+		return echo.NewHTTPError(http.StatusUnprocessableEntity, v.Errors)
+	}
+
+	projects, metadata, err := app.models.Projects.GetAllFlaggedByReviewer(id, input.Page, input.PageSize)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(http.StatusOK, envelope{
+		"message":  "projects returned successfully",
+		"projects": projects,
+		"metadata": metadata,
 	})
 }

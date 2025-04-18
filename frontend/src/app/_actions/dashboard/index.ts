@@ -2,6 +2,7 @@
 
 import { apiUrl } from "@/app/_lib/config"
 import { authFetch } from "@/app/_lib/utils/auth"
+import { notFound } from "next/navigation"
 
 export async function getGeneralStats(){
     const res = await authFetch(`${apiUrl}/stats/general`, {cache:"no-store", next:{tags:["stats-general"]}})
@@ -138,6 +139,22 @@ export async function getProjectsTable(page:number = 1, limit:string = "10"){
     return {status:true, ...result}
 }
 
+export async function getPendingProjectsTable(page:number = 1, limit:string = "10"){
+    const res = await authFetch(`${apiUrl}/tables/pendingProjects?page=${page}&page_size=${limit}`, {cache:"no-store", next:{tags:["projects-table"]}})
+
+    if(!res.ok){
+        const result = await res.json()
+        if(typeof result.error === "object"){
+            return {status:false, error:Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
+        }
+        return {status:false, ...result}
+    }
+
+    
+    const result = await res.json()
+    return {status:true, ...result}
+}
+
 export async function getUsersTable(page:number = 1, limit:string = "10"){
     const res = await authFetch(`${apiUrl}/tables/users?page=${page}&page_size=${limit}`, {cache:"no-store", next:{tags:["projects-table"]}})
 
@@ -184,4 +201,33 @@ export async function getDisputesTable(page:number = 1, limit:string = "10"){
     
     const result = await res.json()
     return {status:true, ...result}
+}
+
+export async function reviewProject(data : any, projectId: number){
+    const res = await authFetch(`${apiUrl}/projects/review/${projectId}`,{
+        method:"POST",
+        headers:{
+            "Content-Type":"application/json"
+        },
+        body: JSON.stringify(data)
+    })
+
+    try {
+        if(!res.ok) {
+            const result = await res.json()
+            if(typeof result.error === "object"){
+                return {status:false, error: Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
+            }else if(result.error === "Project not found"){
+                notFound()
+            }else{
+                return {status: false, ...result}
+            }
+          }    
+
+      
+          const result = await res.json();
+          return {status:true, ...result}
+    }catch(error: any){
+        return {status: false, error: error.message}
+    }
 }

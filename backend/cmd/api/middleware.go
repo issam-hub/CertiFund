@@ -102,7 +102,7 @@ func (app *application) VerifyProjectOwnership() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			user := c.Get("user").(*data.User)
-			if user.Role == "admin" {
+			if user.Role == "admin" || user.Role == "reviewer" {
 				return next(c)
 			}
 			projectIDParam := c.Param("id")

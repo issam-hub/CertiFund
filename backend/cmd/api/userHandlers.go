@@ -89,7 +89,7 @@ func (app *application) createUserHandler(c echo.Context) error {
 	user := &data.User{
 		Username:  input.Username,
 		Email:     input.Email,
-		Activated: false,
+		Activated: true,
 		Role:      input.Role,
 	}
 
@@ -114,23 +114,6 @@ func (app *application) createUserHandler(c echo.Context) error {
 			return err
 		}
 	}
-
-	token, err := app.models.Tokens.New(user.ID, 2*24*time.Hour, data.ScopeActivation)
-	if err != nil {
-		return err
-	}
-
-	app.background(func() {
-		data := map[string]interface{}{
-			"ActivationToken": token.PlainText,
-			"Username":        user.Username,
-			"UserID":          user.ID,
-		}
-		err = app.mailer.Send(user.Email, "user_welcome.tmpl", data)
-		if err != nil {
-			c.Logger().Error(err)
-		}
-	})
 
 	return c.JSON(http.StatusCreated, envelope{
 		"message": "User created successfully",
