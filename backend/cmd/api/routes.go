@@ -25,8 +25,8 @@ func (app *application) routes(e *echo.Echo) {
 	authGroup.GET("/projects/saved", app.getSavedProjectsByCurrentUserHandler)
 	authGroup.POST("/projects/review/:id", app.reviewProjectHandler)
 	authGroup.GET("/projects/review/:id", app.getReviewHandler)
-	authGroup.GET("/projects/reviewer/:id", app.getProjectsByReviewerHandler)
-	authGroup.GET("/projects/flagged/reviewer/:id", app.getFlaggedProjectsByReviewerHandler)
+	authGroup.GET("/projects/reviewer", app.getProjectsByReviewerHandler)
+	authGroup.GET("/projects/flagged/reviewer", app.getFlaggedProjectsByReviewerHandler)
 
 	// image upload
 	authGroup.POST("/projects/image/upload", app.fileUploadHandler)
@@ -84,11 +84,13 @@ func (app *application) routes(e *echo.Echo) {
 	authGroup.GET("/stats/backingsNrefunds", app.getBackingsRefundsHandler, app.RequirePermission("stats"))
 
 	// tables
-	authGroup.GET("/tables/projects", app.getProjectsTableHandler, app.RequirePermission("tables:projects"))
+	authGroup.GET("/tables/projects", app.getProjectsTableHandler)
 	authGroup.GET("/tables/pendingProjects", app.getPendingProjectsTableHandler, app.RequirePermission("tables:projects"))
 	authGroup.GET("/tables/users", app.getUsersTableHandler, app.RequirePermission("tables:users"))
 	authGroup.GET("/tables/backings", app.getBackingsTableHandler, app.RequirePermission("tables:backings"))
 	authGroup.GET("/tables/disputes", app.getDisputesTableHandler, app.RequirePermission("tables:disputes"))
+	authGroup.GET("/tables/pendingAssessements", app.getPendingAssessementProjectsTableHandler)
+	authGroup.GET("/tables/assessed", app.getAssessedProjectsTableHandler)
 
 	// disputes
 	authGroup.POST("/disputes/create/:id", app.createDisputeHandler, app.RequirePermission("disputes:create"))
@@ -103,4 +105,8 @@ func (app *application) routes(e *echo.Echo) {
 	publicGroup.GET("/projects/like/:id", app.getLikesHandler)
 	authGroup.GET("/projects/didILikeThis/:id", app.didILikeThisHandler)
 	authGroup.GET("/projects/didISaveThis/:id", app.didISaveThisHandler)
+
+	// experts
+	authGroup.POST("/experts/create", app.CreateExpertHandler)
+	authGroup.POST("/experts/assess/:id", app.assessProjectHandler)
 }

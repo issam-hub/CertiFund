@@ -23,6 +23,7 @@ import AdminLinks from "../user/adminLinks"
 import { useAtomValue } from "jotai"
 import { userAtom } from "@/app/_store/shared"
 import ReviewerLinks from "../user/reviewLinks"
+import ExpertLinks from "../user/expertLinks"
   
   export function DashSidebar() {
     const sidebarState = useSidebar()
@@ -41,8 +42,10 @@ import ReviewerLinks from "../user/reviewLinks"
           {
             user?.role === "admin" ? (
               <AdminLinks/>
-            ):(
+            ): user?.role === "reviewer" ? (
               <ReviewerLinks/>
+            ):(
+              <ExpertLinks/>
             )
           }
           <SidebarSeparator className="h-[1px] bg-slate-500"/>
@@ -52,7 +55,7 @@ import ReviewerLinks from "../user/reviewLinks"
               <SidebarMenu>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
-                    <Link href={"/admin/dashboard/settings"}>
+                    <Link href={`/${user?.role}/dashboard/settings`}>
                       <Settings className="h-5 w-5" />
                       <span>Settings</span>
                     </Link>
@@ -60,7 +63,7 @@ import ReviewerLinks from "../user/reviewLinks"
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
-                    <Link href={"/admin/dashboard/help"}>
+                    <Link href={`/${user?.role}/dashboard/help`}>
                       <HelpCircle className="h-5 w-5" />
                       <span>Help & Support</span>
                     </Link>

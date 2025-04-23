@@ -25,15 +25,16 @@ interface MultiSelectProps {
   register: UseFormRegister<any>
   control: Control<any>
   errors: any,
+  name: string
   disableEdit?: boolean
 }
 
-export default function MultiSelect({register, control, errors, disableEdit}: MultiSelectProps) {
+export default function MultiSelect({register, control, errors, disableEdit, name}: MultiSelectProps) {
   return (
     <>
       <Controller 
         control={control}
-        name="categories"
+        name={name}
         rules={{ 
           required: "Please select at least one category",
           validate: (value) => {
@@ -59,7 +60,7 @@ export default function MultiSelect({register, control, errors, disableEdit}: Mu
           />
         )}
       />
-      {errors.categories && <p className="text-xs text-red-600">* {errors.categories.message}</p>}
+      {errors[name] && <p className="text-xs text-red-600">* {errors[name].message}</p>}
     </>
   );
 }

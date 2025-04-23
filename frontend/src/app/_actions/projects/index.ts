@@ -1,7 +1,7 @@
 "use server"
 
 import { apiUrl } from "@/app/_lib/config";
-import { CreateProjectSchema, RewardsSchema, UpdateSchema } from "@/app/_lib/schemas/project";
+import { AssessmentFormSchema, CreateProjectSchema, RewardsSchema, UpdateSchema } from "@/app/_lib/schemas/project";
 import { BasicsFormData, FundingFormData, Reward, StoryFormData } from "@/app/_lib/types";
 import { formatDateTime } from "@/app/_lib/utils";
 import { authFetch } from "@/app/_lib/utils/auth";
@@ -851,8 +851,8 @@ export async function getReview(projectId: number) {
     return {status:true, ...result}
 }
 
-export async function getProjectByReviewer(reviewer: number) {
-    const res = await authFetch(`${apiUrl}/projects/reviewer/${reviewer}`, {cache:"no-store", next:{tags:["projects-reviewer"]}})
+export async function getProjectsByReviewer(page:number = 1, limit:string = "10") {
+    const res = await authFetch(`${apiUrl}/projects/reviewer?page=${page}&page_size=${limit}`, {cache:"no-store", next:{tags:["projects-reviewer"]}})
 
     if(!res.ok){
         const result = await res.json()
@@ -870,8 +870,8 @@ export async function getProjectByReviewer(reviewer: number) {
     return {status:true, ...result}
 }
 
-export async function getFlaggedProjectByReviewer(reviewer: number) {
-    const res = await authFetch(`${apiUrl}/projects/flagged/reviewer/${reviewer}`, {cache:"no-store", next:{tags:["projects-reviewer"]}})
+export async function getFlaggedProjectByReviewer(page:number = 1, limit:string = "10") {
+    const res = await authFetch(`${apiUrl}/projects/flagged/reviewer?page=${page}&page_size=${limit}`, {cache:"no-store", next:{tags:["projects-reviewer"]}})
 
     if(!res.ok){
         const result = await res.json()
@@ -887,4 +887,39 @@ export async function getFlaggedProjectByReviewer(reviewer: number) {
     
     const result = await res.json()
     return {status:true, ...result}
+}
+
+export async function assessProject(data: AssessmentFormSchema, projectId: number){
+    let toBeSent = {
+        vote: {
+            highly_not_recommended: data.vote.highly_not_recommended / 100,
+            not_recommended: data.vote.not_recommended / 100,
+            recommended: data.vote.recommended / 100,
+            highly_recommended: data.vote.highly_recommended / 100
+          },
+          comment: data.comment
+    };
+    const res = await authFetch(`${apiUrl}/experts/assess/${projectId}`,{
+        method:"POST",
+        headers:{
+            "Content-Type":"application/json"
+        },
+        body: JSON.stringify(toBeSent)
+    })
+    try {
+        if(!res.ok) {
+            const result = await res.json()
+            if(typeof result.error === "object"){
+                return {status:false, error: Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\r\n"+`*${curr}`) as string}
+            }else if(result.error === "User not found"){
+                notFound()
+            }
+            return {status: false, ...result}
+          }   
+          
+          const result = await res.json();
+          return {status:true, ...result}
+    }catch(error: any){
+        return {status: false, error: error.message}
+    }
 }

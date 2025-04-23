@@ -138,17 +138,6 @@ export default function EditProfilePage() {
   
   return (
     <div className="min-h-[calc(100vh-90px)] bg-gray-50">
-      {/* Header */}
-      <div className="text-mainColor">
-        <div className="container mx-auto px-4 py-6">
-            <Link href="/settings/profile" className="text-mainColor flex items-center gap-2 w-fit">
-                <ArrowLeft className="h-5 w-5" />
-                <h1 className="text-2xl font-bold">Edit Profile</h1>
-            </Link>
-        </div>
-      </div>
-
-      {/* Main Content */}
       <div className="container mx-auto px-4 py-8">
         <Card className="max-w-3xl mx-auto">
           <CardHeader>
@@ -166,7 +155,7 @@ export default function EditProfilePage() {
               <FormLabel className="font-semibold">Profile Picture</FormLabel>
               <div className="flex items-center gap-6">
                 <div className="relative">
-                  <Avatar className="h-24 w-24 border-4 border-accentColor">
+                  <Avatar className="h-24 w-24 border-4 border-red-500">
                     <AvatarImage 
                       src={previewImage || user.image_url || "/placeholder.svg?height=128&width=128"} 
                       alt="Profile preview" 

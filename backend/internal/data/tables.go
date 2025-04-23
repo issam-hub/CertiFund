@@ -9,25 +9,26 @@ import (
 )
 
 type ProjectsTable struct {
-	ID             int            `json:"project_id"`
-	Title          string         `json:"title"`
-	Description    string         `json:"description"`
-	FundingGoal    float64        `json:"funding_goal"`
-	CurrentFunding float64        `json:"current_funding"`
-	Categories     pq.StringArray `json:"categories"`
-	Deadline       time.Time      `json:"deadline"`
-	Status         string         `json:"status"`
-	ProjectImg     string         `json:"project_img"`
-	Campaign       string         `json:"campaign"`
-	CreatedAt      time.Time      `json:"created_at"`
-	UpdatedAt      time.Time      `json:"updated_at"`
-	LaunchedAt     time.Time      `json:"launched_at"`
-	Version        int32          `json:"-"`
-	Creator        string         `json:"creator"`
-	Backers        int            `json:"backers"`
-	CreatorImg     string         `json:"creator_img"`
-	Rewards        []Reward       `json:"rewards,omitempty"`
-	IsSuspicious   bool           `json:"is_suspicious"`
+	ID              int            `json:"project_id"`
+	Title           string         `json:"title"`
+	Description     string         `json:"description"`
+	FundingGoal     float64        `json:"funding_goal"`
+	CurrentFunding  float64        `json:"current_funding"`
+	Categories      pq.StringArray `json:"categories"`
+	Deadline        time.Time      `json:"deadline"`
+	Status          string         `json:"status"`
+	ProjectImg      string         `json:"project_img"`
+	Campaign        string         `json:"campaign"`
+	CreatedAt       time.Time      `json:"created_at"`
+	UpdatedAt       time.Time      `json:"updated_at"`
+	LaunchedAt      time.Time      `json:"launched_at"`
+	Version         int32          `json:"-"`
+	Creator         string         `json:"creator"`
+	Backers         int            `json:"backers"`
+	CreatorImg      string         `json:"creator_img"`
+	Rewards         []Reward       `json:"rewards,omitempty"`
+	IsSuspicious    bool           `json:"is_suspicious"`
+	ExpertsDecision string         `json:"experts_decision"`
 }
 
 type UsersTable struct {
@@ -81,7 +82,7 @@ func (m TablesModel) GetProjects(page, pageSize int) ([]*ProjectsTable, MetaData
 	offset := (page - 1) * pageSize
 
 	query := `
-	SELECT COUNT(pr.project_id) OVER(), pr.project_id, pr.title, pr.description, pr.categories, pr.funding_goal, pr.current_funding, pr.deadline, pr.status, pr.project_img, pr.campaign, pr.created_at, pr.updated_at, pr.launched_at, u.username as creator, u.image_url, count(DISTINCT b.backer_id) as backers, pr.is_suspicious
+	SELECT COUNT(pr.project_id) OVER(), pr.project_id, pr.title, pr.description, pr.categories, pr.funding_goal, pr.current_funding, pr.deadline, pr.status, pr.project_img, pr.campaign, pr.created_at, pr.updated_at, pr.launched_at, u.username as creator, u.image_url, count(DISTINCT b.backer_id) as backers, pr.is_suspicious, pr.experts_decision
 	FROM project pr 
 	INNER JOIN user_t u ON pr.creator_id = u.user_id 
 	LEFT JOIN backing b on pr.project_id = b.project_id
@@ -126,6 +127,7 @@ func (m TablesModel) GetProjects(page, pageSize int) ([]*ProjectsTable, MetaData
 			&row.CreatorImg,
 			&row.Backers,
 			&row.IsSuspicious,
+			&row.ExpertsDecision,
 		)
 		if err != nil {
 			return nil, MetaData{}, err
@@ -370,7 +372,7 @@ func (m TablesModel) GetPendingProjects(page, pageSize int) ([]*ProjectsTable, M
 	offset := (page - 1) * pageSize
 
 	query := `
-	SELECT COUNT(pr.project_id) OVER(), pr.project_id, pr.title, pr.description, pr.categories, pr.funding_goal, pr.current_funding, pr.deadline, pr.status, pr.project_img, pr.campaign, pr.created_at, pr.updated_at, pr.launched_at, u.username as creator, u.image_url, count(DISTINCT b.backer_id) as backers, pr.is_suspicious
+	SELECT COUNT(pr.project_id) OVER(), pr.project_id, pr.title, pr.description, pr.categories, pr.funding_goal, pr.current_funding, pr.deadline, pr.status, pr.project_img, pr.campaign, pr.created_at, pr.updated_at, pr.launched_at, u.username as creator, u.image_url, count(DISTINCT b.backer_id) as backers, pr.is_suspicious, pr.experts_decision
 	FROM project pr 
 	INNER JOIN user_t u ON pr.creator_id = u.user_id 
 	LEFT JOIN backing b on pr.project_id = b.project_id
@@ -416,6 +418,148 @@ func (m TablesModel) GetPendingProjects(page, pageSize int) ([]*ProjectsTable, M
 			&row.CreatorImg,
 			&row.Backers,
 			&row.IsSuspicious,
+			&row.ExpertsDecision,
+		)
+		if err != nil {
+			return nil, MetaData{}, err
+		}
+
+		row.ProjectImg = projectImgVar.String
+		row.Campaign = campaignVar.String
+
+		table = append(table, row)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, MetaData{}, err
+	}
+
+	metaData := calculateMetadata(totalRecords, page, pageSize)
+
+	return table, metaData, nil
+}
+
+func (m TablesModel) GetPendingAssessementProjects(categories []string, expertID, page, pageSize int) ([]*ProjectsTable, MetaData, error) {
+	offset := (page - 1) * pageSize
+
+	query := `
+	SELECT COUNT(pr.project_id) OVER(), pr.project_id, pr.title, pr.description, pr.categories, pr.funding_goal, pr.current_funding, pr.deadline, pr.status, pr.project_img, pr.campaign, pr.created_at, pr.updated_at, pr.launched_at, u.username as creator, u.image_url, count(DISTINCT b.backer_id) as backers, pr.experts_decision
+	FROM project pr 
+	INNER JOIN user_t u ON pr.creator_id = u.user_id 
+	LEFT JOIN backing b on pr.project_id = b.project_id
+	LEFT JOIN expert_review er ON pr.project_id = er.project_id AND er.expert_id = $1
+	WHERE (pr.status = 'Live' OR pr.status = 'Approved') AND er.expert_id IS NULL
+	AND (pr.categories @> $2 OR $2 = '{}')
+	GROUP BY pr.project_id, u.username, u.image_url
+	LIMIT $3 OFFSET $4
+	`
+
+	table := []*ProjectsTable{}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	args := []interface{}{expertID, pq.Array(categories), pageSize, offset}
+
+	rows, err := m.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, MetaData{}, err
+	}
+
+	totalRecords := 0
+	for rows.Next() {
+		row := &ProjectsTable{}
+		var projectImgVar sql.NullString
+		var campaignVar sql.NullString
+
+		err := rows.Scan(
+			&totalRecords,
+			&row.ID,
+			&row.Title,
+			&row.Description,
+			&row.Categories,
+			&row.FundingGoal,
+			&row.CurrentFunding,
+			&row.Deadline,
+			&row.Status,
+			&projectImgVar,
+			&campaignVar,
+			&row.CreatedAt,
+			&row.UpdatedAt,
+			&row.LaunchedAt,
+			&row.Creator,
+			&row.CreatorImg,
+			&row.Backers,
+			&row.ExpertsDecision,
+		)
+		if err != nil {
+			return nil, MetaData{}, err
+		}
+
+		row.ProjectImg = projectImgVar.String
+		row.Campaign = campaignVar.String
+
+		table = append(table, row)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, MetaData{}, err
+	}
+
+	metaData := calculateMetadata(totalRecords, page, pageSize)
+
+	return table, metaData, nil
+}
+
+func (m TablesModel) GetAssessedProjects(categories []string, expertID, page, pageSize int) ([]*ProjectsTable, MetaData, error) {
+	offset := (page - 1) * pageSize
+
+	query := `
+	SELECT COUNT(pr.project_id) OVER(), pr.project_id, pr.title, pr.description, pr.categories, pr.funding_goal, pr.current_funding, pr.deadline, pr.status, pr.project_img, pr.campaign, pr.created_at, pr.updated_at, pr.launched_at, u.username as creator, u.image_url, count(DISTINCT b.backer_id) as backers, pr.experts_decision
+	FROM project pr 
+	INNER JOIN user_t u ON pr.creator_id = u.user_id 
+	LEFT JOIN backing b on pr.project_id = b.project_id
+	INNER JOIN expert_review er ON pr.project_id = er.project_id AND er.expert_id = $1
+	AND (pr.categories @> $2 OR $2 = '{}')
+	GROUP BY pr.project_id, u.username, u.image_url
+	LIMIT $3 OFFSET $4
+	`
+
+	table := []*ProjectsTable{}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	args := []interface{}{expertID, pq.Array(categories), pageSize, offset}
+
+	rows, err := m.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, MetaData{}, err
+	}
+
+	totalRecords := 0
+	for rows.Next() {
+		row := &ProjectsTable{}
+		var projectImgVar sql.NullString
+		var campaignVar sql.NullString
+
+		err := rows.Scan(
+			&totalRecords,
+			&row.ID,
+			&row.Title,
+			&row.Description,
+			&row.Categories,
+			&row.FundingGoal,
+			&row.CurrentFunding,
+			&row.Deadline,
+			&row.Status,
+			&projectImgVar,
+			&campaignVar,
+			&row.CreatedAt,
+			&row.UpdatedAt,
+			&row.LaunchedAt,
+			&row.Creator,
+			&row.CreatorImg,
+			&row.Backers,
+			&row.ExpertsDecision,
 		)
 		if err != nil {
 			return nil, MetaData{}, err

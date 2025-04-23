@@ -314,7 +314,7 @@ export default function ProjectForm({ data, activeTab, onStepComplete }: Project
         </div>
         <div>
           <Label htmlFor="category" className="font-semibold">Categories:</Label>
-          <MultiSelect disableEdit={disableEdit} register={basicsForm.register} control={basicsForm.control} errors={basicsForm.formState.errors}/>
+          <MultiSelect disableEdit={disableEdit} register={basicsForm.register} control={basicsForm.control} errors={basicsForm.formState.errors} name='categories'/>
         </div>
         <Button 
           type="submit" 

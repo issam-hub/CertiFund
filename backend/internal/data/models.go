@@ -11,7 +11,10 @@ var (
 	ErrFailedOpening    = errors.New("failed to open file")
 	ErrFailedUploading  = errors.New("failed to upload the image")
 	ErrActionsForbidden = errors.New("You don't have the permission to perform this action")
+	ErrVotedTwice       = errors.New("You have already voted for this project")
 )
+
+var SupportedCategories = []string{"technology", "art", "music", "games", "film & video", "publishing & writing", "design", "food & craft", "social good", "miscellaneous"}
 
 type Models struct {
 	Projects    ProjectModel
@@ -26,6 +29,7 @@ type Models struct {
 	Tables      TablesModel
 	Disputes    DisputeModel
 	Feedback    FeedbackModel
+	Experts     ExpertsModel
 }
 
 func NewModels(db *sql.DB) Models {
@@ -42,5 +46,6 @@ func NewModels(db *sql.DB) Models {
 		Tables:      TablesModel{DB: db},
 		Disputes:    DisputeModel{DB: db},
 		Feedback:    FeedbackModel{DB: db},
+		Experts:     ExpertsModel{DB: db},
 	}
 }

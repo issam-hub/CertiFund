@@ -2,7 +2,7 @@ include .env
 
 .PHONY: run
 run: build
-	@./bin/api
+	@./bin/api && sh ~/update_expert_decisions.sh
 
 .PHONY: audit
 audit: vendor

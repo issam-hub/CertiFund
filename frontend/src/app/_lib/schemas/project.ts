@@ -9,7 +9,7 @@ export const createProjectSchema = z.object({
 })
 
 export type CreateProjectSchema = z.infer<typeof createProjectSchema>&{creator_id: string}
-export type UpdateProjectSchema = z.infer<typeof createProjectSchema>&{project_id?:string, project_img?:string, campaign?:string, status?:string, current_funding:number, creator_id:string}
+export type UpdateProjectSchema = z.infer<typeof createProjectSchema>&{project_id?:string, project_img?:string, campaign?:string, status?:string, current_funding:number, creator_id:string, experts_decision: string}
 
 export const backProjectSchema = z.object({
     amount: z.number({required_error: "* Amount must be provided", invalid_type_error:"* Amount must be a number"}),
@@ -94,3 +94,32 @@ export const reviewFormSchema = z.object({
 })
 
 export type ReviewFormSchema = z.infer<typeof reviewFormSchema>
+
+export const assessmentFormSchema = z.object({
+  vote: z.object({
+    highly_not_recommended: z.number().refine(val => val % 10 === 0, {
+      message: "Value must be a multiple of 10",
+    }),
+    not_recommended: z.number().refine(val => val % 10 === 0, {
+      message: "Value must be a multiple of 10",
+    }),
+    recommended: z.number().refine(val => val % 10 === 0, {
+      message: "Value must be a multiple of 10",
+    }),
+    highly_recommended: z.number().refine(val => val % 10 === 0, {
+      message: "Value must be a multiple of 10",
+    }),
+  }),
+  comment: z.string()
+  .min(10, "Comment must be at least 10 characters")
+  .max(500, "Comment must be less than 500 characters")
+}).superRefine((data, ctx) => {
+  if (data.vote.highly_not_recommended + data.vote.not_recommended + data.vote.recommended + data.vote.highly_recommended !== 100) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "The sum of all votes must equal 100"
+    });
+  }
+})
+
+export type AssessmentFormSchema = z.infer<typeof assessmentFormSchema>

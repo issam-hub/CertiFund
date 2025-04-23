@@ -29,6 +29,16 @@ const badgeVariants = cva(
         warning:
           "border-orange-500 text-orange-500 bg-orange-100 hover:bg-orange-200",
         outline: "text-foreground",
+        highlyNotRecommended:
+          "border-red-500 text-red-500 bg-red-100 hover:bg-red-200",
+        notRecommended:
+          "border-orange-500 text-orange-500 bg-orange-100 hover:bg-orange-200",
+        recommended:
+          "border-green-500 text-green-500 bg-green-100 hover:bg-green-200",
+        highlyRecommended:
+          "border-blue-500 text-blue-500 bg-blue-100 hover:bg-blue-200",
+        neutral:
+          "border-gray-500 text-gray-500 bg-gray-100 hover:bg-gray-200",
       },
     },
     defaultVariants: {

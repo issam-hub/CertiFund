@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import {
   flexRender,
   getCoreRowModel,
@@ -12,7 +12,7 @@ import {
   type ColumnFiltersState,
   type SortingState,
 } from "@tanstack/react-table"
-import { ArrowUpDown, ChevronDown, CirclePlus, Eye, EyeOff, Loader2, MoreHorizontal, Search } from "lucide-react"
+import { ArrowUpDown, ChevronDown, CirclePlus, Eye, EyeOff, FileText, Loader2, MoreHorizontal, Search, Upload, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
@@ -38,7 +38,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Label } from "@/components/ui/label"
-import { Metadata, User } from "@/app/_lib/types"
+import { FileWithUrl, Metadata, User } from "@/app/_lib/types"
 import Link from "next/link"
 import { format } from "date-fns"
 import { createUser, deleteUser, updateUser } from "@/app/_actions/user"
@@ -48,7 +48,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useForm } from "react-hook-form"
 import { createUserSchema, CreateUserSchema } from "@/app/_lib/schemas/auth"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import MultiSelect from "@/components/multiSelect"
+import { createClient } from "@supabase/supabase-js"
+import { supabaseServiceRoleKey, supabaseUrl } from "@/app/_lib/config"
+import { uploadFile } from "../reportButton"
+import { createExpert } from "@/app/_actions/expert"
+import EnhancedSlider from "@/components/ui/enhancedSlider"
+
+const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
 
 export function UserManagement({users, meta}: { users: User[], meta: Metadata }) {
@@ -61,6 +69,7 @@ export function UserManagement({users, meta}: { users: User[], meta: Metadata })
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [editedUser, setEditedUser] = useState<User | null>(null)
   const [showPassword, setShowPassword] = useState(false)
+  const [uploadedFile, setUploadedFile] = useState<FileWithUrl | null>(null)
 
   const {toast} = useToast()
 
@@ -244,24 +253,120 @@ export function UserManagement({users, meta}: { users: User[], meta: Metadata })
   }
 
   async function onSubmit(values: CreateUserSchema) {
-    const result = await createUser(values)
-    if(result.status) {
-      toast({
-        title: TOAST_SUCCESS_TITLE,
-        description: "User create successfully",
-        variant: "default",
-      });
-      
-    } else {
-      toast({
-        title: TOAST_ERROR_TITLE,
-        description: result.error,
-        variant: "destructive",
-      });
+    if(values.role === "expert"){
+      const result = await createExpert(values)
+      if(result.status) {
+        toast({
+          title: TOAST_SUCCESS_TITLE,
+          description: "Expert create successfully",
+          variant: "default",
+        });
+        
+      } else {
+        toast({
+          title: TOAST_ERROR_TITLE,
+          description: result.error,
+          variant: "destructive",
+        });
+      }
+    }else{
+      const result = await createUser(values)
+      if(result.status) {
+        toast({
+          title: TOAST_SUCCESS_TITLE,
+          description: "User create successfully",
+          variant: "default",
+        });
+        
+      } else {
+        toast({
+          title: TOAST_ERROR_TITLE,
+          description: result.error,
+          variant: "destructive",
+        });
+      }
     }
     form.reset()
     setIsAddDialogOpen(false)
   }
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const fileList = e.target.files
+    if (!fileList || fileList.length === 0) return
+
+    const file = fileList[0]
+
+    // Check if file exceeds 5MB
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: TOAST_ERROR_TITLE,
+        description: "File must be less than 5MB.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    // Create new file entry with uploading status
+    setUploadedFile({
+      file,
+      url: null,
+      isUploading: true
+    });
+
+    // Reset the input value to allow selecting the same file again
+    e.target.value = ""
+
+    try {
+      const url = await uploadFile(file);
+      
+      if (!url) {
+        setUploadedFile(null)
+        return
+      }
+      
+      // Update the file entry with the URL and set uploading to false
+      setUploadedFile({
+        file,
+        url,
+        isUploading: false
+      });
+      
+      // Set the URL in the form
+      form.setValue("qualification", url);
+      
+      console.log("File uploaded successfully:", url);
+    } catch (error) {
+      // Update the file entry to show upload failed
+      setUploadedFile(null);
+      
+      console.error("Error uploading file:", error);
+      toast({
+        title: "File upload failed",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    }
+  }
+
+  const removeFile = async() => {
+    if (uploadedFile) {
+      const {data, error} = await supabase.storage
+        .from('fileUploads')
+        .remove([`files/${uploadedFile.file.name}`]);
+        
+      if (error) {
+        toast({
+          title: TOAST_ERROR_TITLE,
+          description: "Error happened while deleting the file",
+          variant: "destructive"
+        })
+      }
+    }
+
+    setUploadedFile(null);
+    form.setValue("qualification", undefined);
+  }
+
 
   return (
     <div className="container mx-auto px-5 py-10">
@@ -654,7 +759,7 @@ export function UserManagement({users, meta}: { users: User[], meta: Metadata })
         </Dialog>
 
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogContent className="sm:max-w-[450px]">
+          <DialogContent className="sm:max-w-[500px] max-h-[800px] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Create User</DialogTitle>
               <DialogDescription>
@@ -672,9 +777,7 @@ export function UserManagement({users, meta}: { users: User[], meta: Metadata })
                   name="username"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="font-semibold">
-                        Username:
-                      </FormLabel>
+                      <FormLabel className="font-semibold">Username:</FormLabel>
                       <FormControl>
                         <Input placeholder="example user" {...field} />
                       </FormControl>
@@ -742,18 +845,143 @@ export function UserManagement({users, meta}: { users: User[], meta: Metadata })
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="admin">
-                            Admin
-                          </SelectItem>
-                          <SelectItem value="reviewer">
-                            Reviewer
-                          </SelectItem>
+                          <SelectItem value="admin">Admin</SelectItem>
+                          <SelectItem value="reviewer">Reviewer</SelectItem>
+                          <SelectItem value="expert">Expert</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+                {form.watch("role") === "expert" && (
+                  <>
+                    <div className="space-y-2">
+                      <Label className="font-semibold">Fields:</Label>
+                      <MultiSelect
+                        register={form.register}
+                        control={form.control}
+                        errors={form.formState.errors}
+                        name="expertise_fields"
+                      />
+                    </div>
+                    <FormField
+                      control={form.control}
+                      name="qualification"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="font-semibold">
+                            Qualification:
+                          </FormLabel>
+                          <FormControl>
+                            <div className="space-y-3">
+                              <div className="flex items-center gap-2">
+                                <Input
+                                  type="file"
+                                  className="hidden"
+                                  id="file-upload"
+                                  onChange={handleFileChange}
+                                />
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  onClick={() =>
+                                    document
+                                      .getElementById("file-upload")
+                                      ?.click()
+                                  }
+                                  disabled={
+                                    !!uploadedFile && !uploadedFile.isUploading
+                                  }
+                                >
+                                  <Upload className="h-4 w-4 mr-2" />
+                                  {uploadedFile
+                                    ? "Replace File"
+                                    : "Upload File"}
+                                </Button>
+                              </div>
+
+                              {uploadedFile && (
+                                <div className="flex items-center justify-between p-2 bg-gray-50 rounded-md">
+                                  <div className="flex items-center gap-2 text-sm">
+                                    <FileText className="h-4 w-4 text-gray-500" />
+                                    <span className="truncate max-w-[200px]">
+                                      {uploadedFile.file.name}
+                                    </span>
+                                    <span className="text-gray-400 text-xs">
+                                      (
+                                      {(uploadedFile.file.size / 1024).toFixed(
+                                        0
+                                      )}{" "}
+                                      KB)
+                                    </span>
+                                    {uploadedFile.isUploading && (
+                                      <Loader2 className="h-3 w-3 animate-spin text-gray-500 ml-1" />
+                                    )}
+                                  </div>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-6 w-6 p-0 text-gray-400 hover:text-red-500"
+                                    onClick={removeFile}
+                                    disabled={uploadedFile.isUploading}
+                                  >
+                                    <X className="h-4 w-4" />
+                                    <span className="sr-only">Remove file</span>
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
+                          </FormControl>
+                          <FormDescription>
+                            Upload a file (max 5MB)
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="expertise_level"
+                      render={({field: {value, onChange}})=>(
+                        <FormItem>
+                          <FormLabel>Expertise level:</FormLabel>
+                          <FormControl>
+                            <EnhancedSlider defaultValue={[value as number]} onValueChange={(value) => onChange(value[0])}/>
+                          </FormControl>
+                          <FormDescription>
+                            Select the expert's expertise level, 0% to 100%. For an expert with multiple disciplines, put the average value.
+                          </FormDescription>
+                          <FormMessage/>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="is_active"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="font-semibold">Is Available:</FormLabel>
+                          <Select
+                            onValueChange={field.onChange}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select a status" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="true">True</SelectItem>
+                              <SelectItem value="false">False</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </>
+                )}
               </form>
             </Form>
             <DialogFooter>
@@ -771,9 +999,7 @@ export function UserManagement({users, meta}: { users: User[], meta: Metadata })
                 {form.formState.isSubmitting ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
-                  <>
-                    Create
-                  </>
+                  <>Create</>
                 )}
               </Button>
             </DialogFooter>

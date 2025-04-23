@@ -95,6 +95,7 @@ export interface Project {
   creator: string
   creator_img: string
   is_suspicious: boolean
+  experts_decision: string
 }
 
 export interface Metadata {
@@ -153,3 +154,5 @@ export type ProfileType = {
     backed_projects:number
 }
 }
+
+export type ExpertsDecisionType = "highlyNotRecommended" | "notRecommended" | "recommended" | "highlyRecommended"

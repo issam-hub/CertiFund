@@ -13,7 +13,7 @@ export default function Header({
   const pathname = usePathname()
   return (
     <>
-        <header className={`py-4 border-b border-slate-100 grid grid-cols-3 items-center px-4 sm:px-10 ${(pathname.includes("admin") || pathname.includes("reviewer")) && "hidden"}`}>
+        <header className={`py-4 border-b border-slate-100 grid grid-cols-3 items-center px-4 sm:px-10 ${(pathname.includes("admin") || pathname.includes("reviewer") || pathname.includes("expert")) && "hidden"}`}>
             <div className="place-self-start self-center"></div>
             <Link href={"/"} className="mx-auto"><Image src={"/logo.svg"} width={73} height={65} alt="logo" className="cursor-pointer"/></Link>
             <ProfileHeader/>

@@ -9,7 +9,7 @@ import React from 'react'
 
 export default function DashHeader() {
     const pathname = usePathname()
-    const realPath = pathname.split(/(\/admin|\/reviewer)/)[2]
+    const realPath = pathname.split(/(\/admin|\/reviewer|\/expert)/)[2]
     const user = useAtomValue(userAtom)
   return (
     <header className={`flex h-14 shrink-0 items-center gap-2 border-b font-[family-name:--font-montserrat] ${pathname.includes("login") && "hidden"}`}>
