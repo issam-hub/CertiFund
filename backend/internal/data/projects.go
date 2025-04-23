@@ -13,23 +13,24 @@ import (
 )
 
 type Project struct {
-	ID             int            `json:"project_id"`
-	Title          string         `json:"title"`
-	Description    string         `json:"description"`
-	FundingGoal    float64        `json:"funding_goal"`
-	CurrentFunding float64        `json:"current_funding"`
-	Categories     pq.StringArray `json:"categories"`
-	Deadline       time.Time      `json:"deadline"`
-	Status         string         `json:"status"`
-	ProjectImg     string         `json:"project_img"`
-	Campaign       string         `json:"campaign"`
-	CreatedAt      time.Time      `json:"-"`
-	UpdatedAt      time.Time      `json:"-"`
-	LaunchedAt     time.Time      `json:"launched_at"`
-	Version        int32          `json:"version"`
-	CreatorID      int            `json:"creator_id"`
-	Rewards        []Reward       `json:"rewards,omitempty"`
-	IsSuspicious   bool           `json:"is_suspicious"`
+	ID              int            `json:"project_id"`
+	Title           string         `json:"title"`
+	Description     string         `json:"description"`
+	FundingGoal     float64        `json:"funding_goal"`
+	CurrentFunding  float64        `json:"current_funding"`
+	Categories      pq.StringArray `json:"categories"`
+	Deadline        time.Time      `json:"deadline"`
+	Status          string         `json:"status"`
+	ProjectImg      string         `json:"project_img"`
+	Campaign        string         `json:"campaign"`
+	CreatedAt       time.Time      `json:"-"`
+	UpdatedAt       time.Time      `json:"-"`
+	LaunchedAt      time.Time      `json:"launched_at"`
+	Version         int32          `json:"version"`
+	CreatorID       int            `json:"creator_id"`
+	Rewards         []Reward       `json:"rewards,omitempty"`
+	IsSuspicious    bool           `json:"is_suspicious"`
+	ExpertsDecision string         `json:"experts_decision"`
 }
 
 type Review struct {
@@ -46,7 +47,6 @@ type ProjectModel struct {
 }
 
 func ValidateProject(v *validator.Validator, project *Project) {
-	categories := []string{"technology", "art", "music", "games", "film & video", "publishing & writing", "design", "food & craft", "social good", "miscellaneous"}
 
 	v.Check(project.Title != "", "title", "Title must be provided")
 	v.Check(len(project.Title) <= 100, "title", "Title should be less than or equal to 100 character")
@@ -66,7 +66,7 @@ func ValidateProject(v *validator.Validator, project *Project) {
 	v.Check((project.Deadline.Sub(time.Now()).Hours()/24/30) <= 4, "deadline", "Deadline should not exceed 4 months since the date of today")
 
 	for _, category := range project.Categories {
-		v.Check(validator.In(category, categories...), "categories", "Invalid category")
+		v.Check(validator.In(category, SupportedCategories...), "categories", "Invalid category")
 	}
 }
 
@@ -91,7 +91,7 @@ func (m ProjectModel) GetAll(title string, categories []string, filters Filter) 
 	offset := (filters.Page - 1) * filters.PageSize
 
 	query := fmt.Sprintf(`
-	SELECT COUNT(*) OVER(), project_id, title, description, categories, funding_goal, current_funding, deadline, status, project_img, campaign, created_at, updated_at, launched_at, version, creator_id
+	SELECT COUNT(*) OVER(), project_id, title, description, categories, funding_goal, current_funding, deadline, status, project_img, campaign, created_at, updated_at, launched_at, version, creator_id, experts_decision
 	FROM project
 	WHERE (to_tsvector('simple', title) @@ plainto_tsquery('simple', $1) OR $1='') 
 	AND (categories && $2 OR $2 = '{}')
@@ -135,6 +135,7 @@ func (m ProjectModel) GetAll(title string, categories []string, filters Filter) 
 			&project.LaunchedAt,
 			&project.Version,
 			&project.CreatorID,
+			&project.ExpertsDecision,
 		)
 		if err != nil {
 			return nil, MetaData{}, err
@@ -183,7 +184,7 @@ func (m ProjectModel) Get(id int) (*Project, error) {
 	var project Project
 	var projectImgVar sql.NullString
 	var campaignVar sql.NullString
-	query := `SELECT project_id, title, description, categories, funding_goal, current_funding, deadline, status, project_img, campaign, created_at, updated_at, launched_at, version, creator_id FROM project WHERE project_id = $1`
+	query := `SELECT project_id, title, description, categories, funding_goal, current_funding, deadline, status, project_img, campaign, created_at, updated_at, launched_at, version, creator_id, experts_decision FROM project WHERE project_id = $1`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -204,6 +205,7 @@ func (m ProjectModel) Get(id int) (*Project, error) {
 		&project.LaunchedAt,
 		&project.Version,
 		&project.CreatorID,
+		&project.ExpertsDecision,
 	)
 	if err != nil {
 		switch {
@@ -226,7 +228,7 @@ func (m ProjectModel) GetPublic(id int) (*Project, error) {
 	var project Project
 	var projectImgVar sql.NullString
 	var campaignVar sql.NullString
-	query := `SELECT project_id, title, description, categories, funding_goal, current_funding, deadline, status, project_img, campaign, created_at, updated_at, launched_at, version, creator_id FROM project WHERE project_id = $1 AND (status = 'Live' OR status = 'Completed')`
+	query := `SELECT project_id, title, description, categories, funding_goal, current_funding, deadline, status, project_img, campaign, created_at, updated_at, launched_at, version, creator_id, experts_decision FROM project WHERE project_id = $1 AND (status = 'Live' OR status = 'Completed')`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -247,6 +249,7 @@ func (m ProjectModel) GetPublic(id int) (*Project, error) {
 		&project.LaunchedAt,
 		&project.Version,
 		&project.CreatorID,
+		&project.ExpertsDecision,
 	)
 	if err != nil {
 		switch {
@@ -352,7 +355,7 @@ func (m ProjectModel) ProjectOwnership(projectID, creatorID int) (bool, error) {
 
 func (m ProjectModel) GetAllByCreator(creatorID int) ([]*Project, error) {
 	query := `
-		SELECT project_id, title, description, categories, funding_goal, current_funding, deadline, status, project_img, campaign, created_at, updated_at, launched_at, version, creator_id
+		SELECT project_id, title, description, categories, funding_goal, current_funding, deadline, status, project_img, campaign, created_at, updated_at, launched_at, version, creator_id, experts_decision
 		FROM project WHERE creator_id = $1
 	`
 
@@ -387,6 +390,7 @@ func (m ProjectModel) GetAllByCreator(creatorID int) ([]*Project, error) {
 			&project.LaunchedAt,
 			&project.Version,
 			&project.CreatorID,
+			&project.ExpertsDecision,
 		)
 		if err != nil {
 			return nil, err
@@ -406,7 +410,7 @@ func (m ProjectModel) GetAllByCreator(creatorID int) ([]*Project, error) {
 
 func (m ProjectModel) GetAllByCreatorPublic(creatorID int) ([]*Project, error) {
 	query := `
-		SELECT project_id, title, description, categories, funding_goal, current_funding, deadline, status, project_img, campaign, created_at, updated_at, launched_at, version, creator_id
+		SELECT project_id, title, description, categories, funding_goal, current_funding, deadline, status, project_img, campaign, created_at, updated_at, launched_at, version, creator_id, experts_decision
 		FROM project WHERE creator_id = $1 AND (status = 'Live' OR status = 'Completed')
 	`
 
@@ -441,6 +445,7 @@ func (m ProjectModel) GetAllByCreatorPublic(creatorID int) ([]*Project, error) {
 			&project.LaunchedAt,
 			&project.Version,
 			&project.CreatorID,
+			&project.ExpertsDecision,
 		)
 		if err != nil {
 			return nil, err
@@ -460,7 +465,7 @@ func (m ProjectModel) GetAllByCreatorPublic(creatorID int) ([]*Project, error) {
 
 func (m ProjectModel) GetAllByBacker(backerID int) ([]*Project, error) {
 	query := `
-		SELECT pr.project_id, pr.title, pr.description, pr.categories, pr.funding_goal, pr.current_funding, pr.deadline, pr.status, pr.project_img, pr.campaign, pr.created_at, pr.updated_at, pr.launched_at, pr.version, pr.creator_id 
+		SELECT pr.project_id, pr.title, pr.description, pr.categories, pr.funding_goal, pr.current_funding, pr.deadline, pr.status, pr.project_img, pr.campaign, pr.created_at, pr.updated_at, pr.launched_at, pr.version, pr.creator_id, pr.experts_decision 
 		FROM project pr INNER JOIN backing b ON pr.project_id = b.project_id WHERE b.backer_id = $1
 	`
 
@@ -495,6 +500,7 @@ func (m ProjectModel) GetAllByBacker(backerID int) ([]*Project, error) {
 			&project.LaunchedAt,
 			&project.Version,
 			&project.CreatorID,
+			&project.ExpertsDecision,
 		)
 		if err != nil {
 			return nil, err
@@ -514,7 +520,7 @@ func (m ProjectModel) GetAllByBacker(backerID int) ([]*Project, error) {
 
 func (m ProjectModel) GetAllSavedByCurrentUser(userID int) ([]*Project, error) {
 	query := `
-	SELECT pr.project_id, pr.title, pr.description, pr.categories, pr.funding_goal, pr.current_funding, pr.deadline, pr.status, pr.project_img, pr.campaign, pr.created_at, pr.updated_at, pr.launched_at, pr.version, pr.creator_id 
+	SELECT pr.project_id, pr.title, pr.description, pr.categories, pr.funding_goal, pr.current_funding, pr.deadline, pr.status, pr.project_img, pr.campaign, pr.created_at, pr.updated_at, pr.launched_at, pr.version, pr.creator_id, pr.experts_decision 
 	FROM project pr INNER JOIN save s ON pr.project_id = s.project_id WHERE s.user_id = $1
 `
 
@@ -549,6 +555,7 @@ func (m ProjectModel) GetAllSavedByCurrentUser(userID int) ([]*Project, error) {
 			&project.LaunchedAt,
 			&project.Version,
 			&project.CreatorID,
+			&project.ExpertsDecision,
 		)
 		if err != nil {
 			return nil, err
@@ -621,7 +628,7 @@ func (m ProjectModel) GetAllByReviewer(reviewerID, page, pageSize int) ([]*Proje
 	offset := (page - 1) * pageSize
 
 	query := `
-		SELECT COUNT(pr.project_id) OVER(), pr.project_id, pr.title, pr.description, pr.categories, pr.funding_goal, pr.current_funding, pr.deadline, pr.status, pr.project_img, pr.campaign, pr.created_at, pr.updated_at, pr.launched_at, pr.version, pr.creator_id, pr.is_suspicious
+		SELECT COUNT(pr.project_id) OVER(), pr.project_id, pr.title, pr.description, pr.categories, pr.funding_goal, pr.current_funding, pr.deadline, pr.status, pr.project_img, pr.campaign, pr.created_at, pr.updated_at, pr.launched_at, pr.version, pr.creator_id, pr.is_suspicious, pr.experts_decision
 		FROM project pr INNER JOIN project_review pre ON pr.project_id = pre.project_id WHERE pre.reviewer_id = $1 AND pre.status <> 'Flagged'
 		LIMIT $2 OFFSET $3
 	`
@@ -662,6 +669,7 @@ func (m ProjectModel) GetAllByReviewer(reviewerID, page, pageSize int) ([]*Proje
 			&project.Version,
 			&project.CreatorID,
 			&project.IsSuspicious,
+			&project.ExpertsDecision,
 		)
 		if err != nil {
 			return nil, MetaData{}, err
@@ -685,7 +693,7 @@ func (m ProjectModel) GetAllFlaggedByReviewer(reviewerID, page, pageSize int) ([
 	offset := (page - 1) * pageSize
 
 	query := `
-		SELECT COUNT(pr.project_id) OVER(), pr.project_id, pr.title, pr.description, pr.categories, pr.funding_goal, pr.current_funding, pr.deadline, pr.status, pr.project_img, pr.campaign, pr.created_at, pr.updated_at, pr.launched_at, pr.version, pr.creator_id, pr.is_suspicious
+		SELECT COUNT(pr.project_id) OVER(), pr.project_id, pr.title, pr.description, pr.categories, pr.funding_goal, pr.current_funding, pr.deadline, pr.status, pr.project_img, pr.campaign, pr.created_at, pr.updated_at, pr.launched_at, pr.version, pr.creator_id, pr.is_suspicious, pr.experts_decision
 		FROM project pr INNER JOIN project_review pre ON pr.project_id = pre.project_id WHERE pre.reviewer_id = $1 AND pre.status = 'Flagged'
 		LIMIT $2 OFFSET $3
 	`
@@ -726,6 +734,7 @@ func (m ProjectModel) GetAllFlaggedByReviewer(reviewerID, page, pageSize int) ([
 			&project.Version,
 			&project.CreatorID,
 			&project.IsSuspicious,
+			&project.ExpertsDecision,
 		)
 		if err != nil {
 			return nil, MetaData{}, err

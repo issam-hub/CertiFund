@@ -35,7 +35,7 @@ export default function StepOne({register, control, errors}: StepOneProps) {
       </div>
       <div>
         <Label htmlFor="category" className="font-semibold">Categories:</Label>
-        <MultiSelect register={register} control={control} errors={errors}/>
+        <MultiSelect register={register} control={control} errors={errors} name="categories"/>
         {/* <Controller
           control={control}
           {...register("category")}

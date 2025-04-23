@@ -1,0 +1,10 @@
+ALTER TABLE project DROP COLUMN IF EXISTS approved_at;
+ALTER TABLE project DROP COLUMN IF EXISTS experts_decision;
+DROP TABLE IF EXISTS experts_decision;
+DROP TABLE IF EXISTS expert_review;
+DROP TABLE IF EXISTS expert;
+DROP FUNCTION IF EXISTS calculate_expert_decision(BIGINT);
+DROP TRIGGER IF EXISTS track_project_approval ON project;
+DROP FUNCTION IF EXISTS set_project_approved_timestamp();
+DROP FUNCTION IF EXISTS update_experts_decisions();
+DROP TYPE IF EXISTS expert_review_decision;

@@ -12,7 +12,7 @@ import {
   type ColumnFiltersState,
   type SortingState,
 } from "@tanstack/react-table"
-import { ArrowUpDown, Check, CheckCheck, ChevronDown, CircleDot, Loader2, MoreHorizontal, NotepadTextDashed, Radio, Search, Trash2, X } from "lucide-react"
+import { ArrowUpDown, Check, CheckCheck, ChevronDown, CircleDot, CircleMinus, CircleX, Loader2, MoreHorizontal, NotepadTextDashed, Radio, Search, Sparkle, Star, ThumbsDown, ThumbsUp, Trash2, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
@@ -39,23 +39,26 @@ import { format } from "date-fns"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Metadata, Project, ProjectStatus, Reward } from "@/app/_lib/types"
+import { ExpertsDecisionType, Metadata, Project, ProjectStatus, Reward } from "@/app/_lib/types"
 import Link from "next/link"
 import Image from "next/image"
 import { BLUR_IMAGE_URL, TOAST_ERROR_TITLE, TOAST_SUCCESS_TITLE } from "@/app/_lib/constants"
-import { deleteProject, getRewards, handleRewards, updateProject } from "@/app/_actions/projects"
+import { assessProject, deleteProject, getRewards, handleRewards, updateProject } from "@/app/_actions/projects"
 import { toast, useToast } from "@/hooks/use-toast"
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel'
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useForm } from "react-hook-form"
-import { reviewFormSchema, ReviewFormSchema } from "@/app/_lib/schemas/project"
+import { assessmentFormSchema, AssessmentFormSchema, reviewFormSchema, ReviewFormSchema } from "@/app/_lib/schemas/project"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { reviewProject } from "@/app/_actions/dashboard"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Textarea } from "@/components/ui/textarea"
 import { useAtomValue } from "jotai"
 import { userAtom } from "@/app/_store/shared"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import EnhancedSlider from "@/components/ui/enhancedSlider"
+import { toCamelCase } from "@/app/_lib/utils"
 
 
 export function ProjectManagement({projects,meta}:{projects: Project[], meta: Metadata}) {
@@ -66,6 +69,7 @@ export function ProjectManagement({projects,meta}:{projects: Project[], meta: Me
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [isFlagDialogOpen, setIsFlagDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+  const [isAssessDialogOpen, setIsAssessDialogOpen] = useState(false)
   const [rewards, setRewards] = useState<Reward[] |undefined>([])
   const {toast} = useToast()
   const user = useAtomValue(userAtom)
@@ -88,7 +92,7 @@ export function ProjectManagement({projects,meta}:{projects: Project[], meta: Me
     }
   },[selectedProject])
 
-  const columns: ColumnDef<Project>[] = [
+  let columns: ColumnDef<Project>[] = [
     {
       id: "select",
       header: ({ table }) => (
@@ -170,9 +174,6 @@ export function ProjectManagement({projects,meta}:{projects: Project[], meta: Me
       },
       cell: ({ row }) => {
         const amount = Number(row.getValue("current_funding"))/100
-        const goal = Number(row.original.funding_goal)
-        const percentage = Math.round((amount / goal) * 100)
-
         return (
           <div className="flex flex-col gap-1">
             <div className="font-medium">{amount.toLocaleString()}DA</div>
@@ -221,6 +222,14 @@ export function ProjectManagement({projects,meta}:{projects: Project[], meta: Me
       },
     },
     {
+      accessorKey:"experts_decision",
+      header: "Experts Decision",
+      cell: ({row})=>{
+        const value = row.getValue("experts_decision") as string
+        return <Badge variant={toCamelCase(value) as ExpertsDecisionType}>{value}</Badge>
+      }
+    },
+    {
         id: "actions",
         enableHiding: false,
         cell: ({ row }) => {
@@ -240,15 +249,19 @@ export function ProjectManagement({projects,meta}:{projects: Project[], meta: Me
                 >
                   <Link href={`/projects/discover/${project.project_id}`}>Access public page</Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={(e)=>{
-                    e.stopPropagation()
-                    setSelectedProject(project)
-                    setIsEditDialogOpen(true)
-                  }}
-                >
-                  Review project
-                </DropdownMenuItem>
+                {
+                  user?.role !== "expert"  && (
+                  <DropdownMenuItem
+                    onClick={(e)=>{
+                      e.stopPropagation()
+                      setSelectedProject(project)
+                      setIsEditDialogOpen(true)
+                    }}
+                  >
+                    Review project
+                  </DropdownMenuItem>
+                  )
+                }
                 {
                   user?.role === "reviewer" && (
                   <DropdownMenuItem
@@ -262,22 +275,41 @@ export function ProjectManagement({projects,meta}:{projects: Project[], meta: Me
                   </DropdownMenuItem>
                   )
                 }
-                <DropdownMenuItem
-                  className="text-destructive focus:text-destructive"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setSelectedProject(project)
-                    setIsDeleteDialogOpen(true)
-                  }}
-                >
-                  Delete project
-                </DropdownMenuItem>
+                {
+                  user?.role !== "expert" && (
+                  <DropdownMenuItem
+                    className="text-destructive focus:text-destructive"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setSelectedProject(project)
+                      setIsDeleteDialogOpen(true)
+                    }}
+                  >
+                    Delete project
+                  </DropdownMenuItem>
+                  )
+                } 
+                {
+                  user?.role === "expert" && (
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setSelectedProject(project)
+                      setIsAssessDialogOpen(true)
+                    }}
+                  >
+                    Assess project
+                  </DropdownMenuItem>
+                  )
+                }
               </DropdownMenuContent>
             </DropdownMenu>
           )
         },
       },
   ]
+
+  columns = columns.filter((column)=> user?.role === "expert" ? column.header !== "Is suspicious" : column)
 
   const table = useReactTable({
     data: projects || [],
@@ -307,6 +339,10 @@ export function ProjectManagement({projects,meta}:{projects: Project[], meta: Me
     },
   })
 
+  const form2 = useForm<AssessmentFormSchema>({
+    resolver: zodResolver(assessmentFormSchema),
+  })
+
   async function onSubmit(data: ReviewFormSchema){
     const reviewResult = await reviewProject(data, Number(selectedProject?.project_id))
     if (reviewResult.status){
@@ -334,6 +370,25 @@ export function ProjectManagement({projects,meta}:{projects: Project[], meta: Me
     setIsEditDialogOpen(false)
   }
 
+  async function onSubmit2(data: AssessmentFormSchema){
+    const reviewResult = await assessProject(data, Number(selectedProject?.project_id))
+    if (reviewResult.status){
+      toast({
+        title: TOAST_SUCCESS_TITLE,
+        description: "Project Assessed successfully",
+      })
+      form2.reset()
+    }else{
+      toast({
+        title: TOAST_ERROR_TITLE,
+        description: reviewResult.error,
+        variant:"destructive"
+      })
+    }
+    
+    setIsAssessDialogOpen(false)
+  }
+
   
 
   return (
@@ -341,7 +396,7 @@ export function ProjectManagement({projects,meta}:{projects: Project[], meta: Me
       <div className="space-y-4">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-2xl font-bold tracking-tight">
-            Project Management
+            Project {user?.role === "expert" ? "Assessement" : "Management"}
           </h2>
           <div className="flex items-center gap-2">
             <div className="relative w-full sm:w-64">
@@ -733,39 +788,42 @@ export function ProjectManagement({projects,meta}:{projects: Project[], meta: Me
                                 </div>
                               </CardContent>
                             </Card>
-                            <Button
-                              onClick={async () => {
-                                setRewards(
-                                  rewards.filter(
-                                    (reward2, index2) =>
-                                      rewards[index2] !== rewards[index]
-                                  )
-                                );
-                                const result = await handleRewards(
-                                  { rewards: rewards },
-                                  (selectedProject?.project_id).toString(),
-                                  "update"
-                                );
-                                if (result.status) {
-                                  toast({
-                                    title: TOAST_SUCCESS_TITLE,
-                                    description: "Reward deleted successfully",
-                                    variant: "default",
-                                  });
-                                } else {
-                                  toast({
-                                    title: TOAST_ERROR_TITLE,
-                                    description: result.error,
-                                    variant: "destructive",
-                                  });
-                                }
-                              }}
-                              variant="ghost"
-                              className="p-2 absolute bottom-2 right-2 bg-white border border-slate-200"
-                            >
-                              <Trash2 className="text-red-500 h-7 w-7" />
-                              <span className="sr-only">delete reward</span>
-                            </Button>
+                            {user?.role !== "expert" && (
+                              <Button
+                                onClick={async () => {
+                                  setRewards(
+                                    rewards.filter(
+                                      (reward2, index2) =>
+                                        rewards[index2] !== rewards[index]
+                                    )
+                                  );
+                                  const result = await handleRewards(
+                                    { rewards: rewards },
+                                    (selectedProject?.project_id).toString(),
+                                    "update"
+                                  );
+                                  if (result.status) {
+                                    toast({
+                                      title: TOAST_SUCCESS_TITLE,
+                                      description:
+                                        "Reward deleted successfully",
+                                      variant: "default",
+                                    });
+                                  } else {
+                                    toast({
+                                      title: TOAST_ERROR_TITLE,
+                                      description: result.error,
+                                      variant: "destructive",
+                                    });
+                                  }
+                                }}
+                                variant="ghost"
+                                className="p-2 absolute bottom-2 right-2 bg-white border border-slate-200"
+                              >
+                                <Trash2 className="text-red-500 h-7 w-7" />
+                                <span className="sr-only">delete reward</span>
+                              </Button>
+                            )}
                           </CarouselItem>
                         ))}
                       </CarouselContent>
@@ -787,193 +845,339 @@ export function ProjectManagement({projects,meta}:{projects: Project[], meta: Me
         </Dialog>
 
         {/* Delete Confirmation Dialog */}
-        <Dialog open={isFlagDialogOpen} onOpenChange={setIsFlagDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Confirm Flagging</DialogTitle>
-              <DialogDescription>
-                Are you sure you want to flag this project as suspicious?
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setIsFlagDialogOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                className="bg-orange-400 hover:bg-orange-500 text-white"
-                onClick={async () => {
-                  const reviewResult = await reviewProject({status:"Flagged", feedback:""}, Number(selectedProject?.project_id))
-                  if (!reviewResult.status){
-                    toast({
-                      title: TOAST_ERROR_TITLE,
-                      description: reviewResult.error,
-                      variant:"destructive"
-                    })
-                  }
+        {user?.role !== "expert" && (
+          <>
+            <Dialog open={isFlagDialogOpen} onOpenChange={setIsFlagDialogOpen}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Confirm Flagging</DialogTitle>
+                  <DialogDescription>
+                    Are you sure you want to flag this project as suspicious?
+                  </DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsFlagDialogOpen(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    className="bg-orange-400 hover:bg-orange-500 text-white"
+                    onClick={async () => {
+                      const reviewResult = await reviewProject(
+                        { status: "Flagged", feedback: "" },
+                        Number(selectedProject?.project_id)
+                      );
+                      if (!reviewResult.status) {
+                        toast({
+                          title: TOAST_ERROR_TITLE,
+                          description: reviewResult.error,
+                          variant: "destructive",
+                        });
+                      }
 
-                  const result = await updateProject(
-                    { is_suspicious: true },
-                    (selectedProject?.project_id)?.toString() as string
-                  );
-                  if (result.status) {
-                    toast({
-                      title: TOAST_SUCCESS_TITLE,
-                      description: "Project flagged successfully",
-                      variant: "default",
-                    });
-                    setIsFlagDialogOpen(false)
-                  } else {
-                    toast({
-                      title: TOAST_ERROR_TITLE,
-                      description: result.error,
-                      variant: "destructive",
-                    });
-                  }
-                }}
-              >
-                Flag
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-        <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Confirm Deletion</DialogTitle>
-              <DialogDescription>
-                Are you sure you want to delete this project? This action cannot
-                be undone.
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setIsDeleteDialogOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={async () => {
-                  // Handle deletion logic here
-                  const result = await deleteProject(
-                    selectedProject?.project_id?.toString() as string
-                  );
-                  if (result.status) {
-                    toast({
-                      title: TOAST_SUCCESS_TITLE,
-                      description: "The project has been deleted successfully.",
-                      variant: "default",
-                    });
-                    setIsDeleteDialogOpen(false);
-                  } else {
-                    toast({
-                      title: TOAST_ERROR_TITLE,
-                      description: result.error,
-                      variant: "destructive",
-                    });
-                  }
-                }}
-              >
-                Delete
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+                      const result = await updateProject(
+                        { is_suspicious: true },
+                        selectedProject?.project_id?.toString() as string
+                      );
+                      if (result.status) {
+                        toast({
+                          title: TOAST_SUCCESS_TITLE,
+                          description: "Project flagged successfully",
+                          variant: "default",
+                        });
+                        setIsFlagDialogOpen(false);
+                      } else {
+                        toast({
+                          title: TOAST_ERROR_TITLE,
+                          description: result.error,
+                          variant: "destructive",
+                        });
+                      }
+                    }}
+                  >
+                    Flag
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+            <Dialog
+              open={isDeleteDialogOpen}
+              onOpenChange={setIsDeleteDialogOpen}
+            >
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Confirm Deletion</DialogTitle>
+                  <DialogDescription>
+                    Are you sure you want to delete this project? This action
+                    cannot be undone.
+                  </DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsDeleteDialogOpen(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={async () => {
+                      // Handle deletion logic here
+                      const result = await deleteProject(
+                        selectedProject?.project_id?.toString() as string
+                      );
+                      if (result.status) {
+                        toast({
+                          title: TOAST_SUCCESS_TITLE,
+                          description:
+                            "The project has been deleted successfully.",
+                          variant: "default",
+                        });
+                        setIsDeleteDialogOpen(false);
+                      } else {
+                        toast({
+                          title: TOAST_ERROR_TITLE,
+                          description: result.error,
+                          variant: "destructive",
+                        });
+                      }
+                    }}
+                  >
+                    Delete
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>Review project</DialogTitle>
+                  <DialogDescription>
+                    Review this project submission and decide whether to approve
+                    or reject.
+                  </DialogDescription>
+                </DialogHeader>
+                <Form {...form}>
+                  <form
+                    id="review-project-form"
+                    onSubmit={form.handleSubmit(onSubmit)}
+                    className="space-y-4 py-4"
+                  >
+                    <FormItem>
+                      <FormLabel htmlFor="status" className="font-semibold">
+                        Decision:
+                      </FormLabel>
+                      <FormField
+                        control={form.control}
+                        name="status"
+                        render={({ field }) => (
+                          <FormItem>
+                            <Select onValueChange={field.onChange}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select a decision" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value={"Approved"}>
+                                  Approve
+                                </SelectItem>
+                                <SelectItem value={"Rejected"}>
+                                  Reject
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </FormItem>
 
-        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>Review project</DialogTitle>
-              <DialogDescription>
-                Review this project submission and decide whether to approve or
-                reject.
-              </DialogDescription>
-            </DialogHeader>
-            <Form {...form}>
-              <form
-                id="review-project-form"
-                onSubmit={form.handleSubmit(onSubmit)}
-                className="space-y-4 py-4"
-              >
-                <FormItem>
-                  <FormLabel htmlFor="status" className="font-semibold">
-                    Decision:
-                  </FormLabel>
+                    <FormField
+                      control={form.control}
+                      name="feedback"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="font-semibold">
+                            Feedback:
+                          </FormLabel>
+                          <FormControl>
+                            <Textarea
+                              placeholder="Please provide details about your decision..."
+                              className="min-h-[120px]"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </form>
+                </Form>
+                <DialogFooter>
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsEditDialogOpen(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    form="review-project-form"
+                    className="bg-accentColor text-white hover:bg-secondaryColor"
+                    disabled={form.formState.isSubmitting}
+                  >
+                    {form.formState.isSubmitting ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <>Save changes</>
+                    )}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </>
+        )}
+        {user?.role === "expert" && (
+          <Dialog
+            open={isAssessDialogOpen}
+            onOpenChange={setIsAssessDialogOpen}
+          >
+            <DialogContent className="sm:max-w-[500px]">
+              <DialogHeader>
+                <DialogTitle>Assess project</DialogTitle>
+                <DialogDescription>
+                  Assess this project and provide your expert recommendation
+                  level.
+                </DialogDescription>
+              </DialogHeader>
+              <Form {...form2}>
+                <form
+                  id="review-project-form"
+                  onSubmit={form2.handleSubmit(onSubmit2)}
+                  className="space-y-4 py-4"
+                >
+                  <FormItem>
+                    <FormLabel className="font-semibold">
+                      Vote:
+                    </FormLabel>
+                    <div className="space-y-2">
+                      <FormField
+                        control={form2.control}
+                        name="vote.highly_recommended"
+                        render={({field: {value, onChange}})=>(
+                          <FormItem>
+                            <FormLabel>
+                              <div className="flex items-center gap-1.5">
+                                <Sparkle className="h-4 w-4 text-yellow-500" />
+                                <span className="font-medium">Highly recommended</span>
+                              </div>
+                            </FormLabel>
+                            <FormControl>
+                              <EnhancedSlider defaultValue={[value]} onValueChange={(value) => onChange(value[0])}/>
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form2.control}
+                        name="vote.recommended"
+                        render={({field: {value, onChange}})=>(
+                          <FormItem>
+                            <FormLabel>
+                              <div className="flex items-center gap-1.5">
+                                <ThumbsUp className="h-4 w-4 text-green-500" />
+                                <span className="font-medium">Recommended</span>
+                              </div>
+                            </FormLabel>
+                            <FormControl>
+                              <EnhancedSlider defaultValue={[value]} onValueChange={(value) => onChange(value[0])}/>
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form2.control}
+                        name="vote.not_recommended"
+                        render={({field: {value, onChange}})=>(
+                          <FormItem>
+                            <FormLabel>
+                              <div className="flex items-center gap-1.5">
+                                <ThumbsDown className="h-4 w-4 text-orange-500" />
+                                <span className="font-medium">Not recommended</span>
+                              </div>
+                            </FormLabel>
+                            <FormControl>
+                              <EnhancedSlider defaultValue={[value]} onValueChange={(value) => onChange(value[0])}/>
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form2.control}
+                        name="vote.highly_not_recommended"
+                        render={({field: {value, onChange}})=>(
+                          <FormItem>
+                            <FormLabel>
+                              <div className="flex items-center gap-1.5">
+                                <CircleX className="h-4 w-4 text-red-500" />
+                                <span className="font-medium">Highly not recommended</span>
+                              </div>
+                            </FormLabel>
+                            <FormControl>
+                              <EnhancedSlider defaultValue={[value]} onValueChange={(value) => onChange(value[0])}/>
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    <FormDescription>
+                      Assign percentage weights to indicate how strongly you feel about each recommendation level. The total must equal 100%.
+                    </FormDescription>
+                    <FormMessage/>
+                  </FormItem>
+
                   <FormField
-                    control={form.control}
-                    name="status"
+                    control={form2.control}
+                    name="comment"
                     render={({ field }) => (
                       <FormItem>
-                        <Select onValueChange={field.onChange}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select a decision" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value={"Approved"}>
-                              Approve
-                            </SelectItem>
-                            <SelectItem value={"Rejected"}>
-                              Reject
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <FormLabel className="font-semibold">
+                          Comment:
+                        </FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Provide any additional context for your assessment..."
+                            className="min-h-[120px]"
+                            {...field}
+                          />
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                </FormItem>
-
-                <FormField
-                  control={form.control}
-                  name="feedback"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="font-semibold">Feedback:</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder="Please provide details about your decision..."
-                          className="min-h-[120px]"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </form>
-            </Form>
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setIsEditDialogOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                form="review-project-form"
-                className="bg-accentColor text-white hover:bg-secondaryColor"
-                disabled={form.formState.isSubmitting}
-              >
-                {
-                  form.formState.isSubmitting ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin"/>
-                  ):(
-                    <>
-                      Save changes
-                    </>
-                  )
-                }
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+                </form>
+              </Form>
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => setIsAssessDialogOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  form="review-project-form"
+                  className="bg-accentColor text-white hover:bg-secondaryColor"
+                >
+                  Submit assessment
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
     </div>
   );

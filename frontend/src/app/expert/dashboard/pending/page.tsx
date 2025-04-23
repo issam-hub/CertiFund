@@ -1,11 +1,10 @@
-import { getPendingProjectsTable } from "@/app/_actions/dashboard";
-import { getProjectsByReviewer } from "@/app/_actions/projects";
+import { getPendingAssessements, getPendingProjectsTable } from "@/app/_actions/dashboard";
 import { ProjectManagement } from "@/app/_components/project/tables/projects";
 
 export default async function ProjectsPage({searchParams}:{searchParams: Promise<{page: number}>}) {
   const {page} = await searchParams
 
-  const result = await getProjectsByReviewer(Number(page?page:1))
+  const result = await getPendingAssessements(Number(page?page:1))
   if(!result.status){
     throw new Error(result.error)
   }

@@ -5,7 +5,7 @@ import Link from "next/link"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
-import { ArrowRight, CheckCircle, ClipboardCheck, Eye, EyeOff, Github, KeyRound, Loader2, Shield } from "lucide-react"
+import { ArrowRight, Award, CheckCircle, ClipboardCheck, Eye, EyeOff, Github, KeyRound, Loader2, Shield, Star } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
@@ -84,24 +84,42 @@ export default function PrivilegedLoginPage({role}:{role:string}) {
                 <p className="text-sm text-blue-200">Secure administrator access only</p>
             </div>
           </div>
+        ): role === "reviewer" ? (
+          (
+            <div className="relative hidden md:flex flex-col justify-between p-10 bg-[url('/signup-2.jpeg')] bg-cover before:content-[''] before:absolute before:top-0 before:left-0 before:h-full before:w-full before:bg-[rgb(30_58_138/90%)] before:block text-white">
+              <div>
+              </div>
+              <div className="space-y-6 relative">
+                <h2 className="text-4xl font-bold leading-tight">
+                Welcome to the Review Panel
+                </h2>
+                <p className="text-lg text-blue-200">
+                Evaluate projects, provide feedback, and help maintain quality standards.
+                </p>
+              </div>
+              <div className="relative flex gap-3">
+                  <CheckCircle className="h-5 w-5 text-lightAccentColor" />
+                  <p className="text-sm text-blue-200">Your expertise makes a difference</p>
+              </div>
+            </div>
+          )
         ):(
           <div className="relative hidden md:flex flex-col justify-between p-10 bg-[url('/signup-2.jpeg')] bg-cover before:content-[''] before:absolute before:top-0 before:left-0 before:h-full before:w-full before:bg-[rgb(30_58_138/90%)] before:block text-white">
-            <div>
-            </div>
-            <div className="space-y-6 relative">
-              <h2 className="text-4xl font-bold leading-tight">
-              Welcome to the Review Panel
-              </h2>
-              <p className="text-lg text-blue-200">
-              Evaluate projects, provide feedback, and help maintain quality standards.
-              </p>
-            </div>
-            <div className="relative flex gap-3">
-                <CheckCircle className="h-5 w-5 text-lightAccentColor" />
-                <p className="text-sm text-blue-200">Your expertise makes a difference</p>
-            </div>
+          <div>
           </div>
-          
+          <div className="space-y-6 relative">
+            <h2 className="text-4xl font-bold leading-tight">
+            Welcome to the Expert Panel
+            </h2>
+            <p className="text-lg text-blue-200">
+            Provide objective, specialized assessments based on your field(s) of expertise.
+            </p>
+          </div>
+          <div className="relative flex gap-3">
+              <Star className="h-5 w-5 text-lightAccentColor" />
+              <p className="text-sm text-blue-200">Your expertise shapes the future of innovation</p>
+          </div>
+        </div>
         )
       }
 
@@ -117,13 +135,21 @@ export default function PrivilegedLoginPage({role}:{role:string}) {
               <h2 className="text-3xl font-bold text-primaryColor">Administrator Access</h2>
               <p className="text-muted-foreground">Sign in to access the administration dashboard</p>
             </div>
-            ):(
+            ): role === "reviewer" ? (
             <div className="space-y-2 text-center">
               <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[#1E3A8A]">
                 <ClipboardCheck className="h-6 w-6 text-white" />
               </div>
               <h2 className="text-3xl font-bold text-primaryColor">Reviewer Access</h2>
               <p className="text-muted-foreground">Sign in to access your review dashboard</p>
+            </div>
+            ):(
+            <div className="space-y-2 text-center">
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[#1E3A8A]">
+                <Award className="h-6 w-6 text-white" />
+              </div>
+              <h2 className="text-3xl font-bold text-primaryColor">Expert Access</h2>
+              <p className="text-muted-foreground">Sign in to provide specialized project assessments</p>
             </div>
             )
           }

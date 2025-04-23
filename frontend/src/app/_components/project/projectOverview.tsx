@@ -571,7 +571,7 @@ export default function ProjectOverview({ data, updates }: ProjectOverviewProps)
                   </span>
                   <div className="text-xs text-slate-600">
                     Congratulations! Your campaign has been reviewed and
-                    approved. You're ready to start accepting backers.
+                    approved. Launch it and start accepting backers.
                   </div>
                   <Button
                     onClick={async () => {

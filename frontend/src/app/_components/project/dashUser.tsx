@@ -99,7 +99,7 @@ export default function DashUser() {
                   description: "You logged out successfully",
                   variant: "default",
                   });
-                  router.push("/admin/login")
+                  router.push(`/${user?.role}/login`)
               }else{
                   toast({
                   title: TOAST_ERROR_TITLE,

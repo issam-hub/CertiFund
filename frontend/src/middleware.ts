@@ -3,13 +3,11 @@ import { TOKEN_COOKIE_NAME } from "./app/_lib/config";
 import { getCurrentUser } from "./app/_actions/auth";
 import { User } from "./app/_lib/types";
 
-const publicRoutes = [
-  /\/projects\/discover\/[0-9]+/,
-  /\/activate\?token=[\w]+/,
-  /\/activate\/[0-9]+/,
-  /\/login/,
-  /\/signup/,
-  /[\w+]\.(svg|png|jpeg)/
+const privateRoutes = [
+  /\/settings\/profile/,
+  /\/projects\/new/,
+  /\/projects\/[0-9]+/,
+  /\/settings/
 ]
 
 export async function middleware(request: NextRequest) {
@@ -17,37 +15,72 @@ export async function middleware(request: NextRequest) {
     const path = request.nextUrl.pathname
     const userResult: {user: User}|null = (await getCurrentUser())
     const isAuthPage = path.match(/^(\/login|\/signup)$/);
-    const isPublic = publicRoutes.some((entry)=>path.match(entry))
+    const isPrivate = privateRoutes.some((entry)=>path.match(entry))
 
     if (isAuthPage && token) {
       return NextResponse.redirect(new URL('/', request.url));
     }
 
-    if(path.match(/\/admin\/(?:(?!login)[a-zA-Z0-9_])(?:[\w\/]*)/) && userResult?.["user"].role === "user"){
-      const url = new URL('/login', request.url);
-      url.searchParams.set('from', request.nextUrl.pathname);
-      return NextResponse.redirect(url);
+    if(path.match(/\/admin\/(?:(?!login)[a-zA-Z0-9_])(?:[\w\/]*)/)){
+      if(!userResult?.["user"]){
+        const url = new URL('/admin/login', request.url);
+        url.searchParams.set('from', request.nextUrl.pathname);
+        return NextResponse.redirect(url);
+      }
+      if(userResult?.["user"].role === "user"){
+        const url = new URL('/login', request.url);
+        url.searchParams.set('from', request.nextUrl.pathname);
+        return NextResponse.redirect(url);
+      }
+      if(userResult?.["user"].role === "reviewer"){
+        const url = new URL('/reviewer/login', request.url);
+        url.searchParams.set('from', request.nextUrl.pathname);
+        return NextResponse.redirect(url);
+      }
     }
 
-    if(path.match(/\/admin\/(?:(?!login)[a-zA-Z0-9_])(?:[\w\/]*)/) && userResult?.["user"].role === "reviewer"){
-      const url = new URL('/reviewer/login', request.url);
-      url.searchParams.set('from', request.nextUrl.pathname);
-      return NextResponse.redirect(url);
+    if(path.match(/\/expert\/(?:(?!login)[a-zA-Z0-9_])(?:[\w\/]*)/)){
+      if(!userResult?.["user"]){
+        const url = new URL('/expert/login', request.url);
+        url.searchParams.set('from', request.nextUrl.pathname);
+        return NextResponse.redirect(url);
+      }
+      if(userResult?.["user"].role === "user"){
+        const url = new URL('/login', request.url);
+        url.searchParams.set('from', request.nextUrl.pathname);
+        return NextResponse.redirect(url);
+      }
+      if(userResult?.["user"].role === "admin"){
+        const url = new URL('/admin/login', request.url);
+        url.searchParams.set('from', request.nextUrl.pathname);
+        return NextResponse.redirect(url);
+      }
+      if(userResult?.["user"].role === "reviewer"){
+        const url = new URL('/reviewer/login', request.url);
+        url.searchParams.set('from', request.nextUrl.pathname);
+        return NextResponse.redirect(url);
+      }
     }
 
-    if(path.match(/\/reviewer\/(?:(?!login)[a-zA-Z0-9_])(?:[\w\/]*)/) && userResult?.["user"].role === "user"){
-      const url = new URL('/login', request.url);
-      url.searchParams.set('from', request.nextUrl.pathname);
-      return NextResponse.redirect(url);
+    if(path.match(/\/reviewer\/(?:(?!login)[a-zA-Z0-9_])(?:[\w\/]*)/)){
+      if(!userResult?.["user"]){
+        const url = new URL('/reviewer/login', request.url);
+        url.searchParams.set('from', request.nextUrl.pathname);
+        return NextResponse.redirect(url);
+      }
+      if(userResult?.["user"].role === "user"){
+        const url = new URL('/login', request.url);
+        url.searchParams.set('from', request.nextUrl.pathname);
+        return NextResponse.redirect(url);
+      }
+      if(userResult?.["user"].role === "admin"){
+        const url = new URL('/admin/login', request.url);
+        url.searchParams.set('from', request.nextUrl.pathname);
+        return NextResponse.redirect(url);
+      }
     }
 
-    if(path.match(/\/reviewer\/(?:(?!login)[a-zA-Z0-9_])(?:[\w\/]*)/) && userResult?.["user"].role === "admin"){
-      const url = new URL('/admin/login', request.url);
-      url.searchParams.set('from', request.nextUrl.pathname);
-      return NextResponse.redirect(url);
-    }
-
-    if (!token && !isAuthPage && !isPublic) {
+    if (!token && !isAuthPage && isPrivate && path !== "/") {
       const url = new URL('/login', request.url);
       url.searchParams.set('from', request.nextUrl.pathname);
       return NextResponse.redirect(url);

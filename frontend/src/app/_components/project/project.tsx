@@ -6,7 +6,15 @@ import { Button } from '@/components/ui/button'
 import { BLUR_IMAGE_URL } from '@/app/_lib/constants'
 import Link from 'next/link'
 import { UpdateProjectSchema } from '@/app/_lib/schemas/project'
-import { calculateDateDifference, calculateDateDifferenceJSON } from '@/app/_lib/utils'
+import { calculateDateDifference, calculateDateDifferenceJSON, ExpertsDecisionDetails, toCamelCase } from '@/app/_lib/utils'
+import { Badge } from '@/components/ui/badge'
+import { ExpertsDecisionType } from '@/app/_lib/types'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 
 export default function ProjectComp({project}:{project:UpdateProjectSchema}) {
@@ -25,9 +33,16 @@ export default function ProjectComp({project}:{project:UpdateProjectSchema}) {
           fill
           className="object-cover"
         />
-        {/* <div className="absolute top-2 right-2">
-          <Badge className="bg-accentColor">{project.category}</Badge>
-        </div> */}
+        <div className="absolute top-2 right-2">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger><Badge variant={toCamelCase(project.experts_decision) as ExpertsDecisionType}>{project.experts_decision}</Badge></TooltipTrigger>
+              <TooltipContent>
+                <p>{ExpertsDecisionDetails[project.experts_decision as keyof typeof ExpertsDecisionDetails]}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
       </div>
       <CardContent className="p-4">
         <h3 className="font-bold text-lg mb-2 line-clamp-1">{project.title}</h3>

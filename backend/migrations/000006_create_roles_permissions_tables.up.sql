@@ -17,7 +17,8 @@ CREATE TABLE IF NOT EXISTS role_permission (
 INSERT INTO role_t (role_id, rolename) VALUES
 (1, 'admin'),
 (2, 'reviewer'),
-(3, 'user');
+(3, 'user'),
+(4, 'expert');
 
 INSERT INTO permission (permission_id, permission_name) VALUES
 (1, 'projects:create'),

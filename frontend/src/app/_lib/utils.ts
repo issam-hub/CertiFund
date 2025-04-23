@@ -297,3 +297,35 @@ export function extractFilenameFromSupabaseUrl(url: string): string | null {
     return null;
   }
 }
+
+export function toCamelCase(str: string): string {
+  // Split the string by spaces
+  const words = str.split(' ');
+  
+  // If empty string or no words, return empty string
+  if (words.length === 0) {
+    return '';
+  }
+  
+  // Start with the first word in lowercase
+  let result = words[0].toLowerCase();
+  
+  // For each subsequent word, capitalize the first letter and append
+  for (let i = 1; i < words.length; i++) {
+    const word = words[i];
+    if (word.length > 0) {
+      // Capitalize first letter and append rest of word
+      result += word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+    }
+  }
+  
+  return result;
+}
+
+export const ExpertsDecisionDetails = {
+  "highly recommended": "Exceptional project with strong potential for success and impact",
+  "recommended":"Solid project with good potential and minimal concerns",
+  "neutral":"Average project with balanced strengths and weaknesses",
+  "not recommended": "Project with significant concerns or weaknesses",
+  "highly not recommended": "Project with critical flaws or serious concerns"
+}

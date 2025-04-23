@@ -13,7 +13,7 @@ import { didIbackThisProject, didILikeThis, didISaveThis, getBackersCount, getCo
 import { UpdateProjectSchema } from "@/app/_lib/schemas/project"
 import { Separator } from "@/components/ui/separator"
 import parse from 'html-react-parser';
-import { calculateDateDifferenceJSON, transformComments } from "@/app/_lib/utils"
+import { calculateDateDifferenceJSON, ExpertsDecisionDetails, toCamelCase, transformComments } from "@/app/_lib/utils"
 import { getUser } from "@/app/_actions/user"
 import BackProjectButton from "@/app/_components/project/backProjectButton"
 import ProjectActions from "@/app/_components/project/projectActions"
@@ -22,6 +22,8 @@ import RewardsSection from "@/app/_components/project/rewardSection"
 import { ProjectUpdates } from "@/app/_components/project/projectUpdatePage"
 import { ProjectComments } from "@/app/_components/project/projectCommentsForm"
 import { format } from "date-fns"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { ExpertsDecisionType } from "@/app/_lib/types"
 
 
 export default async function ProjectDetailsPage({params}:{params: Promise<{id:string}>}) {
@@ -112,6 +114,16 @@ export default async function ProjectDetailsPage({params}:{params: Promise<{id:s
             <ArrowLeft className="h-4 w-4" />
             <span>Back</span>
           </Link>
+        </div>
+        <div className="absolute top-4 right-4">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger><Badge style={{height:"30px", width:"100px"}} className="text-sm justify-center gap-1.5" variant={toCamelCase(project.experts_decision) as ExpertsDecisionType}><BadgeCheck className="w-5 h-5" />{project.experts_decision}</Badge></TooltipTrigger>
+              <TooltipContent>
+                <p>{ExpertsDecisionDetails[project.experts_decision as keyof typeof ExpertsDecisionDetails]}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </div>
 

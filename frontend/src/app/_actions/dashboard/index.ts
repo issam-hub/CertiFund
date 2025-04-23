@@ -231,3 +231,35 @@ export async function reviewProject(data : any, projectId: number){
         return {status: false, error: error.message}
     }
 }
+
+export async function getPendingAssessements(page:number = 1, limit:string = "10"){
+    const res = await authFetch(`${apiUrl}/tables/pendingAssessements?page=${page}&page_size=${limit}`, {cache:"no-store", next:{tags:["projects-table"]}})
+
+    if(!res.ok){
+        const result = await res.json()
+        if(typeof result.error === "object"){
+            return {status:false, error:Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
+        }
+        return {status:false, ...result}
+    }
+
+    
+    const result = await res.json()
+    return {status:true, ...result}
+}
+
+export async function getAssessedProjects(page:number = 1, limit:string = "10"){
+    const res = await authFetch(`${apiUrl}/tables/assessed?page=${page}&page_size=${limit}`, {cache:"no-store", next:{tags:["projects-table"]}})
+
+    if(!res.ok){
+        const result = await res.json()
+        if(typeof result.error === "object"){
+            return {status:false, error:Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
+        }
+        return {status:false, ...result}
+    }
+
+    
+    const result = await res.json()
+    return {status:true, ...result}
+}
