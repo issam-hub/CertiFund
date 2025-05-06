@@ -448,7 +448,7 @@ func (m TablesModel) GetPendingAssessementProjects(categories []string, expertID
 	LEFT JOIN backing b on pr.project_id = b.project_id
 	LEFT JOIN expert_review er ON pr.project_id = er.project_id AND er.expert_id = $1
 	WHERE (pr.status = 'Live' OR pr.status = 'Approved') AND er.expert_id IS NULL
-	AND (pr.categories @> $2 OR $2 = '{}')
+	AND (pr.categories && $2 OR $2 = '{}')
 	GROUP BY pr.project_id, u.username, u.image_url
 	LIMIT $3 OFFSET $4
 	`
@@ -518,7 +518,7 @@ func (m TablesModel) GetAssessedProjects(categories []string, expertID, page, pa
 	INNER JOIN user_t u ON pr.creator_id = u.user_id 
 	LEFT JOIN backing b on pr.project_id = b.project_id
 	INNER JOIN expert_review er ON pr.project_id = er.project_id AND er.expert_id = $1
-	AND (pr.categories @> $2 OR $2 = '{}')
+	AND (pr.categories && $2 OR $2 = '{}')
 	GROUP BY pr.project_id, u.username, u.image_url
 	LIMIT $3 OFFSET $4
 	`

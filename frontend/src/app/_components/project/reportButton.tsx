@@ -235,7 +235,7 @@ export function ReportButton({
       <DialogTrigger asChild>
         {buttonTrigger}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>Report {context}</DialogTitle>
           <DialogDescription>

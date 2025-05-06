@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"projectx/internal/data"
 	"projectx/internal/validator"
@@ -87,6 +88,8 @@ func (app *application) getPendingAssessementProjectsTableHandler(c echo.Context
 			return err
 		}
 	}
+
+	fmt.Println(expert)
 
 	input.Page = app.readInt(c.QueryParams(), "page", 1, v)
 	input.PageSize = app.readInt(c.QueryParams(), "page_size", 5, v)

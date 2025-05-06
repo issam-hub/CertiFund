@@ -404,10 +404,14 @@ func (m StatsModel) GetTopFiveBackers() ([]*TopUser, error) {
 	for rows.Next() {
 		topBacker := TopUser{}
 
-		err := rows.Scan(&topBacker.Username, &topBacker.ImageURL, &topBacker.ProjectCount, &topBacker.TotalRaised)
+		var imageUrl sql.NullString
+
+		err := rows.Scan(&topBacker.Username, &imageUrl, &topBacker.ProjectCount, &topBacker.TotalRaised)
 		if err != nil {
 			return nil, err
 		}
+
+		topBacker.ImageURL = imageUrl.String
 
 		topBackers = append(topBackers, &topBacker)
 	}

@@ -60,7 +60,7 @@ export default async function ProjectDetailsPage({params}:{params: Promise<{id:s
   const backersCount = backersResult["backers_count"]
 
   // Calculate funding percentage
-  const fundingPercentage = Math.min(Math.round((project.current_funding / project.funding_goal) * 100), 100)
+  const fundingPercentage = Math.min(Math.round((project.current_funding / project.funding_goal)*100), 100)
 
   // Calculate days left
   const {months, days} = calculateDateDifferenceJSON(project.deadline)

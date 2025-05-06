@@ -2,7 +2,7 @@ include .env
 
 .PHONY: run
 run: build
-	@./bin/api && sh ~/update_expert_decisions.sh
+	@./bin/api
 
 .PHONY: audit
 audit: vendor
@@ -28,7 +28,7 @@ git_description = $(shell git describe --always --tags)
 linker_flags = '-s -X main.buildTime=${current_time} -X main.version=${git_description}'
 
 .PHONY: build
-build:
+build: migrateRun
 	@echo "-> Building..."
 	@go build -ldflags=${linker_flags} -o ./bin/api ./cmd/api/
 	GOOS=linux GOARCH=amd64 go build -ldflags=${linker_flags} -o=./bin/linux_amd64/api ./cmd/api/
