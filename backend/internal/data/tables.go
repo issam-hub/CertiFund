@@ -147,6 +147,73 @@ func (m TablesModel) GetProjects(page, pageSize int) ([]*ProjectsTable, MetaData
 	return table, metaData, nil
 }
 
+func (m TablesModel) GetCreatedProjects(page, pageSize, creatorID int) ([]*ProjectsTable, MetaData, error) {
+	offset := (page - 1) * pageSize
+
+	query := `
+	SELECT COUNT(pr.project_id) OVER(), pr.project_id, pr.title, pr.description, pr.categories, pr.funding_goal, pr.current_funding, pr.deadline, pr.status, pr.project_img, pr.campaign, pr.created_at, pr.updated_at, pr.launched_at, count(DISTINCT b.backer_id) as backers, pr.is_suspicious, pr.experts_decision
+	FROM project pr 
+	LEFT JOIN backing b on pr.project_id = b.project_id
+	WHERE pr.creator_id = $1
+	GROUP BY pr.project_id
+	LIMIT $2 OFFSET $3
+	`
+
+	table := []*ProjectsTable{}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	args := []interface{}{creatorID, pageSize, offset}
+
+	rows, err := m.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, MetaData{}, err
+	}
+
+	totalRecords := 0
+	for rows.Next() {
+		row := &ProjectsTable{}
+		var projectImgVar sql.NullString
+		var campaignVar sql.NullString
+
+		err := rows.Scan(
+			&totalRecords,
+			&row.ID,
+			&row.Title,
+			&row.Description,
+			&row.Categories,
+			&row.FundingGoal,
+			&row.CurrentFunding,
+			&row.Deadline,
+			&row.Status,
+			&projectImgVar,
+			&campaignVar,
+			&row.CreatedAt,
+			&row.UpdatedAt,
+			&row.LaunchedAt,
+			&row.Backers,
+			&row.IsSuspicious,
+			&row.ExpertsDecision,
+		)
+		if err != nil {
+			return nil, MetaData{}, err
+		}
+
+		row.ProjectImg = projectImgVar.String
+		row.Campaign = campaignVar.String
+
+		table = append(table, row)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, MetaData{}, err
+	}
+
+	metaData := calculateMetadata(totalRecords, page, pageSize)
+
+	return table, metaData, nil
+}
+
 func (m TablesModel) GetUsers(page, pageSize int) ([]*UsersTable, MetaData, error) {
 	offset := (page - 1) * pageSize
 
@@ -257,6 +324,66 @@ func (m TablesModel) GetBackings(page, pageSize int) ([]*BackingsTable, MetaData
 			&row.ID,
 			&row.PaymentID,
 			&row.Backer,
+			&row.ProjectID,
+			&row.Project,
+			&amount,
+			&row.Status,
+			&row.CreatedAt,
+			&row.UpdatedAt,
+			&row.PaymentMethod,
+			&row.TransactionID,
+		)
+		if err != nil {
+			return nil, MetaData{}, err
+		}
+
+		row.Amount = amount.Float64
+
+		table = append(table, row)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, MetaData{}, err
+	}
+
+	metaData := calculateMetadata(totalRecords, page, pageSize)
+
+	return table, metaData, nil
+}
+
+func (m TablesModel) GetUserBackings(page, pageSize, backerID int) ([]*BackingsTable, MetaData, error) {
+	offset := (page - 1) * pageSize
+
+	query := `
+	SELECT COUNT(*) OVER(), b.backing_id, pa.payment_id, pr.project_id, pr.title, pa.amount, pa.status, pa.created_at, pa.updated_at, pa.payment_method, pa.transaction_id
+	FROM backing b
+	INNER JOIN project pr ON pr.project_id = b.project_id 
+	INNER JOIN payment pa ON pa.backing_id = b.backing_id
+	WHERE b.backer_id = $1
+	GROUP BY b.backing_id, pa.payment_id, pr.project_id, pr.title, pa.amount, pa.status, pa.payment_method, pa.created_at, pa.updated_at, pa.transaction_id
+	LIMIT $2 OFFSET $3
+	`
+
+	table := []*BackingsTable{}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	args := []interface{}{backerID, pageSize, offset}
+
+	rows, err := m.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, MetaData{}, err
+	}
+
+	totalRecords := 0
+	for rows.Next() {
+		row := &BackingsTable{}
+		var amount sql.NullFloat64
+
+		err := rows.Scan(
+			&totalRecords,
+			&row.ID,
+			&row.PaymentID,
 			&row.ProjectID,
 			&row.Project,
 			&amount,

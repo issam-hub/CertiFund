@@ -148,7 +148,7 @@ export function UserManagement({users, meta}: { users: User[], meta: Metadata })
           </Button>
         )
       },
-      cell: ({ row }) => <div>{row.getValue("projects_created")}</div>,
+      cell: ({ row }) => <div>{row.getValue("role") === "user" ? row.getValue("projects_created") : "N/A"}</div>,
     },
     {
       accessorKey: "projects_backed",
@@ -160,7 +160,7 @@ export function UserManagement({users, meta}: { users: User[], meta: Metadata })
           </Button>
         )
       },
-      cell: ({ row }) => <div>{row.getValue("projects_backed")}</div>,
+      cell: ({ row }) => <div>{row.getValue("role") === "user" ? row.getValue("projects_backed") : "N/A"}</div>,
     },
     {
       accessorKey: "total_contributed",
@@ -174,7 +174,7 @@ export function UserManagement({users, meta}: { users: User[], meta: Metadata })
       },
       cell: ({ row }) => {
         const amount = Number.parseFloat(row.getValue("total_contributed"))
-        return <div className="font-medium">{amount.toLocaleString()}DA</div>
+        return <div className="font-medium">{row.getValue("role") === "user" ? `${amount.toLocaleString()}DA` : "N/A"}</div>
       },
     },
     {

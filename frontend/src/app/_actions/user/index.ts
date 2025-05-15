@@ -27,6 +27,7 @@ export async function updateProfile(data: Partial<ProfileSchema>&{image_url?:str
         }  
 
         revalidateTag("current-user")
+        revalidateTag("profile-stats")
         
         
         const result = await res.json()
@@ -79,6 +80,7 @@ export async function deleteAccount(){
         }
         
         // ((await cookies()).delete(TOKEN_COOKIE_NAME))
+        revalidateTag("profile-stats")
         
         const result = await res.json()
         return {status:true, ...result}
@@ -119,6 +121,8 @@ export async function deleteUser(id: string){
             }
             return {status:false, ...result}
         }
+
+        revalidateTag("users-table")
         
         const result = await res.json()
         return {status:true, ...result}
@@ -146,6 +150,7 @@ export async function updateUser(data: Partial<{role: string, activated: boolean
         }  
 
         revalidateTag("current-user")
+        revalidateTag("users-table")
         
         
         const result = await res.json()
@@ -190,7 +195,9 @@ export async function createUser(values: CreateUserSchema){
                 return {status:false, error: Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
             }
             return {status:false, ...result}
-          }    
+          } 
+          
+          revalidateTag("users-table")
       
           const result = await res.json();
           return {status:true, ...result}

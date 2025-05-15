@@ -84,7 +84,7 @@ export default function DashUser() {
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem asChild>
-                <Link href={`/${user?.role}/profile`} className="cursor-pointer">
+                <Link href={user?.role === "user" ? `/settings/profile` : `/${user?.role}/profile`} className="cursor-pointer">
                   <UserRound />
                   Profile
                 </Link>

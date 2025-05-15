@@ -160,3 +160,124 @@ func (app *application) getBackedCreatedCountHandler(c echo.Context) error {
 		"profile_stats": profileStats,
 	})
 }
+
+func (app *application) getReviewerPerformanceHandler(c echo.Context) error {
+	reviewer := c.Get("user").(*data.User)
+
+	performance, err := app.models.Stats.ReviewerPerformance(reviewer.ID)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(http.StatusOK, envelope{
+		"message":     "Reviewer performance returned successfully",
+		"performance": performance,
+	})
+}
+
+func (app *application) getAccuracyHandler(c echo.Context) error {
+	expert := c.Get("user").(*data.User)
+
+	accuracy, err := app.models.Stats.ExpertAccuracy(expert.ID)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(http.StatusOK, envelope{
+		"message":  "Expert accuracy returned successfully",
+		"accuracy": accuracy,
+	})
+}
+
+func (app *application) getReviewerStatsHandler(c echo.Context) error {
+	stats := &data.ReviewerStats{}
+
+	reviewer := c.Get("user").(*data.User)
+
+	err := app.models.Stats.GetPendingReviews(stats)
+	if err != nil {
+		return err
+	}
+	err = app.models.Stats.GetApprovedReviews(stats, reviewer.ID)
+	if err != nil {
+		return err
+	}
+	err = app.models.Stats.GetRejectedReviews(stats, reviewer.ID)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(http.StatusOK, envelope{
+		"message": "Reviewer stats returned successfully",
+		"stats":   stats,
+	})
+}
+
+func (app *application) getUserStatsHandler(c echo.Context) error {
+	stats := &data.UserStats{}
+
+	user := c.Get("user").(*data.User)
+
+	err := app.models.Stats.GetTotalCreatedProjectsCount(stats, user.ID)
+	if err != nil {
+		return err
+	}
+	err = app.models.Stats.GetTotalRaised(stats, user.ID)
+	if err != nil {
+		return err
+	}
+	err = app.models.Stats.GetProjectsBacked(stats, user.ID)
+	if err != nil {
+		return err
+	}
+	err = app.models.Stats.GetTotalBacks(stats, user.ID)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(http.StatusOK, envelope{
+		"message": "User stats returned successfully",
+		"stats":   stats,
+	})
+}
+
+func (app *application) getFundingProgressHandler(c echo.Context) error {
+	user := c.Get("user").(*data.User)
+	progress, err := app.models.Stats.GetFundingProgress(user.ID)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(http.StatusOK, envelope{
+		"message":  "Funding progress returned successfully",
+		"progress": progress,
+	})
+}
+
+func (app *application) getLiveProjectStatisticsHandler(c echo.Context) error {
+	user := c.Get("user").(*data.User)
+
+	projects, err := app.models.Tables.GetLiveProjectsStatistics(user.ID)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(http.StatusOK, envelope{
+		"message":  "Live Projects retrieved successfully",
+		"projects": projects,
+	})
+}
+
+func (app *application) getBackedProjectStatisticsHandler(c echo.Context) error {
+	user := c.Get("user").(*data.User)
+
+	projects, err := app.models.Tables.GetBackedProjectsStatistics(user.ID)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(http.StatusOK, envelope{
+		"message":  "Backed projects retrieved successfully",
+		"projects": projects,
+	})
+}
