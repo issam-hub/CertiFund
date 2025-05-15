@@ -28,7 +28,17 @@ export async function createProject(data: CreateProjectSchema){
             return {status: false, ...result}
           }    
 
+          revalidateTag("projects")
+          revalidateTag("projects-table")
+          revalidateTag("projects-reviewer")
+          revalidateTag("projects-flagged")
           revalidateTag("projects-creator")
+          revalidateTag("stats-general")
+          revalidateTag("stats-overview")
+          revalidateTag("stats-top-projects")
+          revalidateTag("stats-categories")
+          revalidateTag("stats-creators-backers")
+          revalidateTag("projects-user")
       
           const result = await res.json();
           return {status:true, ...result}
@@ -51,6 +61,7 @@ export async function getProject(id: string) {
         }
     }
 
+    revalidateTag("projects-user")
     
     const result = await res.json()
     return {status:true, ...result}
@@ -70,7 +81,8 @@ export async function getProjectPublic(id: string) {
         }
     }
 
-    
+    revalidateTag("projects-user")
+
     const result = await res.json()
     return {status:true, ...result}
 }
@@ -94,7 +106,13 @@ export async function updateProject(data: BasicsFormData|FundingFormData|StoryFo
         }  
 
         revalidateTag("project")
+        revalidateTag("projects")
+        revalidateTag("projects-table")
         revalidateTag("projects-creator")
+        revalidateTag("stats-general")
+        revalidateTag("stats-overview")
+        revalidateTag("projects-backer")
+        revalidateTag("stats-top-projects")
         
       
         const result = await res.json()
@@ -143,6 +161,14 @@ export async function deleteProject(id: string){
           }
           
           revalidateTag("projects-creator")
+          revalidateTag("projects")
+          revalidateTag("projects-table")
+          revalidateTag("stats-general")
+          revalidateTag("stats-overview")
+          revalidateTag("stats-top-projects")
+          revalidateTag("stats-categories")
+          revalidateTag("projects-backer")
+          revalidateTag("stats-creators-backers")
       
           const result = await res.json();
           return {status:true, ...result}
@@ -244,8 +270,15 @@ export async function backProject(data:{project_id: number, payment_intent_id: s
           revalidateTag("project")
           revalidateTag("projects")
           revalidateTag("did-i-back")
+          revalidateTag("projects-table")
+          revalidateTag("backings-table")
           revalidateTag("projects-creator")
           revalidateTag("project-backers")
+          revalidateTag("stats-general")
+          revalidateTag("stats-backings-refunds")
+          revalidateTag("stats-overview")
+          revalidateTag("stats-top-projects")
+          revalidateTag("stats-creators-backers")
       
           const result = await res.json();
           return {status:true, ...result}
@@ -315,9 +348,12 @@ export async function refundBacking(project_id: number, reason?:string){
     }
 
     revalidateTag("project")
+    revalidateTag("projects-table")
+    revalidateTag("backings-table")
     revalidateTag("projects")
     revalidateTag("did-i-back")
     revalidateTag("projects-creator")
+    revalidateTag("stats-backings-refunds")
     revalidateTag("project-backers")
     
     const result = await res.json()
@@ -351,6 +387,7 @@ export async function handleRewards(rewards: RewardsSchema | {rewards: Reward[]}
 
           revalidateTag("project")
           revalidateTag("projects")
+          revalidateTag("projects-table")
           revalidateTag("projects-creator")
           revalidateTag("rewards")
       
@@ -526,7 +563,10 @@ export async function deleteBacking(id: number){
             return {status: false, ...result}
           }   
           
-          revalidateTag("updates")
+          revalidateTag("projects-table")
+          revalidateTag("backings-table")
+          revalidateTag("did-i-back")
+          revalidateTag("stats-backings-refunds")
       
           const result = await res.json();
           return {status:true, ...result}
@@ -554,6 +594,11 @@ export async function updateBacking(status: string, paymentId: number){
             }
             return {status:false, ...result}
         } 
+
+        revalidateTag("projects-table")
+        revalidateTag("backings-table")
+        revalidateTag("did-i-back")
+        revalidateTag("stats-backings-refunds")
         
         const result = await res.json()
         return {status:true, ...result}
@@ -578,6 +623,8 @@ export async function createDispute(reportedResourceId: number, data: {type: str
             }
             return {status: false, ...result}
           }   
+
+          revalidateTag("disputes-table")
           
           const result = await res.json();
           return {status:true, ...result}
@@ -604,7 +651,9 @@ export async function updateDispute(disputeId: number, status: string, note: str
                 return {status:false, error: Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\r\n"+`*${curr}`) as string}
             }
             return {status: false, ...result}
-          }   
+          }  
+          
+          revalidateTag("disputes-table")
           
           const result = await res.json();
           return {status:true, ...result}
@@ -624,7 +673,9 @@ export async function deleteDispute(id: number){
                 return {status:false, error: Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
             }
             return {status: false, ...result}
-          }   
+          } 
+          
+          revalidateTag("disputes-table")
           
           const result = await res.json();
           return {status:true, ...result}
@@ -707,7 +758,8 @@ export async function likeProject(projectId: number){
         }
     }
 
-    
+    revalidateTag("projects-likes")
+
     const result = await res.json()
     return {status:true, ...result}
 }
@@ -727,6 +779,8 @@ export async function saveProject(projectId: number){
             return {status:false, ...result}
         }
     }
+
+    revalidateTag("projects-saved")
 
     
     const result = await res.json()
@@ -749,6 +803,8 @@ export async function unlikeProject(projectId: number){
         }
     }
 
+    revalidateTag("projects-likes")
+
     
     const result = await res.json()
     return {status:true, ...result}
@@ -770,6 +826,8 @@ export async function unsaveProject(projectId: number){
         }
     }
 
+    revalidateTag("projects-saved")
+    
     
     const result = await res.json()
     return {status:true, ...result}
@@ -789,7 +847,6 @@ export async function getLikes(projectId: number) {
         }
     }
 
-    
     const result = await res.json()
     return {status:true, ...result}
 }
@@ -871,7 +928,7 @@ export async function getProjectsByReviewer(page:number = 1, limit:string = "10"
 }
 
 export async function getFlaggedProjectByReviewer(page:number = 1, limit:string = "10") {
-    const res = await authFetch(`${apiUrl}/projects/flagged/reviewer?page=${page}&page_size=${limit}`, {cache:"no-store", next:{tags:["projects-reviewer"]}})
+    const res = await authFetch(`${apiUrl}/projects/flagged/reviewer?page=${page}&page_size=${limit}`, {cache:"no-store", next:{tags:["projects-flagged"]}})
 
     if(!res.ok){
         const result = await res.json()
@@ -916,6 +973,12 @@ export async function assessProject(data: AssessmentFormSchema, projectId: numbe
             }
             return {status: false, ...result}
           }   
+
+          revalidateTag("project")
+          revalidateTag("projects")
+          revalidateTag("projects-table")
+          revalidateTag("projects-creator")
+          revalidateTag("projects-backer")
           
           const result = await res.json();
           return {status:true, ...result}

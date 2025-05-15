@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"errors"
 	"time"
+
+	"github.com/lib/pq"
 )
 
 type Stats struct {
@@ -58,6 +60,43 @@ type BackingVSRefund struct {
 type ProfileStats struct {
 	CreatedProjects int `json:"created_projects"`
 	BackedProjects  int `json:"backed_projects"`
+}
+
+type ReviewerPerformance struct {
+	Day      string `json:"day"`
+	Approved int    `json:"approved"`
+	Rejected int    `json:"rejected"`
+	Flagged  int    `json:"flagged"`
+}
+
+type Accuracy struct {
+	ID          int    `json:"id"`
+	Title       string `json:"title"`
+	Vote        Vote   `json:"expert_vote"`
+	FinalResult string `json:"final_result"`
+}
+
+type ReviewerStats struct {
+	PendingReviews  int `json:"pending_reviews"`
+	ApprovedReviews int `json:"approved_reviews"`
+	RejectedReviews int `json:"rejected_reviews"`
+}
+
+type UserStats struct {
+	TotalProjects  int     `json:"total_projects"`
+	TotalRaised    float64 `json:"total_raised"`
+	ProjectsBacked int     `json:"projects_backed"`
+	TotalBacked    float64 `json:"total_backed"`
+}
+
+type ProjectsStatistics struct {
+	Title          string         `json:"title"`
+	Categories     pq.StringArray `json:"categories"`
+	FundingGoal    float64        `json:"funding_goal"`
+	CurrentFunding float64        `json:"current_funding"`
+	Deadline       time.Time      `json:"deadline"`
+	Status         string         `json:"status"`
+	Backers        int            `json:"backers"`
 }
 
 type StatsModel struct {
@@ -623,4 +662,411 @@ func (m StatsModel) CreatedBackedProjectsCount(userId int) (*ProfileStats, error
 	}
 
 	return &profileStats, nil
+}
+
+func (m StatsModel) ReviewerPerformance(reviewerID int) ([]*ReviewerPerformance, error) {
+	query := `
+	WITH days AS (
+	SELECT 0 AS dow, 'Sun' AS day UNION ALL
+	SELECT 1, 'Mon' UNION ALL
+	SELECT 2, 'Tue' UNION ALL
+	SELECT 3, 'Wed' UNION ALL
+	SELECT 4, 'Thu' UNION ALL
+	SELECT 5, 'Fri' UNION ALL
+	SELECT 6, 'Sat'
+	)
+	SELECT 
+	days.day,
+	COALESCE(SUM(CASE WHEN status = 'Approved' THEN 1 ELSE 0 END), 0) AS approved,
+	COALESCE(SUM(CASE WHEN status = 'Rejected' THEN 1 ELSE 0 END), 0) AS rejected,
+	COALESCE(SUM(CASE WHEN status = 'Flagged' THEN 1 ELSE 0 END), 0) AS flagged
+	FROM 
+	days
+	LEFT JOIN 
+	project_review ON EXTRACT(DOW FROM reviewed_at) = days.dow AND reviewer_id = $1
+	GROUP BY 
+	days.dow, days.day
+	ORDER BY 
+	days.dow
+	`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	weeklyPerformance := []*ReviewerPerformance{}
+
+	rows, err := m.DB.QueryContext(ctx, query, reviewerID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	for rows.Next() {
+		var performance ReviewerPerformance
+		err := rows.Scan(&performance.Day, &performance.Approved, &performance.Rejected, &performance.Flagged)
+		if err != nil {
+			return nil, err
+		}
+
+		weeklyPerformance = append(weeklyPerformance, &performance)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return weeklyPerformance, nil
+}
+
+func (m StatsModel) ExpertAccuracy(reviewerID int) ([]*Accuracy, error) {
+	query := `
+	WITH ExpertVotes AS (
+	SELECT 
+		p.project_id AS id,
+		p.title,
+		p.experts_decision AS final_result,
+		er.vote,
+		er.reviewed_at,
+		ROW_NUMBER() OVER (PARTITION BY er.project_id ORDER BY er.reviewed_at DESC) AS row_num
+	FROM 
+		expert_review er
+	JOIN 
+		Project p ON er.project_id = p.project_id
+	WHERE 
+		er.expert_id = $1
+	)
+	SELECT 
+	id,
+	title,
+	vote AS expert_vote,
+	final_result
+	FROM 
+	ExpertVotes ev
+	WHERE 
+	row_num = 1
+	ORDER BY 
+	reviewed_at DESC
+	LIMIT 5
+	`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	accuracyResult := []*Accuracy{}
+
+	rows, err := m.DB.QueryContext(ctx, query, reviewerID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	for rows.Next() {
+		var acc Accuracy
+		err := rows.Scan(&acc.ID, &acc.Title, &acc.Vote, &acc.FinalResult)
+		if err != nil {
+			return nil, err
+		}
+
+		accuracyResult = append(accuracyResult, &acc)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return accuracyResult, nil
+}
+
+func (m StatsModel) GetPendingReviews(rStats *ReviewerStats) error {
+	query := `SELECT COUNT(*) as pending_reviews FROM project WHERE status = 'Draft'`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	var count sql.NullInt64
+	err := m.DB.QueryRowContext(ctx, query).Scan(&count)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil
+		}
+		return err
+	}
+	rStats.PendingReviews = int(count.Int64)
+
+	return nil
+}
+func (m StatsModel) GetApprovedReviews(rStats *ReviewerStats, reviewerID int) error {
+	query := `SELECT COUNT(*) as approved_reviews FROM project_review WHERE status = 'Approved' AND reviewer_id = $1`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	var count sql.NullInt64
+	err := m.DB.QueryRowContext(ctx, query, reviewerID).Scan(&count)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil
+		}
+		return err
+	}
+	rStats.ApprovedReviews = int(count.Int64)
+
+	return nil
+}
+func (m StatsModel) GetRejectedReviews(rStats *ReviewerStats, reviewerID int) error {
+	query := `SELECT COUNT(*) as approved_reviews FROM project_review WHERE status = 'Rejected' AND reviewer_id = $1`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	var count sql.NullInt64
+	err := m.DB.QueryRowContext(ctx, query, reviewerID).Scan(&count)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil
+		}
+		return err
+	}
+	rStats.RejectedReviews = int(count.Int64)
+
+	return nil
+}
+
+func (m StatsModel) GetTotalCreatedProjectsCount(stats *UserStats, creatorID int) error {
+	query := `SELECT COUNT(*) OVER() FROM project WHERE creator_id = $1`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	var count sql.NullInt64
+	err := m.DB.QueryRowContext(ctx, query, creatorID).Scan(&count)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil
+		}
+		return err
+	}
+	stats.TotalProjects = int(count.Int64)
+
+	return nil
+}
+
+func (m StatsModel) GetTotalRaised(stats *UserStats, creatorID int) error {
+	query := `SELECT SUM(current_funding)/100 FROM project WHERE creator_id = $1`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	var count sql.NullFloat64
+	err := m.DB.QueryRowContext(ctx, query, creatorID).Scan(&count)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil
+		}
+		return err
+	}
+
+	stats.TotalRaised = count.Float64
+
+	return nil
+}
+
+func (m StatsModel) GetProjectsBacked(stats *UserStats, backerID int) error {
+	query := `SELECT COUNT(*) FROM backing b INNER JOIN payment pa ON b.backing_id = pa.backing_id WHERE pa.status = 'succeeded' AND b.backer_id = $1`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	var count sql.NullInt64
+	err := m.DB.QueryRowContext(ctx, query, backerID).Scan(&count)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil
+		}
+		return err
+	}
+
+	stats.ProjectsBacked = int(count.Int64)
+
+	return nil
+}
+
+func (m StatsModel) GetTotalBacks(stats *UserStats, backerID int) error {
+	query := `SELECT SUM(pa.amount)/100 FROM backing b INNER JOIN payment pa ON b.backing_id = pa.backing_id WHERE pa.status = 'succeeded' AND b.backer_id = $1`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	var count sql.NullFloat64
+	err := m.DB.QueryRowContext(ctx, query, backerID).Scan(&count)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil
+		}
+		return err
+	}
+
+	stats.TotalBacked = count.Float64
+
+	return nil
+}
+
+func (m StatsModel) GetFundingProgress(creatorID int) ([]*Overview, error) {
+	query := `
+	WITH project_months AS (
+		SELECT
+			to_char(deadline, 'Month') AS project_month,
+			CASE
+				WHEN current_funding >= funding_goal THEN 'Successful'
+				WHEN current_funding < funding_goal THEN 'Failed'
+				ELSE 'Other'
+			END AS project_status
+		FROM project
+		WHERE status = 'Completed'
+		AND creator_id = $1
+	)
+
+	SELECT
+		left(project_month, 3),
+		COUNT(*) AS total_projects,
+		COUNT(CASE WHEN project_status = 'Successful' THEN 1 END) AS successful_projects,
+		COUNT(CASE WHEN project_status = 'Failed' THEN 1 END) AS failed_projects
+	FROM project_months
+	GROUP BY project_month
+	ORDER BY TO_DATE(project_month, 'Month');
+	`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	rows, err := m.DB.QueryContext(ctx, query, creatorID)
+	if err != nil {
+		return nil, err
+	}
+
+	projectsOverview := []*Overview{}
+
+	for rows.Next() {
+		overview := &Overview{}
+		var totalCount sql.NullInt64
+		var successCount sql.NullInt64
+		var failureCount sql.NullInt64
+
+		err := rows.Scan(
+			&overview.ProjectMonth,
+			&totalCount,
+			&successCount,
+			&failureCount,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		overview.TotalProjects = int(totalCount.Int64)
+		overview.SuccessfulProjects = int(successCount.Int64)
+		overview.FailedProjects = int(failureCount.Int64)
+
+		projectsOverview = append(projectsOverview, overview)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return projectsOverview, nil
+}
+
+func (m TablesModel) GetLiveProjectsStatistics(creatorID int) ([]*ProjectsStatistics, error) {
+	query := `
+	SELECT pr.title, pr.categories, pr.funding_goal, pr.current_funding, pr.deadline, count(DISTINCT b.backer_id) as backers
+	FROM project pr 
+	LEFT JOIN backing b on pr.project_id = b.project_id
+	WHERE pr.status = 'Live' AND pr.creator_id = $1
+	GROUP BY pr.project_id
+	LIMIT 5
+	`
+
+	projects := []*ProjectsStatistics{}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	rows, err := m.DB.QueryContext(ctx, query, creatorID)
+	if err != nil {
+		return nil, err
+	}
+
+	for rows.Next() {
+		project := &ProjectsStatistics{}
+
+		err := rows.Scan(
+			&project.Title,
+			&project.Categories,
+			&project.FundingGoal,
+			&project.CurrentFunding,
+			&project.Deadline,
+			&project.Backers,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		projects = append(projects, project)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return projects, nil
+}
+
+func (m TablesModel) GetBackedProjectsStatistics(backerID int) ([]*ProjectsStatistics, error) {
+	query := `
+	SELECT pr.title, pr.categories, pr.funding_goal, pr.current_funding, pr.deadline, pr.status, count(DISTINCT b.backer_id) as backers
+	FROM project pr 
+	LEFT JOIN backing b on pr.project_id = b.project_id
+	WHERE b.backer_id = $1
+	GROUP BY pr.project_id
+	LIMIT 5
+	`
+
+	projects := []*ProjectsStatistics{}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	rows, err := m.DB.QueryContext(ctx, query, backerID)
+	if err != nil {
+		return nil, err
+	}
+
+	for rows.Next() {
+		project := &ProjectsStatistics{}
+
+		err := rows.Scan(
+			&project.Title,
+			&project.Categories,
+			&project.FundingGoal,
+			&project.CurrentFunding,
+			&project.Deadline,
+			&project.Status,
+			&project.Backers,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		projects = append(projects, project)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return projects, nil
 }

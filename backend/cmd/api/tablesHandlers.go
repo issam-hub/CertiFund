@@ -308,3 +308,67 @@ func (app *application) getFlaggedProjectsByReviewerHandler(c echo.Context) erro
 		"metadata": metadata,
 	})
 }
+
+func (app *application) getCreatedProjectsTableHandler(c echo.Context) error {
+	var input struct {
+		Page     int `json:"page"`
+		PageSize int `json:"page_size"`
+	}
+
+	v := validator.New()
+
+	input.Page = app.readInt(c.QueryParams(), "page", 1, v)
+	input.PageSize = app.readInt(c.QueryParams(), "page_size", 5, v)
+
+	v.Check(input.Page >= 1 && input.PageSize <= 10_000_000, "page", "page must be between 1 and 10000000")
+	v.Check(input.PageSize >= 1 && input.PageSize <= 100, "page_size", "page size must be between 1 and 100")
+
+	if !v.Valid() {
+		return echo.NewHTTPError(http.StatusUnprocessableEntity, v.Errors)
+	}
+
+	user := c.Get("user").(*data.User)
+
+	table, metadata, err := app.models.Tables.GetCreatedProjects(input.Page, input.PageSize, user.ID)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(http.StatusOK, envelope{
+		"message":  "Created projects table retrieved successfully",
+		"table":    table,
+		"metadata": metadata,
+	})
+}
+
+func (app *application) getUserBackingsTableHandler(c echo.Context) error {
+	var input struct {
+		Page     int `json:"page"`
+		PageSize int `json:"page_size"`
+	}
+
+	v := validator.New()
+
+	input.Page = app.readInt(c.QueryParams(), "page", 1, v)
+	input.PageSize = app.readInt(c.QueryParams(), "page_size", 5, v)
+
+	v.Check(input.Page >= 1 && input.PageSize <= 10_000_000, "page", "page must be between 1 and 10000000")
+	v.Check(input.PageSize >= 1 && input.PageSize <= 100, "page_size", "page size must be between 1 and 100")
+
+	if !v.Valid() {
+		return echo.NewHTTPError(http.StatusUnprocessableEntity, v.Errors)
+	}
+
+	user := c.Get("user").(*data.User)
+
+	table, metadata, err := app.models.Tables.GetUserBackings(input.Page, input.PageSize, user.ID)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(http.StatusOK, envelope{
+		"message":  "User backings table retrieved successfully",
+		"table":    table,
+		"metadata": metadata,
+	})
+}

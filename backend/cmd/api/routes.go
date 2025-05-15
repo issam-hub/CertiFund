@@ -82,6 +82,13 @@ func (app *application) routes(e *echo.Echo) {
 	authGroup.GET("/stats/categoriesDist", app.getCategoriesDistributionHandler, app.RequirePermission("stats"))
 	authGroup.GET("/stats/creatorsNbackers", app.getCreatorsBackersGrowthHandler, app.RequirePermission("stats"))
 	authGroup.GET("/stats/backingsNrefunds", app.getBackingsRefundsHandler, app.RequirePermission("stats"))
+	authGroup.GET("/stats/reviewerPerformance", app.getReviewerPerformanceHandler)
+	authGroup.GET("/stats/accuracy", app.getAccuracyHandler)
+	authGroup.GET("/stats/reviewerStats", app.getReviewerStatsHandler)
+	authGroup.GET("/stats/userStats", app.getUserStatsHandler)
+	authGroup.GET("/stats/fundingProgress", app.getFundingProgressHandler)
+	authGroup.GET("/stats/liveProjects", app.getLiveProjectStatisticsHandler)
+	authGroup.GET("/stats/backedProjects", app.getBackedProjectStatisticsHandler)
 
 	// tables
 	authGroup.GET("/tables/projects", app.getProjectsTableHandler)
@@ -91,6 +98,8 @@ func (app *application) routes(e *echo.Echo) {
 	authGroup.GET("/tables/disputes", app.getDisputesTableHandler, app.RequirePermission("tables:disputes"))
 	authGroup.GET("/tables/pendingAssessements", app.getPendingAssessementProjectsTableHandler)
 	authGroup.GET("/tables/assessed", app.getAssessedProjectsTableHandler)
+	authGroup.GET("/tables/createdProjects", app.getCreatedProjectsTableHandler)
+	authGroup.GET("/tables/userBackings", app.getUserBackingsTableHandler)
 
 	// disputes
 	authGroup.POST("/disputes/create/:id", app.createDisputeHandler, app.RequirePermission("disputes:create"))

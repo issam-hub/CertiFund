@@ -12,7 +12,7 @@ import {
   } from "@/components/ui/dropdown-menu"
 import { useToast } from "@/hooks/use-toast"
 import { useAtomValue } from "jotai"
-import { CircleUserRound, LogOut, Settings, UserRoundPen, WandSparkles } from "lucide-react"
+import { CircleUserRound, LayoutDashboard, LogOut, Settings, UserRoundPen, WandSparkles } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
@@ -70,6 +70,13 @@ export default function ProfileHeader() {
                         <Link href={`/settings`} className="px-2 py-1.5 flex gap-2 items-center w-full">
                             <Settings style={{height:"18px", width:"18px"}} className="text-slate-500" />
                             Settings
+                        </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem className="cursor-pointer px-0 py-0">
+                        <Link href={`/${user.role}/dashboard`} className="px-2 py-1.5 flex gap-2 items-center w-full">
+                            <LayoutDashboard style={{height:"18px", width:"18px"}} className="text-slate-500" />
+                            Dashboard
                         </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
