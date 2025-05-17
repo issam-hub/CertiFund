@@ -79,3 +79,40 @@ func (app *application) getAllCommentsHandler(c echo.Context) error {
 		"comments": comments,
 	})
 }
+
+func (app *application) deleteCommentHandler(c echo.Context) error {
+	id, err := app.readIDParam(c)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusNotFound, err.Error())
+	}
+
+	comment, err := app.models.Comments.Get(id)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrNoRecordFound):
+			return echo.NewHTTPError(http.StatusNotFound, "Comment not found")
+		default:
+			return err
+		}
+	}
+
+	user := c.Get("user").(*data.User)
+
+	if comment.UserID != user.ID || user.Role != "admin" {
+		return echo.NewHTTPError(http.StatusForbidden, "You are not allowed to delete this comment")
+	}
+
+	err = app.models.Comments.Delete(id)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrNoRecordFound):
+			return echo.NewHTTPError(http.StatusNotFound, "Comment not found")
+		default:
+			return err
+		}
+	}
+
+	return c.JSON(http.StatusOK, envelope{
+		"message": "Comment deleted successfully",
+	})
+}

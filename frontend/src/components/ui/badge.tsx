@@ -39,6 +39,8 @@ const badgeVariants = cva(
           "border-blue-500 text-blue-500 bg-blue-100 hover:bg-blue-200",
         neutral:
           "border-gray-500 text-gray-500 bg-gray-100 hover:bg-gray-200",
+        unverified:
+          "border-white text-white"
       },
     },
     defaultVariants: {

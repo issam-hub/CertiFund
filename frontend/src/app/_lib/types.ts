@@ -142,6 +142,7 @@ export type Dispute = {
   reporter: string
   context: string
   reported_resource: string
+  reported_resource_id: number
 }
 
 export type ProfileType = {
