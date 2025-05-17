@@ -118,7 +118,7 @@ export default async function ProjectDetailsPage({params}:{params: Promise<{id:s
         <div className="absolute top-4 right-4">
           <TooltipProvider>
             <Tooltip>
-              <TooltipTrigger><Badge style={{height:"30px", width:"100px"}} className="text-sm justify-center gap-1.5" variant={toCamelCase(project.experts_decision) as ExpertsDecisionType}><BadgeCheck className="w-5 h-5" />{project.experts_decision}</Badge></TooltipTrigger>
+              <TooltipTrigger><Badge style={{height:"30px"}} className="text-sm justify-center gap-1.5" variant={toCamelCase(project.experts_decision) as ExpertsDecisionType}><BadgeCheck className="w-5 h-5" />{project.experts_decision}</Badge></TooltipTrigger>
               <TooltipContent>
                 <p>{ExpertsDecisionDetails[project.experts_decision as keyof typeof ExpertsDecisionDetails]}</p>
               </TooltipContent>

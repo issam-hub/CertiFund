@@ -71,15 +71,29 @@ export const reportFormSchema = z.object({
 
 export type ReportFormSchema = z.infer<typeof reportFormSchema>
 
+
 export const resolveFormSchema = z.object({
   status: z.enum(["resolved", "rejected"], {
     required_error: "Please select a status",
     invalid_type_error: "Status must be either resolved or rejected"
   }),
   note: z.string()
-  .min(10, "Note must be at least 10 characters")
-  .max(500, "Note must be less than 500 characters")
-})
+    .min(10, "Note must be at least 10 characters")
+    .max(500, "Note must be less than 500 characters"),
+  selectedActions: z.array(z.string())
+    .optional()
+}).refine(
+  (data) => {
+    if (data.status === "resolved") {
+      return data.selectedActions && data.selectedActions.length > 0;
+    }
+    return true;
+  },
+  {
+    message: "Actions must be selected when status is resolved",
+    path: ["selectedActions"],
+  }
+);
 
 export type ResolveFormSchema = z.infer<typeof resolveFormSchema>
 

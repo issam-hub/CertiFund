@@ -102,6 +102,7 @@ BEGIN
     UPDATE project
     SET experts_decision = calculate_expert_decision(project_id)
     WHERE status = 'Approved'
+        OR status = 'Live'
       AND experts_decision = 'unverified'
       AND approved_at IS NOT NULL
       AND approved_at <= NOW() - INTERVAL '10 minutes' -- for developement only

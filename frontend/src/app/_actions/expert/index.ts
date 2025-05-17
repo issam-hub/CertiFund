@@ -3,6 +3,7 @@
 import { apiUrl } from "@/app/_lib/config"
 import { CreateUserSchema } from "@/app/_lib/schemas/auth"
 import { authFetch } from "@/app/_lib/utils/auth"
+import { revalidateTag } from "next/cache"
 
 export async function createExpert(values: CreateUserSchema){
     let toBeSent = {
@@ -25,6 +26,8 @@ export async function createExpert(values: CreateUserSchema){
             }
             return {status:false, ...result}
           }    
+
+          revalidateTag("users-table")
       
           const result = await res.json();
           return {status:true, ...result}

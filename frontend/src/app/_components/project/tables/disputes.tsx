@@ -54,6 +54,7 @@ import { ReportFormSchema, resolveFormSchema, ResolveFormSchema } from "@/app/_l
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import CustomCheckBox from "@/components/customCheckbox"
 
 // Helper function to get status badge variant
 const getStatusBadgeVariant = (status: DisputeStatus) => {
@@ -100,6 +101,7 @@ export function DisputeManagement({disputes, meta}:{disputes:Dispute[], meta:Met
       defaultValues: {
         status: undefined,
         note: "",
+        selectedActions:[]
       },
     })
 
@@ -650,6 +652,11 @@ export function DisputeManagement({disputes, meta}:{disputes:Dispute[], meta:Met
                       </FormItem>
                     )}
                   />
+                  {
+                    form.watch("status") === "resolved" && (
+                      <CustomCheckBox control={form.control}/>
+                    )
+                  }
                 </form>
               </Form>
             )}

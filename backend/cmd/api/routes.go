@@ -82,13 +82,13 @@ func (app *application) routes(e *echo.Echo) {
 	authGroup.GET("/stats/categoriesDist", app.getCategoriesDistributionHandler, app.RequirePermission("stats"))
 	authGroup.GET("/stats/creatorsNbackers", app.getCreatorsBackersGrowthHandler, app.RequirePermission("stats"))
 	authGroup.GET("/stats/backingsNrefunds", app.getBackingsRefundsHandler, app.RequirePermission("stats"))
-	authGroup.GET("/stats/reviewerPerformance", app.getReviewerPerformanceHandler)
-	authGroup.GET("/stats/accuracy", app.getAccuracyHandler)
-	authGroup.GET("/stats/reviewerStats", app.getReviewerStatsHandler)
-	authGroup.GET("/stats/userStats", app.getUserStatsHandler)
-	authGroup.GET("/stats/fundingProgress", app.getFundingProgressHandler)
-	authGroup.GET("/stats/liveProjects", app.getLiveProjectStatisticsHandler)
-	authGroup.GET("/stats/backedProjects", app.getBackedProjectStatisticsHandler)
+	authGroup.GET("/stats/reviewerPerformance", app.getReviewerPerformanceHandler, app.RequirePermission("stats:reviewer"))
+	authGroup.GET("/stats/accuracy", app.getAccuracyHandler, app.RequirePermission("stats:expert"))
+	authGroup.GET("/stats/reviewerStats", app.getReviewerStatsHandler, app.RequirePermission("stats:reviewer"))
+	authGroup.GET("/stats/userStats", app.getUserStatsHandler, app.RequirePermission("stats:user"))
+	authGroup.GET("/stats/fundingProgress", app.getFundingProgressHandler, app.RequirePermission("stats:user"))
+	authGroup.GET("/stats/liveProjects", app.getLiveProjectStatisticsHandler, app.RequirePermission("stats:user"))
+	authGroup.GET("/stats/backedProjects", app.getBackedProjectStatisticsHandler, app.RequirePermission("stats:user"))
 
 	// tables
 	authGroup.GET("/tables/projects", app.getProjectsTableHandler)
@@ -96,10 +96,10 @@ func (app *application) routes(e *echo.Echo) {
 	authGroup.GET("/tables/users", app.getUsersTableHandler, app.RequirePermission("tables:users"))
 	authGroup.GET("/tables/backings", app.getBackingsTableHandler, app.RequirePermission("tables:backings"))
 	authGroup.GET("/tables/disputes", app.getDisputesTableHandler, app.RequirePermission("tables:disputes"))
-	authGroup.GET("/tables/pendingAssessements", app.getPendingAssessementProjectsTableHandler)
-	authGroup.GET("/tables/assessed", app.getAssessedProjectsTableHandler)
-	authGroup.GET("/tables/createdProjects", app.getCreatedProjectsTableHandler)
-	authGroup.GET("/tables/userBackings", app.getUserBackingsTableHandler)
+	authGroup.GET("/tables/pendingAssessements", app.getPendingAssessementProjectsTableHandler, app.RequirePermission("tables:pendingAssessments"))
+	authGroup.GET("/tables/assessed", app.getAssessedProjectsTableHandler, app.RequirePermission("tables:assessed"))
+	authGroup.GET("/tables/createdProjects", app.getCreatedProjectsTableHandler, app.RequirePermission("tables:created"))
+	authGroup.GET("/tables/userBackings", app.getUserBackingsTableHandler, app.RequirePermission("tables:userBackings"))
 
 	// disputes
 	authGroup.POST("/disputes/create/:id", app.createDisputeHandler, app.RequirePermission("disputes:create"))
@@ -107,15 +107,15 @@ func (app *application) routes(e *echo.Echo) {
 	authGroup.PATCH("/disputes/:id", app.updateDisputeHandler, app.RequirePermission("disputes:update"))
 
 	// feedback
-	authGroup.POST("/projects/like/:id", app.LikeProjectHandler)
-	authGroup.POST("/projects/unlike/:id", app.unlikeProjectHandler)
-	authGroup.POST("/projects/save/:id", app.SaveProjectHandler)
-	authGroup.POST("/projects/unsave/:id", app.unsaveProjectHandler)
+	authGroup.POST("/projects/like/:id", app.LikeProjectHandler, app.RequirePermission("projects:like"))
+	authGroup.POST("/projects/unlike/:id", app.unlikeProjectHandler, app.RequirePermission("projects:unlike"))
+	authGroup.POST("/projects/save/:id", app.SaveProjectHandler, app.RequirePermission("projects:save"))
+	authGroup.POST("/projects/unsave/:id", app.unsaveProjectHandler, app.RequirePermission("projects:unsave"))
 	publicGroup.GET("/projects/like/:id", app.getLikesHandler)
 	authGroup.GET("/projects/didILikeThis/:id", app.didILikeThisHandler)
 	authGroup.GET("/projects/didISaveThis/:id", app.didISaveThisHandler)
 
 	// experts
-	authGroup.POST("/experts/create", app.CreateExpertHandler)
-	authGroup.POST("/experts/assess/:id", app.assessProjectHandler)
+	authGroup.POST("/experts/create", app.CreateExpertHandler, app.RequirePermission("experts:create"))
+	authGroup.POST("/experts/assess/:id", app.assessProjectHandler, app.RequirePermission("experts:assess"))
 }

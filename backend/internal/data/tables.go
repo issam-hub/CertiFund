@@ -60,18 +60,19 @@ type BackingsTable struct {
 }
 
 type DisputesTable struct {
-	ID               string         `json:"dispute_id"`
-	Status           string         `json:"status"`
-	Type             string         `json:"type"`
-	Description      string         `json:"description"`
-	Context          string         `json:"context"`
-	CreatedAt        time.Time      `json:"created_at"`
-	UpdatedAt        time.Time      `json:"updated_at"`
-	Version          int            `json:"version"`
-	ResolvedAt       time.Time      `json:"resolved_at"`
-	Reporter         string         `json:"reporter"`
-	ReportedResource string         `json:"reported_resource"`
-	Evidences        pq.StringArray `json:"evidences,omitempty"`
+	ID                 string         `json:"dispute_id"`
+	Status             string         `json:"status"`
+	Type               string         `json:"type"`
+	Description        string         `json:"description"`
+	Context            string         `json:"context"`
+	CreatedAt          time.Time      `json:"created_at"`
+	UpdatedAt          time.Time      `json:"updated_at"`
+	Version            int            `json:"version"`
+	ResolvedAt         time.Time      `json:"resolved_at"`
+	Reporter           string         `json:"reporter"`
+	ReportedResource   string         `json:"reported_resource"`
+	ReportedResourceID int            `json:"reported_resource_id"`
+	Evidences          pq.StringArray `json:"evidences,omitempty"`
 }
 
 type TablesModel struct {
@@ -431,6 +432,11 @@ func (m TablesModel) GetDisputes(page, pageSize int) ([]*DisputesTable, MetaData
         WHEN d.user_id IS NOT NULL THEN u.username
         WHEN d.comment_id IS NOT NULL THEN pc.content
     END AS reported_resource,
+    CASE
+        WHEN d.project_id IS NOT NULL THEN d.project_id
+        WHEN d.user_id IS NOT NULL THEN d.user_id
+        WHEN d.comment_id IS NOT NULL THEN d.comment_id
+    END AS reported_resource_id,
     d.evidences
 	FROM 
 		dispute d
@@ -476,6 +482,7 @@ func (m TablesModel) GetDisputes(page, pageSize int) ([]*DisputesTable, MetaData
 			&row.Version,
 			&row.Reporter,
 			&row.ReportedResource,
+			&row.ReportedResourceID,
 			&row.Evidences,
 		)
 		if err != nil {

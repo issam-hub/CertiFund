@@ -327,5 +327,6 @@ export const ExpertsDecisionDetails = {
   "recommended":"Solid project with good potential and minimal concerns",
   "neutral":"Average project with balanced strengths and weaknesses",
   "not recommended": "Project with significant concerns or weaknesses",
-  "highly not recommended": "Project with critical flaws or serious concerns"
+  "highly not recommended": "Project with critical flaws or serious concerns",
+  "unverified": "Experts didn't decide yet"
 }

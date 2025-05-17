@@ -31,7 +31,7 @@ import UserLinks from "../user/userLinks"
     const user = useAtomValue(userAtom)
 
     return (
-      <Sidebar collapsible="icon" isUser={true}>
+      <Sidebar collapsible="icon" isUser={user?.role === "user"}>
         <SidebarHeader>
           <SidebarMenu className="flex flex-row justify-between items-center">
             <SidebarMenuItem>

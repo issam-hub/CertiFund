@@ -61,7 +61,6 @@ export async function getProject(id: string) {
         }
     }
 
-    revalidateTag("projects-user")
     
     const result = await res.json()
     return {status:true, ...result}
@@ -80,8 +79,6 @@ export async function getProjectPublic(id: string) {
             return {status:false, ...result}
         }
     }
-
-    revalidateTag("projects-user")
 
     const result = await res.json()
     return {status:true, ...result}
