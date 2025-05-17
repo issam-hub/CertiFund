@@ -778,7 +778,7 @@ func (m StatsModel) ExpertAccuracy(reviewerID int) ([]*Accuracy, error) {
 }
 
 func (m StatsModel) GetPendingReviews(rStats *ReviewerStats) error {
-	query := `SELECT COUNT(*) as pending_reviews FROM project WHERE status = 'Draft'`
+	query := `SELECT COUNT(*) as pending_reviews FROM project WHERE status = 'Pending Review'`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -856,7 +856,7 @@ func (m StatsModel) GetTotalCreatedProjectsCount(stats *UserStats, creatorID int
 }
 
 func (m StatsModel) GetTotalRaised(stats *UserStats, creatorID int) error {
-	query := `SELECT SUM(current_funding)/100 FROM project WHERE creator_id = $1`
+	query := `SELECT SUM(current_funding) FROM project WHERE creator_id = $1`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()

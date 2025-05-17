@@ -3,6 +3,7 @@ package data
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"projectx/internal/validator"
 	"time"
 )
@@ -157,4 +158,64 @@ func (m CommentsModel) GetAll(projectID int) ([]*Comment, error) {
 	}
 
 	return comments, nil
+}
+
+func (m CommentsModel) Delete(commentID int) error {
+	query := `
+		DELETE FROM project_comment WHERE comment_id = $1
+	`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	result, err := m.DB.ExecContext(ctx, query, commentID)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return sql.ErrNoRows
+	}
+
+	return nil
+}
+
+func (m CommentsModel) Get(commentID int) (*Comment, error) {
+	if commentID < 1 {
+		return nil, ErrNoRecordFound
+	}
+	query := `
+		SELECT comment_id, content, user_id, project_id, created_at, updated_at, version
+		FROM project_comment
+		WHERE comment_id = $1
+	`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	var comment Comment
+	err := m.DB.QueryRowContext(ctx, query, commentID).Scan(
+		&comment.ID,
+		&comment.Content,
+		&comment.UserID,
+		&comment.ProjectID,
+		&comment.CreatedAt,
+		&comment.UpdatedAt,
+		&comment.Version,
+	)
+
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, ErrNoRecordFound
+		default:
+			return nil, err
+		}
+	}
+
+	return &comment, nil
 }

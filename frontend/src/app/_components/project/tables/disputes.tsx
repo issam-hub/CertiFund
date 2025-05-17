@@ -46,7 +46,7 @@ import { Dispute, DisputeStatus, Metadata } from "@/app/_lib/types"
 import Link from "next/link"
 import { useToast } from "@/hooks/use-toast"
 import { TOAST_ERROR_TITLE, TOAST_SUCCESS_TITLE } from "@/app/_lib/constants"
-import { deleteDispute, updateDispute } from "@/app/_actions/projects"
+import { deleteComment, deleteDispute, deleteProject, updateDispute } from "@/app/_actions/projects"
 import { extractFilenameFromSupabaseUrl } from "@/app/_lib/utils"
 import { createClient } from "@supabase/supabase-js"
 import { supabaseServiceRoleKey, supabaseUrl } from "@/app/_lib/config"
@@ -55,6 +55,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import CustomCheckBox from "@/components/customCheckbox"
+import { deleteUser } from "@/app/_actions/user"
 
 // Helper function to get status badge variant
 const getStatusBadgeVariant = (status: DisputeStatus) => {
@@ -266,23 +267,77 @@ export function DisputeManagement({disputes, meta}:{disputes:Dispute[], meta:Met
     }
 
       async function onSubmit(data: ResolveFormSchema) {
+        if (data.selectedActions?.length) {
+          for(const action of data.selectedActions){
+            switch (action){
+              case "delete-project":
+                const result = await deleteProject(selectedDispute?.reported_resource_id as unknown as string);
+                if (result.status) {
+                  toast({
+                    title: TOAST_SUCCESS_TITLE,
+                    description:
+                      "The project has been deleted successfully.",
+                    variant: "default",
+                  });
+                } else {
+                  toast({
+                    title: TOAST_ERROR_TITLE,
+                    description: result.error,
+                    variant: "destructive",
+                  });
+                }
+                break;
+              case "delete-user":
+                const result2 = await deleteUser(selectedDispute?.reported_resource_id as unknown as string);
+                if (result2.status) {
+                  toast({
+                    title: TOAST_SUCCESS_TITLE,
+                    description: "User deleted successfully",
+                    variant: "default",
+                  });
+                } else {
+                  toast({
+                    title: TOAST_ERROR_TITLE,
+                    description: result2.error,
+                    variant: "destructive",
+                  });
+                }
+                break;
+              case "delete-comment":
+                const result3 = await deleteComment(selectedDispute?.reported_resource_id as unknown as number);
+                if (result3.status) {
+                  toast({
+                    title: TOAST_SUCCESS_TITLE,
+                    description: "Comment deleted successfully",
+                    variant: "default",
+                  });
+                } else {
+                  toast({
+                    title: TOAST_ERROR_TITLE,
+                    description: result3.error,
+                    variant: "destructive",
+                  });
+                }
+            }
+          }
+        }
     
         const result = await updateDispute(Number(selectedDispute?.dispute_id), data.status, data.note)
-      if(result.status){
-        toast({
-          title: TOAST_SUCCESS_TITLE,
-          description: "Dispute resolved successfully",
-        })
-      }else{
-        toast({
-          title: TOAST_ERROR_TITLE,
-          description: result.error,
-          variant:"destructive"
-        })
-      }
-    
-      form.reset()
-      setIsResolveDialogOpen(false)
+        if(result.status){
+          toast({
+            title: TOAST_SUCCESS_TITLE,
+            description: "Dispute resolved successfully",
+          })
+        }else{
+          toast({
+            title: TOAST_ERROR_TITLE,
+            description: result.error,
+            variant:"destructive"
+          })
+        }
+      
+        form.reset()
+        setIsResolveDialogOpen(false)
     
     }
 
@@ -654,7 +709,7 @@ export function DisputeManagement({disputes, meta}:{disputes:Dispute[], meta:Met
                   />
                   {
                     form.watch("status") === "resolved" && (
-                      <CustomCheckBox control={form.control}/>
+                      <CustomCheckBox control={form.control} type={selectedDispute.context}/>
                     )
                   }
                 </form>

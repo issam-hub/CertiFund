@@ -547,6 +547,28 @@ export async function createComment(projectId: string, content: string, parentId
     }
 }
 
+export async function deleteComment(commentId: number){
+    const res = await authFetch(`${apiUrl}/comments/${commentId}`,{
+        method:"DELETE"
+    })
+    try {
+        if(!res.ok) {
+            const result = await res.json()
+            if(typeof result.error === "object"){
+                return {status:false, error: Object.values(result.error).reduce((prev, curr)=>`*${prev}`+"\n"+`*${curr}`) as string}
+            }
+            return {status: false, ...result}
+          }   
+          
+          revalidateTag("comments")
+      
+          const result = await res.json();
+          return {status:true, ...result}
+    }catch(error: any){
+        return {status: false, error: error.message}
+    }
+}
+
 export async function deleteBacking(id: number){
     const res = await authFetch(`${apiUrl}/backing/${id}`,{
         method:'DELETE'

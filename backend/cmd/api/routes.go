@@ -71,6 +71,7 @@ func (app *application) routes(e *echo.Echo) {
 
 	// comments
 	authGroup.POST("/comments/create/:id", app.createCommentHandler, app.RequirePermission("comments:create"))
+	authGroup.DELETE("/comments/:id", app.deleteCommentHandler)
 	publicGroup.GET("/comments/:id", app.getAllCommentsHandler)
 
 	// stats

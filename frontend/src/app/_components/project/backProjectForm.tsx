@@ -53,15 +53,16 @@ export function BackProjectForm({ projectId,rewards }: { projectId: number, rewa
       resolver: zodResolver(backProjectSchema)
     })
 
+    const areThereRewards = (getSelectedRewardsData() ?? []).length > 0
 
-    if(getSelectedRewardsData()){
+    if(areThereRewards){
       form.setValue("amount", amountInRewards)
     }
 
       async function onSubmit(values: BackProjectSchema) {
         setIsLoading(true)
 
-        const intent = await createPaymentIntent(Number(user?.user_id), projectId, values.amount*100)
+        const intent = await createPaymentIntent(Number(user?.user_id), projectId, areThereRewards ? values.amount : values.amount * 100)
         if (!intent.status){
           toast({
             title: TOAST_ERROR_TITLE,
