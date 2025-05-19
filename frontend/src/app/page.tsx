@@ -379,7 +379,7 @@ export default function LandingPage() {
             <CardContent className="p-8">
               <div className="flex flex-col md:flex-row gap-8 items-center">
                 <Image
-                  src="/me.jpeg"
+                  src="/me.png"
                   alt="Founder"
                   width={200}
                   height={200}
