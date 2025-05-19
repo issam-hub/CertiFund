@@ -15,24 +15,14 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { didILikeThis, didISaveThis } from '@/app/_actions/projects'
-import MinLikeButton from './minLikeButton'
-import MinSaveButton from './MinSaveButton'
+import MinActions from '../MinActions'
 
 
-export default async function ProjectComp({project}:{project:UpdateProjectSchema}) {
+export default function ProjectComp({project}:{project:UpdateProjectSchema}) {
   let currentFund = ((project.current_funding * 100) / project.funding_goal).toFixed(2)
   let displayedCurrentFund = parseFloat(currentFund) > 100 ? "100" : currentFund
     const {months, days} = calculateDateDifferenceJSON(project.deadline)
 
-  const didILikeResult = await didILikeThis(project.project_id as unknown as number)
-  if (!didILikeResult.status){
-    throw new Error(didILikeResult.error)
-  }
-  const didISaveResult = await didISaveThis(project.project_id as unknown as number)
-  if (!didISaveResult.status){
-    throw new Error(didISaveResult.error)
-  }
   return (
     <div className="p-1">
     <Card className="overflow-hidden hover:shadow-lg transition-shadow">
@@ -82,10 +72,7 @@ export default async function ProjectComp({project}:{project:UpdateProjectSchema
         </div>
 
         <div className="flex justify-between items-center mt-4 pt-4 border-t">
-          <div className="flex gap-2">
-            <MinLikeButton projectId={Number(project.project_id)} didILikeIt={didILikeResult["did_i"]} />
-            <MinSaveButton projectId={Number(project.project_id)} didISaveIt={didISaveResult["did_i"]}/>
-          </div>
+          <MinActions projectId={Number(project.project_id)} />
           <Button asChild size="sm" className="bg-accentColor hover:bg-[#1E3A8A]">
             <Link href={`/projects/discover/${project.project_id}`}>
               View Project

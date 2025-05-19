@@ -20,6 +20,7 @@ import { useToast } from "@/hooks/use-toast"
 import { updateProfile } from "@/app/_actions/user"
 import { uploadImage } from "@/app/_actions/projects"
 import { TOAST_ERROR_TITLE, TOAST_SUCCESS_TITLE } from "@/app/_lib/constants"
+import LoadingComponent from "@/app/_components/global/loading"
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024 // 2MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/gif"]
@@ -133,7 +134,7 @@ export default function EditProfilePage() {
   }
   
   if(!user) {
-    return <div>Loading...</div>;
+    return <LoadingComponent/>;
   }
   
   return (
