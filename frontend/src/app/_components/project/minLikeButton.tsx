@@ -45,7 +45,7 @@ export default function MinLikeButton({projectId, didILikeIt}:{projectId: number
         className="h-9 w-9 p-0 rounded-full"
         aria-label="Like project"
     >
-        <Heart className={`h-5 w-5 transition-all duration-300 ${isLiked ? "fill-accentColor text-accentColor animate-heartbeat" : "fill-none text-gray-500"}`} />
+        <Heart className={`h-5 w-5 transition-all duration-300 ${isLiked ? "fill-accentColor text-accentColor animate-heartbeat" : "fill-none"}`} />
     </Button>
   )
 }
