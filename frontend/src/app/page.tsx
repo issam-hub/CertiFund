@@ -200,7 +200,7 @@ export default function LandingPage() {
               <h2 className="text-3xl font-bold mb-2">Latest Projects</h2>
               <p className="text-gray-600">Discover the newest additions to our platform</p>
             </div>
-            <Button className="bg-accentColor hover:bg-[#1E3A8A]">View All Projects</Button>
+            <Button className="bg-accentColor hover:bg-[#1E3A8A]"><Link href={"/projects/discover"}>View All Projects</Link></Button>
           </div>
 
           <ProjectsWithFilters page="" search="" limit="" categories={[]} sort="-launched_at"/>
@@ -255,7 +255,7 @@ export default function LandingPage() {
               <h2 className="text-3xl font-bold mb-2">Technology Projects</h2>
               <p className="text-gray-600">Innovative solutions changing the world</p>
             </div>
-            <Button variant="outline">View All in Technology</Button>
+            <Button variant="outline"><Link href={"/projects/discover?categories=technology"}>View All in Technology</Link></Button>
           </div>
 
           <ProjectsWithFilters page="" search="" limit="" categories={["technology"]} sort=""/>
@@ -270,7 +270,7 @@ export default function LandingPage() {
               <h2 className="text-3xl font-bold mb-2">Creative Projects</h2>
               <p className="text-gray-600">Art, Writing, Film & More</p>
             </div>
-            <Button variant="outline">View All Creative Projects</Button>
+            <Button variant="outline"><Link href={"/projects/discover?categories=art%2Cdesign%2Cfilm-video%2Cpublishing-writing%2Cfood-craft"}>View All Creative Projects</Link></Button>
           </div>
 
           <ProjectsWithFilters page="" search="" limit="" categories={["art", "design", "film & video", "publishing & writing", "food & craft"]} sort=""/>

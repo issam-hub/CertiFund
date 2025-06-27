@@ -5,11 +5,15 @@ import { TOAST_ERROR_TITLE } from '@/app/_lib/constants'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/hooks/use-toast'
 import { Bookmark } from 'lucide-react'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 
 export default function MinSaveButton({projectId, didISaveIt}:{projectId: number, didISaveIt: boolean}) {
     const [isSaved, setIsSaved] = useState(didISaveIt)
     const {toast} = useToast()
+
+    useEffect(()=>{
+        setIsSaved(didISaveIt)
+    },[didISaveIt])
 
     const handleSave = async() => {
         const wasSaved = isSaved

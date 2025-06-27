@@ -291,7 +291,7 @@ func (m StatsModel) GetProjectsOverview() ([]*Overview, error) {
 		COUNT(CASE WHEN project_status = 'Failed' THEN 1 END) AS failed_projects
 	FROM project_months
 	GROUP BY project_month
-	ORDER BY TO_DATE(project_month, 'Month');
+	ORDER BY TO_DATE(project_month, 'Month')
 	`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)

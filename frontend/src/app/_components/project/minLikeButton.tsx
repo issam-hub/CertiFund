@@ -5,11 +5,15 @@ import { TOAST_ERROR_TITLE } from '@/app/_lib/constants'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/hooks/use-toast'
 import { Heart } from 'lucide-react'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 
 export default function MinLikeButton({projectId, didILikeIt}:{projectId: number, didILikeIt: boolean}) {
     const [isLiked, setIsLiked] = useState(didILikeIt)
     const {toast} = useToast()
+
+    useEffect(()=>{
+        setIsLiked(didILikeIt)
+    },[didILikeIt])
 
     const handleLike = async() => {
         const wasLiked = isLiked

@@ -30,7 +30,7 @@ export default function MinActions({projectId}:{projectId:number}) {
             setDidISaveResult(didISaveResult["did_i"])
         }
         fetchData()
-    })
+    },[])
     return (
         <div className="flex gap-2">
             <MinLikeButton projectId={Number(projectId)} didILikeIt={didILikeResult} />

@@ -21,7 +21,7 @@ export default async function ProjectsWithFilters({page, search, categories, lim
     
   return (
     <div className="mx-auto max-w-6xl px-8">
-    <Carousel opts={{ align: "start", loop: true }}>
+    <Carousel opts={{ align: "start" }}>
       <CarouselContent>
         {result["projects"].map((project:UpdateProjectSchema, index:number) => {
           return (
