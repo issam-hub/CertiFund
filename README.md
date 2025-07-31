@@ -1,4 +1,4 @@
-# projectx
+# CertiFund
 
 ## project setup
 ### backend:
